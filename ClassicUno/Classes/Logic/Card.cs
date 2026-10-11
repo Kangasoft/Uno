@@ -3,6 +3,7 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
+using System.ComponentModel;
 using System.Drawing;
 
 namespace ClassicUno.Classes.Logic
@@ -10,10 +11,19 @@ namespace ClassicUno.Classes.Logic
     [Serializable]
     public enum CardColor
     {
+        [Description("None")]
         None = 0,
+
+        [Description("Red")]
         Red = 1,
+
+        [Description("Yellow")]
         Yellow = 2,
+
+        [Description("Green")]
         Green = 3,
+
+        [Description("Blue")]
         Blue = 4
     }
 
@@ -39,5 +49,7 @@ namespace ClassicUno.Classes.Logic
         public int Value { get; set; }
 
         public RectangleF Region { get; set; }
+
+        public float DrawAngle { get; set; }
     }
 }

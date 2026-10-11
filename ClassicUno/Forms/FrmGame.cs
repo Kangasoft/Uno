@@ -13,6 +13,7 @@ using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Helpers.UI;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
+using ClassicUno.Classes.Settings;
 using ClassicUno.Controls;
 
 namespace ClassicUno.Forms
@@ -22,6 +23,9 @@ namespace ClassicUno.Forms
         #region Fields
         private Game _currentGame;
         private readonly Timer _tmrNew;
+
+        private readonly Timer _time;
+        private int _currentTime;
 
         private readonly UiSynchronize _sync;
         #endregion
@@ -47,6 +51,9 @@ namespace ClassicUno.Forms
 
             _tmrNew = new Timer {Interval = 10, Enabled = true};
             _tmrNew.Tick += ShowNewGameDialog;
+
+            _time = new Timer {Interval = 1000, Enabled = false};
+            _time.Tick += TimerCount;
 
             _sync = new UiSynchronize(this);
 
@@ -247,7 +254,7 @@ namespace ClassicUno.Forms
         }
         #endregion
 
-        #region Timer callback
+        #region Timer callbacks
         private void ShowNewGameDialog(object sender, EventArgs e)
         {
             /* This allows the form to initialize and load properly before displaying the dialog */
@@ -256,6 +263,16 @@ namespace ClassicUno.Forms
             _tmrNew.Dispose();
 
             NewGame();
+        }
+
+        private void TimerCount(object sender, EventArgs e)
+        {
+            if (_currentGame == null)
+            {
+                return;
+            }
+            _currentTime++;
+            slTime.Text = $@"Time: {Utils.FormatTime(_currentTime)}";
         }
         #endregion
 
@@ -295,6 +312,14 @@ namespace ClassicUno.Forms
 
             _currentGame = new Game(this, data);
             AudioManager.PlayEffect(SoundType.Shuffle);
+
+            slTime.Text = @"Time: 0s";
+
+            _currentTime = 0;
+            _time.Enabled = true;
+
+            SettingsManager.Settings.Statistics.GamesPlayed++;
+
             Invalidate();
         }
 
@@ -305,6 +330,20 @@ namespace ClassicUno.Forms
                 location.Y <= c.Region.Y + c.Region.Height);
         }
 
+        public void UpdateStatus(string text)
+        {
+            if (InvokeRequired)
+            {
+                _sync.Execute(() => UpdateStatus(text));
+                return;
+            }
+            slGame.Text = text;
+            var direction = Utils.GetDescriptionFromEnumValue(_currentGame.CurrentDirection);
+            var color = Utils.GetDescriptionFromEnumValue(_currentGame.CurrentColor);
+            slDirection.Text = $@"Direction: {direction}";
+            slColor.Text = $@"Color: {color}";
+        }
+
         public void GameOver(IPlayer player, int score)
         {
             if (InvokeRequired)
@@ -313,9 +352,29 @@ namespace ClassicUno.Forms
                 return;
             }
 
+            _time.Enabled = false;
+            /* Record statistics */
+            if (player is HumanPlayer)
+            {
+                SettingsManager.Settings.Statistics.GamesWon++;
+                SettingsManager.Settings.Statistics.HighScore += score;
+            }
+            else
+            {
+                SettingsManager.Settings.Statistics.GamesLost++;
+            }
+
+            SettingsManager.Settings.Statistics.ShortestGame =
+                SettingsManager.Settings.Statistics.ShortestGame == 0
+                    ? _currentTime
+                    : Math.Min(SettingsManager.Settings.Statistics.ShortestGame, _currentTime);
+
+            SettingsManager.Settings.Statistics.LongestGame =
+                Math.Max(SettingsManager.Settings.Statistics.LongestGame, _currentTime);
+
             var msg = player is HumanPlayer
                 ? $"You have won and earned {score} points!"
-                : $"{player.NameData.Name} has won!";
+                : $"{player} has won!";
 
             if (MessageBox.Show(this, $@"{msg} Play again?", @"Classic UNO! 2026", MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question) == DialogResult.Yes)
@@ -326,6 +385,11 @@ namespace ClassicUno.Forms
 
             _currentGame.Dispose();
             _currentGame = null;
+
+            slGame.Text = @"No game running. Select the Game menu and New Game.";
+            slDirection.Text = @"Direction: Clockwise";
+            slColor.Text = @"Color: None";
+            slTime.Text = @"Time: 0s";
 
             Invalidate();
         }

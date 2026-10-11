@@ -4,7 +4,6 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
@@ -15,6 +14,7 @@ namespace ClassicUno.Classes.Logic.Player
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
+        public int AudioPan { get; set; }
 
         public List<Card> Cards { get; set; }
         public bool IsSkipped { get; set; }
@@ -37,7 +37,6 @@ namespace ClassicUno.Classes.Logic.Player
             /* Discard card "card" isn't necessary for human player */
             if (IsSkipped)
             {
-                Debug.Print(NameData.Name + " SKIPPED!");
                 IsSkipped = false;
                 EndTurn();
                 return;
@@ -63,7 +62,13 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void EndTurn()
         {
+            IsSkipped = false; /* Make sure this variable is RESET */
             PlayerEndTurn?.Invoke(this);
+        }
+
+        public override string ToString()
+        {
+            return NameData.Name;
         }
     }
 }

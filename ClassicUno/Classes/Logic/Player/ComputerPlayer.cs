@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using ClassicUno.Classes.Settings.SettingsData;
 
@@ -23,9 +22,12 @@ namespace ClassicUno.Classes.Logic.Player
 
         private BackgroundWorker _worker;
 
+        private readonly Random _rnd = new Random();
+
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
+        public int AudioPan { get; set; }
 
         public List<Card> Cards { get; set; }
         public bool IsSkipped { get; set; }
@@ -47,11 +49,11 @@ namespace ClassicUno.Classes.Logic.Player
         {
             if (IsSkipped)
             {
-                Debug.Print(NameData.Name + " SKIPPED!");
                 IsSkipped = false;
                 EndTurn();
                 return;
             }
+
             _discardCard = card;
             _currentColor = currentColor;
 
@@ -72,14 +74,15 @@ namespace ClassicUno.Classes.Logic.Player
         public void DrawCard(Card card)
         {
             Cards.Add(card);
-            if (_hasDrawn)
+            if (!_hasDrawn)
             {
-                /* Loop back to original background process */
-                _worker = new BackgroundWorker { WorkerSupportsCancellation = true };
-                _worker.DoWork += BackgroundWorkerCallback;
-                _worker.RunWorkerCompleted += BackgroundWorkerEndWork;
-                _worker.RunWorkerAsync();
+                return;
             }
+            /* Loop back to original background process */
+            _worker = new BackgroundWorker { WorkerSupportsCancellation = true };
+            _worker.DoWork += BackgroundWorkerCallback;
+            _worker.RunWorkerCompleted += BackgroundWorkerEndWork;
+            _worker.RunWorkerAsync();
         }
 
         public void Pass()
@@ -89,17 +92,24 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void EndTurn()
         {
+            IsSkipped = false; /* Make sure this variable is RESET */
             _hasDrawn = false;
             PlayerEndTurn?.Invoke(this);
+        }
+
+        public override string ToString()
+        {
+            return NameData.Name;
         }
 
         private void BackgroundWorkerCallback(object sender, DoWorkEventArgs e)
         {
             /* Analyze upper card on discard pile (_discardCard) */
-            Thread.Sleep(1000);
+            Thread.Sleep(_rnd.Next(600, 1500));
             var card = SelectComputerCard();
             if (card == null)
             {
+                Thread.Sleep(_rnd.Next(300, 1500));
                 if (!_hasDrawn)
                 {
                     /* Need to draw */
@@ -122,9 +132,8 @@ namespace ClassicUno.Classes.Logic.Player
                 /* Choose color */
                 var c = ChooseWildColor();
                 PlayerChoosesColor?.Invoke(this, c);
-
             }
-            Thread.Sleep(1000); /* Prevent race condition */
+            Thread.Sleep(_rnd.Next(400, 800));
         }
 
         private void BackgroundWorkerEndWork(object sender, RunWorkerCompletedEventArgs e)

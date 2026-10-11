@@ -39,6 +39,9 @@ namespace ClassicUno.Classes.Settings
         [XmlElement("options")]
         public GameOptionData Options = new GameOptionData();
 
+        [XmlElement("statistics")]
+        public Statistics Statistics = new Statistics();
+
         /* Constructor */
         public Settings()
         {
@@ -47,11 +50,11 @@ namespace ClassicUno.Classes.Settings
 
             Options.NumberOfPlayers = 2;
             Options.Sounds.EnableVoice = true;
-            Options.Sounds.VoiceVolume = 90;
+            Options.Sounds.VoiceVolume = 95;
             Options.Sounds.EnableEffects = true;
-            Options.Sounds.EffectsVolume = 90;
+            Options.Sounds.EffectsVolume = 95;
             Options.Sounds.EnableMusic = true;
-            Options.Sounds.MusicVolume = 30;
+            Options.Sounds.MusicVolume = 70;
         }
     }
 }

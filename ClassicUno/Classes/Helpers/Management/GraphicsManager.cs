@@ -5,6 +5,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Linq;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Properties;
@@ -230,11 +232,67 @@ namespace ClassicUno.Classes.Helpers.Management
                 return;
             }
             var position = new PointF((_cardWidth + 20) / 2f + (clientRectangle.Width - _cardWidth) / 2f, (clientRectangle.Height - _cardHeight * 2) / 2f);
-            /* We'll make this simpler by only drawing the bottom-most card on the pile, which is
-             * the "top" of the pile. This may change to make it look more realistic as a "mess"
-             * of cards. */
-            var card = game.DiscardPile[game.DiscardPile.Count - 1];
-            DrawCard(g, GetCardImage(card), clientRectangle, position);
+
+            /* Draw a few offset cards to simulate a stack. */
+            //var card = game.DiscardPile[game.DiscardPile.Count - 1];
+            //var cardImage = GetCardImage(card);
+            Card card;
+            /* Draw up to three slightly rotated card backs underneath top card. */
+            var stackDepth = Math.Min(game.DiscardPile.Count - 1, 3);
+            //float[] angles = { -8f, 5f, -4f };
+
+            //for (var i = stackDepth; i >= 1; i--)
+            //{
+            //    var x = clientRectangle.Left + position.X - i * 2 + _cardWidth / 2f;
+            //    var y = clientRectangle.Top + position.Y - i * 2 + _cardHeight / 2f;
+
+            //    /* Slightly skew card */
+            //    DrawRotatedCard(g, CardBack, x, y, angles[(i - 1) % angles.Length]);
+            //}
+
+            //original
+            //for (var i = stackDepth; i >= 1; i--)
+            //{
+            //    var x = clientRectangle.Left + position.X - i * 2 + _cardWidth / 2f;
+            //    var y = clientRectangle.Top + position.Y - i * 2 + _cardHeight / 2f;
+
+            //    /* Use the discarded card's stored angle. */
+            //    card = game.DiscardPile[game.DiscardPile.Count - 1 - i];
+            //    DrawRotatedCard(g, CardBack, x, y, card.DrawAngle);
+            //}
+
+            var count = game.DiscardPile.Count;
+
+            if (count > 1)
+            {
+                var indices = count <= 3
+                    ? Enumerable.Range(0, count - 1).ToArray()
+                    : new[] { 0, count - 3, count - 2 };
+
+                for (var i = 0; i < indices.Length; i++)
+                {
+                    var cardIndex = indices[i];
+                    var offset = indices.Length - i;
+
+                    var x = clientRectangle.Left + position.X - offset * 2
+                            + _cardWidth / 2f;
+                    var y = clientRectangle.Top + position.Y - offset * 2
+                            + _cardHeight / 2f;
+
+                    card = game.DiscardPile[cardIndex];
+
+                    DrawRotatedCard(g, CardBack, x, y, card.DrawAngle);
+                }
+            }
+
+            /* Draw the face-up top card, slightly crooked. */
+            var topCentreX = clientRectangle.Left + position.X + _cardWidth / 2f;
+            var topCentreY = clientRectangle.Top + position.Y + _cardHeight / 2f;
+
+            card = game.DiscardPile[game.DiscardPile.Count - 1];
+            DrawRotatedCard(g, GetCardImage(card), topCentreX, topCentreY, card.DrawAngle);
+
+            /* Draw orb color marker */
             DrawOrbColor(game, g, card, clientRectangle, position);
         }
 
@@ -431,11 +489,11 @@ namespace ClassicUno.Classes.Helpers.Management
                                     /* Draw shadow. */
                                     var shadowBounds = bounds;
                                     shadowBounds.Offset(2f, 2f);
-                                    g.DrawString(game.Players[i].NameData.Name, font, shadow, shadowBounds, sf);
+                                    g.DrawString(game.Players[i].ToString(), font, shadow, shadowBounds, sf);
 
                                     /* Highlight the current player's name. */
                                     var textBrush = game.CurrentPlayer == game.Players[i] ? highlightText : normalText;
-                                    g.DrawString(game.Players[i].NameData.Name, font, textBrush, bounds, sf);
+                                    g.DrawString(game.Players[i].ToString(), font, textBrush, bounds, sf);
                                 }
                             }
                         }

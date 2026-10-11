@@ -15,6 +15,7 @@ namespace ClassicUno.Classes.Logic.Player
         PlayerNameData NameData { get; set; }
 
         int VoiceIndex { get; set; }
+        int AudioPan { get; set; }
 
         List<Card> Cards { get; set; }
 

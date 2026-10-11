@@ -22,6 +22,8 @@ namespace ClassicUno.Classes.Helpers.UI
 
         void ShowColorButtons(bool visible);
 
+        void UpdateStatus(string text);
+
         void GameOver(IPlayer player, int score);
 
         void Invalidate();

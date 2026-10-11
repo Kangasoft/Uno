@@ -78,8 +78,15 @@ namespace ClassicUno.Classes.Helpers.Management
             SetEffectsVolume(SettingsManager.Settings.Options.Sounds.EffectsVolume);
             SetMusicVolume(SettingsManager.Settings.Options.Sounds.MusicVolume);
 
-            var d = new DirectoryInfo(Utils.MainDir(@"data\voice\", false));
-            voiceSearch.BeginSearch(d, "*.mp3", "*", false);
+            var voice = new DirectoryInfo(Utils.MainDir(@"data\voice\", false));
+            voiceSearch.BeginSearch(voice, "*.mp3", "*", false);
+
+            var musicSearch = new FolderSearch();
+            musicSearch.OnFileSearchCompleted += MusicSearchCompleted;
+            musicSearch.OnFileFound += MusicSearchFileFound;
+
+            var music = new DirectoryInfo(Utils.MainDir(@"data\music\", false));
+            musicSearch.BeginSearch(music, "*.mp3", "*", false);
         }
 
         public static void SetVoiceVolume(int volume)
@@ -126,6 +133,11 @@ namespace ClassicUno.Classes.Helpers.Management
             }
             foreach (var v in Voices.Where(v => v.VoiceType == type && v.VoiceIndex == player.VoiceIndex && v.Gender == player.NameData.Gender))
             {
+                if (v.Voice.Pan != player.AudioPan)
+                {
+                    /* Set panning of voice ONCE */
+                    v.Voice.Pan = player.AudioPan;
+                }
                 v.Voice?.PlayAsync(true);
                 return;
             }
@@ -258,6 +270,18 @@ namespace ClassicUno.Classes.Helpers.Management
             _music = new Sound(Music[_musicIndex]) { Volume = _musicVolume };
             _music.OnMediaEnded += OnMusicEnd;
             _music.PlayAsync();
+        }
+
+        private static void MusicSearchFileFound(string file)
+        {
+            Music.Add(file);
+        }
+
+        private static void MusicSearchCompleted(FolderSearch search)
+        {
+            Music.Shuffle();
+            /* Begin music playback */
+            PlayMusic();
         }
 
         /* Private load method */

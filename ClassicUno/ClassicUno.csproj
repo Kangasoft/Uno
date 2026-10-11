@@ -68,6 +68,7 @@
     <Compile Include="Classes\Settings\Settings.cs" />
     <Compile Include="Classes\Settings\SettingsData\GameOptionData.cs" />
     <Compile Include="Classes\Settings\SettingsData\SoundData.cs" />
+    <Compile Include="Classes\Settings\SettingsData\Statistics.cs" />
     <Compile Include="Controls\CustomButton.cs">
       <SubType>Component</SubType>
     </Compile>

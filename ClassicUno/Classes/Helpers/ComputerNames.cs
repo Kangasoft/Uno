@@ -35,7 +35,10 @@ namespace ClassicUno.Classes.Helpers
             "Rob",
             "Peter",
             "Simon",
-            "Dan"
+            "Dan",
+            "Tony",
+            "Max",
+            "Mick"
         };
 
         private static readonly List<string> FemaleNames = new List<string>()
@@ -58,7 +61,10 @@ namespace ClassicUno.Classes.Helpers
             "Jane",
             "Judy",
             "Anna",
-            "Sandy"
+            "Sandy",
+            "Toni",
+            "Ivy",
+            "Kath"
         };
 
         public static PlayerNameData GetRandomName()

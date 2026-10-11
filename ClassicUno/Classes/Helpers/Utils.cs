@@ -15,6 +15,13 @@ namespace ClassicUno.Classes.Helpers
         private static readonly string BaseFolder = AppDomain.CurrentDomain.BaseDirectory;
         private static readonly string UserFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
+        public static string FormatTime(int seconds)
+        {
+            var ts = new TimeSpan(0, 0, 0, seconds);
+            return ts.Hours > 0 ? $"{ts.Hours}h {ts.Minutes}m {ts.Seconds}s" :
+                ts.Minutes > 0 ? $"{ts.Minutes}m {ts.Seconds}s" : $"{ts.Seconds}s";
+        }
+
         /* Main application folder */
         public static string MainDir(string path)
         {

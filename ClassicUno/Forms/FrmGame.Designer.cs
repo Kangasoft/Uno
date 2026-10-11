@@ -36,6 +36,10 @@ namespace ClassicUno.Forms
             this.mnuOptions = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.statusBar = new System.Windows.Forms.StatusStrip();
+            this.slGame = new System.Windows.Forms.ToolStripStatusLabel();
+            this.slDirection = new System.Windows.Forms.ToolStripStatusLabel();
+            this.slColor = new System.Windows.Forms.ToolStripStatusLabel();
+            this.slTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.btnDraw = new ClassicUno.Controls.CustomButton();
             this.btnPass = new ClassicUno.Controls.CustomButton();
             this.tblButtons = new System.Windows.Forms.TableLayoutPanel();
@@ -44,6 +48,7 @@ namespace ClassicUno.Forms
             this.btnGreen = new ClassicUno.Controls.CustomButton();
             this.btnBlue = new ClassicUno.Controls.CustomButton();
             this.mnuMain.SuspendLayout();
+            this.statusBar.SuspendLayout();
             this.tblButtons.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -80,12 +85,50 @@ namespace ClassicUno.Forms
             // 
             // statusBar
             // 
+            this.statusBar.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.statusBar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.slGame,
+            this.slDirection,
+            this.slColor,
+            this.slTime});
             this.statusBar.Location = new System.Drawing.Point(0, 599);
             this.statusBar.Name = "statusBar";
             this.statusBar.Padding = new System.Windows.Forms.Padding(1, 0, 16, 0);
             this.statusBar.Size = new System.Drawing.Size(914, 22);
             this.statusBar.TabIndex = 1;
             this.statusBar.Text = "statusStrip1";
+            // 
+            // slGame
+            // 
+            this.slGame.Name = "slGame";
+            this.slGame.Size = new System.Drawing.Size(457, 17);
+            this.slGame.Spring = true;
+            this.slGame.Text = "Ready!";
+            this.slGame.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // slDirection
+            // 
+            this.slDirection.AutoSize = false;
+            this.slDirection.Name = "slDirection";
+            this.slDirection.Size = new System.Drawing.Size(200, 17);
+            this.slDirection.Text = "Direction: Clockwise";
+            this.slDirection.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // slColor
+            // 
+            this.slColor.AutoSize = false;
+            this.slColor.Name = "slColor";
+            this.slColor.Size = new System.Drawing.Size(120, 17);
+            this.slColor.Text = "Color: None";
+            this.slColor.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // slTime
+            // 
+            this.slTime.AutoSize = false;
+            this.slTime.Name = "slTime";
+            this.slTime.Size = new System.Drawing.Size(120, 17);
+            this.slTime.Text = "Time: 0s";
+            this.slTime.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // btnDraw
             // 
@@ -211,6 +254,8 @@ namespace ClassicUno.Forms
             this.Text = "Classic Uno 2026";
             this.mnuMain.ResumeLayout(false);
             this.mnuMain.PerformLayout();
+            this.statusBar.ResumeLayout(false);
+            this.statusBar.PerformLayout();
             this.tblButtons.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -231,6 +276,10 @@ namespace ClassicUno.Forms
         private CustomButton btnYellow;
         private CustomButton btnGreen;
         private CustomButton btnBlue;
+        private System.Windows.Forms.ToolStripStatusLabel slGame;
+        private System.Windows.Forms.ToolStripStatusLabel slDirection;
+        private System.Windows.Forms.ToolStripStatusLabel slTime;
+        private System.Windows.Forms.ToolStripStatusLabel slColor;
     }
 }
 
