@@ -31,6 +31,7 @@ namespace ClassicUno.Classes.Logic.Player
 
         public List<Card> Cards { get; set; }
         public bool IsSkipped { get; set; }
+        public bool HasPassed { get; set; }
 
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw;
@@ -47,6 +48,7 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void BeginTurn(Card card, CardColor currentColor)
         {
+            HasPassed = false;
             if (IsSkipped)
             {
                 IsSkipped = false;
@@ -87,6 +89,7 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void Pass()
         {
+            HasPassed = true;
             PlayerPass?.Invoke(this);
         }
 
@@ -94,6 +97,7 @@ namespace ClassicUno.Classes.Logic.Player
         {
             IsSkipped = false; /* Make sure this variable is RESET */
             _hasDrawn = false;
+            _hasRequestedDraw = false;
             PlayerEndTurn?.Invoke(this);
         }
 
@@ -116,12 +120,13 @@ namespace ClassicUno.Classes.Logic.Player
                     _hasDrawn = true;
                     _hasRequestedDraw = true;
                     PlayerDraw?.Invoke(this);
-                    _worker.CancelAsync();
+                    //_worker.CancelAsync();
                     return;
                 }
                 /* Have to pass */
                 Pass();
-                _worker.CancelAsync();
+                _hasRequestedDraw = false;
+                //_worker.CancelAsync();
                 return;
             }
 

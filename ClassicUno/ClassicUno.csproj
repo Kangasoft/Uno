@@ -87,6 +87,9 @@
     <Compile Include="Controls\FormEx.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Controls\VuMeterTrackBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Forms\FrmAbout.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -150,16 +153,6 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <None Include="Images\btnBlue.png" />
-    <None Include="Images\btnDraw.png" />
-    <None Include="Images\btnGreen.png" />
-    <None Include="Images\btnPass.png" />
-    <None Include="Images\btnRed.png" />
-    <None Include="Images\btnYellow.png" />
-    <None Include="Images\blueOrb.png" />
-    <None Include="Images\greenOrb.png" />
-    <None Include="Images\redOrb.png" />
-    <None Include="Images\yellowOrb.png" />
     <Content Include="mainIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -18,6 +18,7 @@ namespace ClassicUno.Classes.Logic.Player
 
         public List<Card> Cards { get; set; }
         public bool IsSkipped { get; set; }
+        public bool HasPassed { get; set; }
 
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw; /* Not used on human players */
@@ -41,6 +42,8 @@ namespace ClassicUno.Classes.Logic.Player
                 EndTurn();
                 return;
             }
+
+            HasPassed = false;
             PlayerBeginTurn?.Invoke(this);
         }
 
@@ -57,6 +60,7 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void Pass()
         {
+            HasPassed = true;
             PlayerPass?.Invoke(this);
         }
 

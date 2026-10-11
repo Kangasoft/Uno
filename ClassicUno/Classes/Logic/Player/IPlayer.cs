@@ -20,6 +20,7 @@ namespace ClassicUno.Classes.Logic.Player
         List<Card> Cards { get; set; }
 
         bool IsSkipped { get; set; }
+        bool HasPassed { get; set; }
 
         event Action<IPlayer> PlayerBeginTurn;
         event Action<IPlayer> PlayerDraw;

@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -62,6 +63,9 @@ namespace ClassicUno.Forms
             AudioManager.Initialize();
 
             BuildMenuGame(mnuGame);
+            BuildMenuOptions(mnuOptions);
+
+            mnuOptions.DropDownOpening += OnMenuOptionsOpening;
 
             /* Help menu */
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
@@ -145,6 +149,26 @@ namespace ClassicUno.Forms
                 });
         }
 
+        private void OnMenuOptionsOpening(object sender, EventArgs e)
+        {
+            BuildMenuOptions(mnuOptions);
+        }
+
+        private void BuildMenuOptions(ToolStripDropDownItem m)
+        {
+            m.DropDownItems.Clear();
+
+            m.DropDownItems.AddRange(
+                new ToolStripItem[]
+                {
+                    MenuHelper.AddMenuItem("Enable voice", "VOICE", Keys.None, true, SettingsManager.Settings.Options.Sounds.EnableVoice, null, OnMenuClick),
+                    MenuHelper.AddMenuItem("Enable card sound effects", "SFX", Keys.None, true, SettingsManager.Settings.Options.Sounds.EnableEffects, null, OnMenuClick),
+                    MenuHelper.AddMenuItem("Enable music", "MUSIC", Keys.None, true, SettingsManager.Settings.Options.Sounds.EnableMusic, null, OnMenuClick),
+                    new ToolStripSeparator(), 
+                    MenuHelper.AddMenuItem("Options", "OPTIONS", Keys.None, true,  OnMenuClick),
+                });
+        }
+
         private void OnMenuClick(object sender, EventArgs e)
         {
             var o = (ToolStripItem)sender;
@@ -156,6 +180,39 @@ namespace ClassicUno.Forms
 
                 case "EXIT":
                     Close();
+                    break;
+
+                case "VOICE":
+                    SettingsManager.Settings.Options.Sounds.EnableVoice =
+                        !SettingsManager.Settings.Options.Sounds.EnableVoice;
+                    break;
+
+                case "SFX":
+                    SettingsManager.Settings.Options.Sounds.EnableEffects =
+                        !SettingsManager.Settings.Options.Sounds.EnableEffects;
+                    break;
+
+                case "MUSIC":
+                    var music = !SettingsManager.Settings.Options.Sounds.EnableMusic;
+                    SettingsManager.Settings.Options.Sounds.EnableMusic = music;
+                    switch (music)
+                    {
+                        case true:
+                            AudioManager.PlayMusic();
+                            break;
+
+                        default:
+                            AudioManager.StopMusic();
+                            break;
+                    }
+
+                    break;
+
+                case "OPTIONS":
+                    using (var options = new FrmOptions())
+                    {
+                        options.ShowDialog(this);
+                    }
                     break;
 
                 case "ABOUT":

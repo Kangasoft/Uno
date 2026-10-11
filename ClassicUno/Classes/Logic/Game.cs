@@ -197,7 +197,6 @@ namespace ClassicUno.Classes.Logic
                 _ui.VoiceRequest(VoiceType.Uno, player);
             }
 
-            /* Something fishy going on with my IsSkipped code...*/
             var nextPlayer = GetNextPlayer(player, CurrentDirection);
 
             _gameText = GetGameText(player, nextPlayer, card);
@@ -342,9 +341,10 @@ namespace ClassicUno.Classes.Logic
 
             var card = DiscardPile[DiscardPile.Count - 1];
             /* If there are only two players, and last played card is a reverse, this acts as a skip as well - stay on same player */
-            if (Players.Count == 2 && card.Type == CardType.Reverse)
+            if (Players.Count == 2 && card.Type == CardType.Reverse && !player.HasPassed)
             {
-                CurrentPlayer.BeginTurn(card, CurrentColor);
+                /* Added "HasPassed", or else this gets stuck in a loop (on passing) until the computer draws a card it can use... */
+                player.BeginTurn(card, CurrentColor);
                 _ui.Invalidate();
                 return;
             }
