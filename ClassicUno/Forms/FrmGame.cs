@@ -3,14 +3,11 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using ClassicUno.Classes.Assets;
-using ClassicUno.Classes.DirectSound;
 using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Helpers.UI;
@@ -22,11 +19,14 @@ namespace ClassicUno.Forms
 {
     public sealed partial class FrmGame : FeltForm, IGame
     {
+        #region Fields
         private Game _currentGame;
         private readonly Timer _tmrNew;
 
         private readonly UiSynchronize _sync;
+        #endregion
 
+        #region Constructor
         public FrmGame()
         {
             InitializeComponent();
@@ -62,6 +62,7 @@ namespace ClassicUno.Forms
                 MenuHelper.AddMenuItem("About", "ABOUT", Keys.None, true, OnMenuClick)
             });
         }
+        #endregion
 
         #region Form overrides
         protected override void OnLoad(EventArgs e)
@@ -105,6 +106,7 @@ namespace ClassicUno.Forms
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            /* Add a check if game is running */
             if (WindowState == FormWindowState.Normal)
             {
                 SettingsManager.Settings.Location = Location;
@@ -159,8 +161,50 @@ namespace ClassicUno.Forms
         }
         #endregion
 
-        #region Mouse
+        #region Control buttons
+        private void OnButtonClick(object sender, EventArgs e)
+        {
+            if (_currentGame == null)
+            {
+                return;
+            }
 
+            var btn = (Button)sender;
+            if (btn == null)
+            {
+                return;
+            }
+
+            switch (btn.Tag)
+            {
+                case "DRAW":
+                    _currentGame.HumanDrawCard();
+                    break;
+
+                case "PASS":
+                    _currentGame.HumanPass();
+                    break;
+
+                case "RED":
+                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Red);
+                    break;
+
+                case "BLUE":
+                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Blue);
+                    break;
+
+                case "GREEN":
+                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Green);
+                    break;
+
+                case "YELLOW":
+                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Yellow);
+                    break;
+            }
+        }
+        #endregion
+
+        #region Mouse
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (_currentGame == null)
@@ -172,7 +216,7 @@ namespace ClassicUno.Forms
             if (_currentGame.CurrentPlayer != null && _currentGame.CurrentPlayer is HumanPlayer)
             {
                 /* Your turn */
-                var c = HitTest.Compare(_currentGame.Players[0].Cards, e.Location);
+                var c = HitTest(_currentGame.Players[0].Cards, e.Location);
                 _currentGame.HighlightCard = c;
                 Invalidate();
             }
@@ -190,16 +234,16 @@ namespace ClassicUno.Forms
 
             if (!(_currentGame.CurrentPlayer is HumanPlayer))
             {
+                /* Do nothing as it's not your turn */
                 return;
             }
 
             if (_currentGame.HighlightCard != null && e.Button == MouseButtons.Left)
             {
-                Debug.Print("card clicked " + _currentGame.CurrentColor);
-                _currentGame.PlayerPlayCard();
+                _currentGame.HumanPlaysCard();
             }
 
-            base.OnMouseDown(e);
+            base.OnMouseDoubleClick(e);
         }
         #endregion
 
@@ -230,6 +274,12 @@ namespace ClassicUno.Forms
                 Invalidate();
             }
 
+            /* Reset default button states */
+            btnDraw.Enabled = false;
+            btnPass.Enabled = false;
+            ShowButtons(false);
+            ShowColorButtons(false);
+
             var data = SettingsManager.Settings.Options;
             var form = new FrmNew
             {
@@ -247,6 +297,38 @@ namespace ClassicUno.Forms
             AudioManager.PlayEffect(SoundType.Shuffle);
             Invalidate();
         }
+
+        private static Card HitTest(IEnumerable<Card> cards, Point location)
+        {
+            return cards.FirstOrDefault(c =>
+                location.X >= c.Region.X && location.X <= c.Region.X + c.Region.Width && location.Y >= c.Region.Y &&
+                location.Y <= c.Region.Y + c.Region.Height);
+        }
+
+        public void GameOver(IPlayer player, int score)
+        {
+            if (InvokeRequired)
+            {
+                _sync.Execute(() => GameOver(player, score));
+                return;
+            }
+
+            var msg = player is HumanPlayer
+                ? $"You have won and earned {score} points!"
+                : $"{player.NameData.Name} has won!";
+
+            if (MessageBox.Show(this, $@"{msg} Play again?", @"Classic UNO! 2026", MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                NewGame();
+                return;
+            }
+
+            _currentGame.Dispose();
+            _currentGame = null;
+
+            Invalidate();
+        }
         #endregion
 
         #region IGame
@@ -254,7 +336,6 @@ namespace ClassicUno.Forms
         {
             if (InvokeRequired)
             {
-                Debug.Print("invoke required");
                 _sync.Execute(() => SoundEffectRequest(type));
                 return;
             }
@@ -319,53 +400,7 @@ namespace ClassicUno.Forms
             btnYellow.Visible = visible;
 
             OnResize(new EventArgs());
-
-            if (visible)
-            {
-                /* This is where we need to loop back to Game */
-            }
         }
         #endregion
-
-        private void OnButtonClick(object sender, EventArgs e)
-        {
-            if (_currentGame == null)
-            {
-                return;
-            }
-
-            var btn = (Button) sender;
-            if (btn == null)
-            {
-                return;
-            }
-
-            switch (btn.Tag)
-            {
-                case "DRAW":
-                    _currentGame.PlayerDrawCard();
-                    break;
-
-                case "PASS":
-                    _currentGame.PlayerPass();
-                    break;
-
-                case "RED":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Red);
-                    break;
-
-                case "BLUE":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Blue);
-                    break;
-
-                case "GREEN":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Green);
-                    break;
-
-                case "YELLOW":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Yellow);
-                    break;
-            }
-        }
     }
 }

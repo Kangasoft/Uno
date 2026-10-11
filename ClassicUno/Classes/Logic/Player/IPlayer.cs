@@ -4,7 +4,6 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using ClassicUno.Classes.Assets;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
@@ -19,12 +18,12 @@ namespace ClassicUno.Classes.Logic.Player
 
         List<Card> Cards { get; set; }
 
-        bool Skip { get; set; }
+        bool IsSkipped { get; set; }
 
         event Action<IPlayer> PlayerBeginTurn;
-        event Action<IPlayer> PlayerDraw; 
+        event Action<IPlayer> PlayerDraw;
+        event Action<IPlayer, CardColor> PlayerChoosesColor;
         event Action<IPlayer, Card> PlayerPlaysCard;
-        event Action<IPlayer> PlayerHasUno;
         event Action<IPlayer> PlayerPass;
         event Action<IPlayer> PlayerEndTurn;
 

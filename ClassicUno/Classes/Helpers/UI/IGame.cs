@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ClassicUno.Classes.DirectSound;
+﻿/* Classic Uno 2026
+ * Version: 1.0
+ * By: Jason James Newland
+ * ©2026 - Kangasoft Software */
 using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Logic.Player;
 
@@ -11,6 +9,7 @@ namespace ClassicUno.Classes.Helpers.UI
 {
     public interface IGame
     {
+        /* "Contract" interface between Game.cs and UI */
         void SoundEffectRequest(SoundType type);
 
         void VoiceRequest(VoiceType type, IPlayer player);
@@ -22,6 +21,8 @@ namespace ClassicUno.Classes.Helpers.UI
         void EnablePass(bool enabled);
 
         void ShowColorButtons(bool visible);
+
+        void GameOver(IPlayer player, int score);
 
         void Invalidate();
     }

@@ -5,7 +5,7 @@
 using System;
 using System.Drawing;
 
-namespace ClassicUno.Classes.Assets
+namespace ClassicUno.Classes.Logic
 {
     [Serializable]
     public enum CardColor

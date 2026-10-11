@@ -8,7 +8,6 @@ using System.Threading;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using ClassicUno.Classes.Assets;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
@@ -29,12 +28,12 @@ namespace ClassicUno.Classes.Logic.Player
         public int VoiceIndex { get; set; }
 
         public List<Card> Cards { get; set; }
-        public bool Skip { get; set; }
+        public bool IsSkipped { get; set; }
 
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw;
+        public event Action<IPlayer, CardColor> PlayerChoosesColor;
         public event Action<IPlayer, Card> PlayerPlaysCard;
-        public event Action<IPlayer> PlayerHasUno;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
 
@@ -46,10 +45,10 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void BeginTurn(Card card, CardColor currentColor)
         {
-            if (Skip)
+            if (IsSkipped)
             {
-                Debug.Print(">>>> " + NameData.Name + " SKIPPED <<<<<");
-                Skip = false;
+                Debug.Print(NameData.Name + " SKIPPED!");
+                IsSkipped = false;
                 EndTurn();
                 return;
             }
@@ -76,6 +75,9 @@ namespace ClassicUno.Classes.Logic.Player
             if (_hasDrawn)
             {
                 /* Loop back to original background process */
+                _worker = new BackgroundWorker { WorkerSupportsCancellation = true };
+                _worker.DoWork += BackgroundWorkerCallback;
+                _worker.RunWorkerCompleted += BackgroundWorkerEndWork;
                 _worker.RunWorkerAsync();
             }
         }
@@ -94,44 +96,35 @@ namespace ClassicUno.Classes.Logic.Player
         private void BackgroundWorkerCallback(object sender, DoWorkEventArgs e)
         {
             /* Analyze upper card on discard pile (_discardCard) */
-            Thread.Sleep(400);
-            //switch (_discardCard.Type)
-            //{
-            //    case CardType.Skip:
-            //        /* Player skipped */
-            //        return;
+            Thread.Sleep(1000);
+            var card = SelectComputerCard();
+            if (card == null)
+            {
+                if (!_hasDrawn)
+                {
+                    /* Need to draw */
+                    _hasDrawn = true;
+                    _hasRequestedDraw = true;
+                    PlayerDraw?.Invoke(this);
+                    _worker.CancelAsync();
+                    return;
+                }
+                /* Have to pass */
+                Pass();
+                _worker.CancelAsync();
+                return;
+            }
 
-            //    case CardType.DrawTwo:
-            //        /* Player needs to draw two cards - then is skipped */
-            //        _forceDraw = true;
-            //        for (var i = 0; i < 2; i++)
-            //        {
-            //            PlayerDraw?.Invoke(this);
-            //            Thread.Sleep(400);
-            //        }
-            //        return;
+            Cards.Remove(card);
+            PlayerPlaysCard?.Invoke(this, card);
+            if (card.Type == CardType.Wild || card.Type == CardType.DrawFour)
+            {
+                /* Choose color */
+                var c = ChooseWildColor();
+                PlayerChoosesColor?.Invoke(this, c);
 
-            //    case CardType.DrawFour:
-            //        /* Player draws four cards - then is skipped */
-            //        Debug.Print("here");
-            //        _forceDraw = true;
-            //        for (var i = 0; i < 4; i++)
-            //        {
-            //            Debug.Print("count " + i);
-            //            PlayerDraw?.Invoke(this);
-            //            Thread.Sleep(400);
-            //        }
-            //        return;
-            //}
-            Thread.Sleep(2000);
-            //if (_currentColor == CardColor.None && _discardCard.Type == CardType.Wild)
-            //{
-            //    Debug.Print("HELLO");
-
-            //    /* Computer needs to choose a color */
-            //    PlayerChoosesColor?.Invoke(this, ChooseWildColor());
-            //    Thread.Sleep(200);
-            //}
+            }
+            Thread.Sleep(1000); /* Prevent race condition */
         }
 
         private void BackgroundWorkerEndWork(object sender, RunWorkerCompletedEventArgs e)
@@ -143,6 +136,75 @@ namespace ClassicUno.Classes.Logic.Player
             }
 
             EndTurn();
+        }
+
+        private Card SelectComputerCard()
+        {
+            if (Cards.Count == 0)
+            {
+                return null;
+            }
+            var hand = Cards.Where(card => card != null).ToList();
+
+            /* Only consider cards allowed by your validation rules. */
+            var playableCards = hand.Where(card => Validation.IsCardPlayable(_discardCard, card, _currentColor, hand)).ToList();
+
+            if (playableCards.Count == 0)
+            {
+                return null;
+            }
+
+            Card bestCard = null;
+            var bestScore = int.MinValue;
+
+            foreach (var card in playableCards)
+            {
+                var score = 0;
+                /* Prioritise getting rid of high-penalty cards. (Note: the values are for strategy only, not actually what the cards are worth). */
+                switch (card.Type)
+                {
+                    case CardType.DrawFour:
+                        score += 100;
+                        break;
+
+                    case CardType.Wild:
+                        score += 90;
+                        break;
+
+                    case CardType.DrawTwo:
+                        score += 70;
+                        break;
+
+                    case CardType.Skip:
+                    case CardType.Reverse:
+                        score += 50;
+                        break;
+
+                    case CardType.Numeric:
+                        score += card.Value;
+                        break;
+                }
+
+                /* Prefer colours that leave the computer with more cards it can potentially play next. */
+                if (card.Type != CardType.Wild && card.Type != CardType.DrawFour)
+                {
+                    var matchingColorCount = hand.Count(other => other != card && other.Color == card.Color);
+                    score += matchingColorCount * 5;
+                }
+
+                /* Prefer playing a card that matches the current color when scores are otherwise similar. */
+                if (card.Color == _currentColor)
+                {
+                    score += 2;
+                }
+                if (score <= bestScore)
+                {
+                    continue;
+                }
+                bestScore = score;
+                bestCard = card;
+            }
+            return bestCard;
         }
 
         private CardColor ChooseWildColor()

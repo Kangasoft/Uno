@@ -4,7 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using ClassicUno.Classes.Assets;
+using System.Diagnostics;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
@@ -17,12 +17,12 @@ namespace ClassicUno.Classes.Logic.Player
         public int VoiceIndex { get; set; }
 
         public List<Card> Cards { get; set; }
-        public bool Skip { get; set; }
+        public bool IsSkipped { get; set; }
 
         public event Action<IPlayer> PlayerBeginTurn;
-        public event Action<IPlayer> PlayerDraw;
+        public event Action<IPlayer> PlayerDraw; /* Not used on human players */
+        public event Action<IPlayer, CardColor> PlayerChoosesColor; /* Not used on human players */
         public event Action<IPlayer, Card> PlayerPlaysCard;
-        public event Action<IPlayer> PlayerHasUno;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
 
@@ -35,9 +35,10 @@ namespace ClassicUno.Classes.Logic.Player
         public void BeginTurn(Card card, CardColor currentColor)
         {
             /* Discard card "card" isn't necessary for human player */
-            if (Skip)
+            if (IsSkipped)
             {
-                Skip = false;
+                Debug.Print(NameData.Name + " SKIPPED!");
+                IsSkipped = false;
                 EndTurn();
                 return;
             }

@@ -49,7 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Assets\Card.cs" />
+    <Compile Include="Classes\Logic\Card.cs" />
     <Compile Include="Classes\DirectSound\Core\Control.cs" />
     <Compile Include="Classes\DirectSound\Core\Core.cs" />
     <Compile Include="Classes\DirectSound\Core\Device.cs" />
@@ -61,10 +61,10 @@
     <Compile Include="Classes\Helpers\Management\AudioManager.cs" />
     <Compile Include="Classes\Helpers\Management\SettingsManager.cs" />
     <Compile Include="Classes\Helpers\MenuHelper.cs" />
-    <Compile Include="Classes\Helpers\UI\HitTest.cs" />
     <Compile Include="Classes\Helpers\UI\IGame.cs" />
     <Compile Include="Classes\Helpers\UI\UiSynchronize.cs" />
     <Compile Include="Classes\Helpers\Utils.cs" />
+    <Compile Include="Classes\Logic\Validation.cs" />
     <Compile Include="Classes\Settings\Settings.cs" />
     <Compile Include="Classes\Settings\SettingsData\GameOptionData.cs" />
     <Compile Include="Classes\Settings\SettingsData\SoundData.cs" />
@@ -155,6 +155,10 @@
     <None Include="Images\btnPass.png" />
     <None Include="Images\btnRed.png" />
     <None Include="Images\btnYellow.png" />
+    <None Include="Images\blueOrb.png" />
+    <None Include="Images\greenOrb.png" />
+    <None Include="Images\redOrb.png" />
+    <None Include="Images\yellowOrb.png" />
     <Content Include="mainIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

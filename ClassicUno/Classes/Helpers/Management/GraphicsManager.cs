@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using ClassicUno.Classes.Assets;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Properties;
@@ -56,14 +55,11 @@ namespace ClassicUno.Classes.Helpers.Management
 
         /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
         public static Bitmap CardBack { get; private set; }
-
-        public static Bitmap Uno { get; private set; }
         #endregion
 
         public static void Initialize()
         {
             BuildCardImages();
-            BuildAssets();
         }
 
         #region Card image building
@@ -137,15 +133,6 @@ namespace ClassicUno.Classes.Helpers.Management
                 }
                 startY += 216; /* Card image height */
             }
-        }
-        #endregion
-
-        #region Asset building
-        private static void BuildAssets()
-        {
-            /* Build other graphics related objects */
-            Uno = new Bitmap(Resources.uno);
-            Uno.MakeTransparent(Color.FromArgb(1, 1, 1));
         }
         #endregion
 
@@ -246,7 +233,51 @@ namespace ClassicUno.Classes.Helpers.Management
             /* We'll make this simpler by only drawing the bottom-most card on the pile, which is
              * the "top" of the pile. This may change to make it look more realistic as a "mess"
              * of cards. */
-            DrawCard(g, GetCardImage(game.DiscardPile[game.DiscardPile.Count - 1]), clientRectangle, position);
+            var card = game.DiscardPile[game.DiscardPile.Count - 1];
+            DrawCard(g, GetCardImage(card), clientRectangle, position);
+            DrawOrbColor(game, g, card, clientRectangle, position);
+        }
+
+        private static void DrawOrbColor(Game game, Graphics g, Card card, Rectangle clientRectangle, PointF position)
+        {
+            /* When a wild card/wild draw four is the top card, after the color has been assigned - give the user
+             * a visual cue/marker. */
+            if (card == null || card.Type != CardType.Wild && card.Type != CardType.DrawFour || game.CurrentColor == CardColor.None)
+            {
+                return;
+            }
+
+            Bitmap orb = null;
+
+            switch (game.CurrentColor)
+            {
+                case CardColor.Red:
+                    orb = Resources.redOrb;
+                    break;
+
+                case CardColor.Blue:
+                    orb = Resources.blueOrb;
+                    break;
+
+                case CardColor.Green:
+                    orb = Resources.greenOrb;
+                    break;
+
+                case CardColor.Yellow:
+                    orb = Resources.yellowOrb;
+                    break;
+            }
+
+            if (orb == null)
+            {
+                return;
+            }
+
+            var orbSize = _cardWidth * (64f / 144f);
+            var x = clientRectangle.Left + position.X + (_cardWidth - orbSize) / 2f;
+            var y = clientRectangle.Top + position.Y + _cardHeight + 6f;
+
+            g.DrawImage(orb, x, y, orbSize, orbSize);
         }
 
         private static void DrawPlayerCards(Game game, Graphics g, Rectangle clientRectangle)
