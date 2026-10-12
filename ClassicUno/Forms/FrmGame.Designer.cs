@@ -37,8 +37,6 @@ namespace ClassicUno.Forms
             this.mnuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.statusBar = new System.Windows.Forms.StatusStrip();
             this.slGame = new System.Windows.Forms.ToolStripStatusLabel();
-            this.slDirection = new System.Windows.Forms.ToolStripStatusLabel();
-            this.slColor = new System.Windows.Forms.ToolStripStatusLabel();
             this.slTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.btnDraw = new ClassicUno.Controls.CustomButton();
             this.btnPass = new ClassicUno.Controls.CustomButton();
@@ -88,8 +86,6 @@ namespace ClassicUno.Forms
             this.statusBar.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.statusBar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.slGame,
-            this.slDirection,
-            this.slColor,
             this.slTime});
             this.statusBar.Location = new System.Drawing.Point(0, 599);
             this.statusBar.Name = "statusBar";
@@ -101,26 +97,10 @@ namespace ClassicUno.Forms
             // slGame
             // 
             this.slGame.Name = "slGame";
-            this.slGame.Size = new System.Drawing.Size(426, 17);
+            this.slGame.Size = new System.Drawing.Size(746, 17);
             this.slGame.Spring = true;
             this.slGame.Text = "Ready!";
             this.slGame.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // slDirection
-            // 
-            this.slDirection.AutoSize = false;
-            this.slDirection.Name = "slDirection";
-            this.slDirection.Size = new System.Drawing.Size(200, 17);
-            this.slDirection.Text = "Direction: Clockwise";
-            this.slDirection.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // slColor
-            // 
-            this.slColor.AutoSize = false;
-            this.slColor.Name = "slColor";
-            this.slColor.Size = new System.Drawing.Size(120, 17);
-            this.slColor.Text = "Color: None";
-            this.slColor.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // slTime
             // 
@@ -129,6 +109,7 @@ namespace ClassicUno.Forms
             this.slTime.Size = new System.Drawing.Size(120, 17);
             this.slTime.Text = "Time: 0s";
             this.slTime.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.slTime.Visible = false;
             // 
             // btnDraw
             // 
@@ -277,9 +258,7 @@ namespace ClassicUno.Forms
         private CustomButton btnGreen;
         private CustomButton btnBlue;
         private System.Windows.Forms.ToolStripStatusLabel slGame;
-        private System.Windows.Forms.ToolStripStatusLabel slDirection;
         private System.Windows.Forms.ToolStripStatusLabel slTime;
-        private System.Windows.Forms.ToolStripStatusLabel slColor;
     }
 }
 

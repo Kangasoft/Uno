@@ -23,7 +23,8 @@ namespace ClassicUno.Classes.Helpers.Management
         Shuffle = 0,
         Deal = 1,
         Drop = 2,
-        Draw = 3
+        Draw = 3,
+        Error = 4
     }
 
     internal class AudioData
@@ -71,7 +72,8 @@ namespace ClassicUno.Classes.Helpers.Management
                     LoadSound(Utils.MainDir(@"\data\sound\card-shuffle.wav"), SoundType.Shuffle),
                     LoadSound(Utils.MainDir(@"\data\sound\card-deal.wav"), SoundType.Deal),
                     LoadSound(Utils.MainDir(@"\data\sound\card-drop.wav"), SoundType.Drop),
-                    LoadSound(Utils.MainDir(@"\data\sound\card-draw.wav"), SoundType.Draw)
+                    LoadSound(Utils.MainDir(@"\data\sound\card-draw.wav"), SoundType.Draw),
+                    LoadSound(Utils.MainDir(@"\data\sound\card-error.wav"), SoundType.Error)
                 });
 
             SetVoiceVolume(SettingsManager.Settings.Options.Sounds.VoiceVolume);

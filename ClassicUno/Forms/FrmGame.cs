@@ -14,7 +14,6 @@ using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Helpers.UI;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
-using ClassicUno.Classes.Settings;
 using ClassicUno.Controls;
 
 namespace ClassicUno.Forms
@@ -389,8 +388,7 @@ namespace ClassicUno.Forms
             if (form.ShowDialog(this) != DialogResult.OK)
             {
                 slGame.Text = @"No game running. Select the Game menu and New Game.";
-                slDirection.Text = @"Direction: Clockwise";
-                slColor.Text = @"Color: None";
+                slTime.Visible = false;
                 return;
             }
             data.NameData = form.NameData;
@@ -401,6 +399,7 @@ namespace ClassicUno.Forms
 
             _currentTime = 0;
             _time.Enabled = true;
+            slTime.Visible = true;
 
             Invalidate();
         }
@@ -420,10 +419,6 @@ namespace ClassicUno.Forms
                 return;
             }
             slGame.Text = text;
-            var direction = Utils.GetDescriptionFromEnumValue(_currentGame.CurrentDirection);
-            var color = Utils.GetDescriptionFromEnumValue(_currentGame.CurrentColor);
-            slDirection.Text = $@"Direction: {direction}";
-            slColor.Text = $@"Color: {color}";
         }
 
         public void GameOver(IPlayer player, int score)
@@ -457,13 +452,6 @@ namespace ClassicUno.Forms
 
             SettingsManager.Settings.Statistics.TotalGameTime += _currentTime;
 
-            var played = SettingsManager.Settings.Statistics.GamesPlayed;
-            var averageGameTime = played > 0
-                ? SettingsManager.Settings.Statistics.TotalGameTime / (double)played
-                : 0;
-
-            Debug.Print($"Average time: {averageGameTime}");
-
             var msg = player is HumanPlayer
                 ? $"You have won and earned {score} points!"
                 : $"{player} has won!";
@@ -479,9 +467,7 @@ namespace ClassicUno.Forms
             _currentGame = null;
 
             slGame.Text = @"No game running. Select the Game menu and New Game.";
-            slDirection.Text = @"Direction: Clockwise";
-            slColor.Text = @"Color: None";
-            slTime.Text = @"Time: 0s";
+            slTime.Visible = false;
 
             Invalidate();
         }

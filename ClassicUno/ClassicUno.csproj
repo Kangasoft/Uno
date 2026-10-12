@@ -87,6 +87,9 @@
     <Compile Include="Controls\FormEx.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Controls\PercentageWheel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Controls\VuMeterTrackBar.cs">
       <SubType>Component</SubType>
     </Compile>

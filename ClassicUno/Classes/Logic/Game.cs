@@ -152,6 +152,8 @@ namespace ClassicUno.Classes.Logic
             else
             {
                 /* Cannot play card */
+                _ui.SoundEffectRequest(SoundType.Error);
+
                 _gameText = "Selected card cannot be played. Choose another, or draw.";
                 _ui.UpdateStatus(_gameText);
             }
