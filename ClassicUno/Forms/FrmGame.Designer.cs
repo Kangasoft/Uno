@@ -101,7 +101,7 @@ namespace ClassicUno.Forms
             // slGame
             // 
             this.slGame.Name = "slGame";
-            this.slGame.Size = new System.Drawing.Size(457, 17);
+            this.slGame.Size = new System.Drawing.Size(426, 17);
             this.slGame.Spring = true;
             this.slGame.Text = "Ready!";
             this.slGame.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;

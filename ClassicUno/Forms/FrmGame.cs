@@ -117,7 +117,15 @@ namespace ClassicUno.Forms
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            /* Add a check if game is running */
+            if (_currentGame?.GameRunning == true)
+            {
+                if (MessageBox.Show(this, @"Are you sure you want to resign this current game?", @"Classic UNO! 2026",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
             if (WindowState == FormWindowState.Normal)
             {
                 SettingsManager.Settings.Location = Location;
@@ -145,6 +153,8 @@ namespace ClassicUno.Forms
                 {
                     MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true,  OnMenuClick),
                     new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
+                    new ToolStripSeparator(), 
                     MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true,  OnMenuClick)
                 });
         }
@@ -161,11 +171,14 @@ namespace ClassicUno.Forms
             m.DropDownItems.AddRange(
                 new ToolStripItem[]
                 {
-                    MenuHelper.AddMenuItem("Enable voice", "VOICE", Keys.None, true, SettingsManager.Settings.Options.Sounds.EnableVoice, null, OnMenuClick),
-                    MenuHelper.AddMenuItem("Enable card sound effects", "SFX", Keys.None, true, SettingsManager.Settings.Options.Sounds.EnableEffects, null, OnMenuClick),
-                    MenuHelper.AddMenuItem("Enable music", "MUSIC", Keys.None, true, SettingsManager.Settings.Options.Sounds.EnableMusic, null, OnMenuClick),
-                    new ToolStripSeparator(), 
-                    MenuHelper.AddMenuItem("Options", "OPTIONS", Keys.None, true,  OnMenuClick),
+                    MenuHelper.AddMenuItem("Enable voice", "VOICE", Keys.Alt | Keys.V, true,
+                        SettingsManager.Settings.Options.Sounds.EnableVoice, null, OnMenuClick),
+                    MenuHelper.AddMenuItem("Enable card sound effects", "SFX", Keys.Alt | Keys.E, true,
+                        SettingsManager.Settings.Options.Sounds.EnableEffects, null, OnMenuClick),
+                    MenuHelper.AddMenuItem("Enable music", "MUSIC", Keys.Alt | Keys.M, true,
+                        SettingsManager.Settings.Options.Sounds.EnableMusic, null, OnMenuClick),
+                    new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Options", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick),
                 });
         }
 
@@ -176,6 +189,13 @@ namespace ClassicUno.Forms
             {
                 case "NEW":
                     NewGame();
+                    break;
+
+                case "STATS":
+                    using (var stats = new FrmStats())
+                    {
+                        stats.ShowDialog(this);
+                    }
                     break;
 
                 case "EXIT":
@@ -343,6 +363,10 @@ namespace ClassicUno.Forms
                 {
                     return;
                 }
+            }
+
+            if (_currentGame != null)
+            {
                 _currentGame.Dispose();
                 _currentGame = null;
                 Invalidate();
@@ -354,6 +378,8 @@ namespace ClassicUno.Forms
             ShowButtons(false);
             ShowColorButtons(false);
 
+            slTime.Text = @"Time: 0s";
+
             var data = SettingsManager.Settings.Options;
             var form = new FrmNew
             {
@@ -362,6 +388,9 @@ namespace ClassicUno.Forms
             };
             if (form.ShowDialog(this) != DialogResult.OK)
             {
+                slGame.Text = @"No game running. Select the Game menu and New Game.";
+                slDirection.Text = @"Direction: Clockwise";
+                slColor.Text = @"Color: None";
                 return;
             }
             data.NameData = form.NameData;
@@ -370,12 +399,8 @@ namespace ClassicUno.Forms
             _currentGame = new Game(this, data);
             AudioManager.PlayEffect(SoundType.Shuffle);
 
-            slTime.Text = @"Time: 0s";
-
             _currentTime = 0;
             _time.Enabled = true;
-
-            SettingsManager.Settings.Statistics.GamesPlayed++;
 
             Invalidate();
         }
@@ -411,6 +436,7 @@ namespace ClassicUno.Forms
 
             _time.Enabled = false;
             /* Record statistics */
+            SettingsManager.Settings.Statistics.GamesPlayed++;
             if (player is HumanPlayer)
             {
                 SettingsManager.Settings.Statistics.GamesWon++;
@@ -428,6 +454,15 @@ namespace ClassicUno.Forms
 
             SettingsManager.Settings.Statistics.LongestGame =
                 Math.Max(SettingsManager.Settings.Statistics.LongestGame, _currentTime);
+
+            SettingsManager.Settings.Statistics.TotalGameTime += _currentTime;
+
+            var played = SettingsManager.Settings.Statistics.GamesPlayed;
+            var averageGameTime = played > 0
+                ? SettingsManager.Settings.Statistics.TotalGameTime / (double)played
+                : 0;
+
+            Debug.Print($"Average time: {averageGameTime}");
 
             var msg = player is HumanPlayer
                 ? $"You have won and earned {score} points!"

@@ -79,7 +79,7 @@ namespace ClassicUno.Classes.Helpers.Management
             SetMusicVolume(SettingsManager.Settings.Options.Sounds.MusicVolume);
 
             var voice = new DirectoryInfo(Utils.MainDir(@"data\voice\", false));
-            voiceSearch.BeginSearch(voice, "*.mp3", "*", false);
+            voiceSearch.BeginSearch(voice, "*.wav", "*", false);
 
             var musicSearch = new FolderSearch();
             musicSearch.OnFileSearchCompleted += MusicSearchCompleted;

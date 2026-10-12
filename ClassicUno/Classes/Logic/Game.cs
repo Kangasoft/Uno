@@ -41,12 +41,14 @@ namespace ClassicUno.Classes.Logic
         private IPlayer _playerWhoForced;
         private bool _forceDrawChooseColor;
 
+        private bool _waitToStart;
+
         private string _gameText;
 
         private static readonly Random Rnd = new Random();
 
         public bool GameRunning { get; set; }
-
+        
         public List<IPlayer> Players { get; set; }
 
         public List<Card> Deck { get; set; }
@@ -66,6 +68,8 @@ namespace ClassicUno.Classes.Logic
         public Game(IGame ui, GameOptionData data)
         {
             _ui = ui;
+
+            _waitToStart = true;
 
             Players = new List<IPlayer>();
             Deck = new List<Card>();
@@ -185,8 +189,8 @@ namespace ClassicUno.Classes.Logic
 
             /* Set the angle for drawing on the discard pile */
             card.DrawAngle = (float)(Rnd.NextDouble() * 10.0 - 5.0);
-
             DiscardPile.Add(card);
+
             _ui.SoundEffectRequest(SoundType.Drop);
             _ui.Invalidate();
 
@@ -268,9 +272,9 @@ namespace ClassicUno.Classes.Logic
             }
             /* Evaluted top card on discard pile */
             var c = DiscardPile[DiscardPile.Count - 1];
-            if (!GameRunning)
+            if (_waitToStart)
             {
-                GameRunning = true;
+                _waitToStart = false;
                 CurrentColor = c.Color;
 
                 _gameText = "Round started!";
@@ -484,6 +488,8 @@ namespace ClassicUno.Classes.Logic
         #region Deal
         private void BeginDeal()
         {
+            GameRunning = true;
+
             _worker = new BackgroundWorker {WorkerSupportsCancellation = true};
             _worker.DoWork += DealWorkerCallback;
             _worker.RunWorkerCompleted += DealEnded;
@@ -550,7 +556,10 @@ namespace ClassicUno.Classes.Logic
                 /* The top card wasn't a Wild Draw Four, so use it directly */
                 startingCard = topCard;
             }
+
+            startingCard.DrawAngle = (float)(Rnd.NextDouble() * 10.0 - 5.0);
             DiscardPile.Add(startingCard);
+
             Thread.Sleep(300);
         }
 

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using ClassicUno.Classes.Settings.SettingsData;
 
@@ -120,13 +121,10 @@ namespace ClassicUno.Classes.Logic.Player
                     _hasDrawn = true;
                     _hasRequestedDraw = true;
                     PlayerDraw?.Invoke(this);
-                    //_worker.CancelAsync();
                     return;
                 }
                 /* Have to pass */
                 Pass();
-                _hasRequestedDraw = false;
-                //_worker.CancelAsync();
                 return;
             }
 

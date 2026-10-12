@@ -16,25 +16,37 @@ namespace ClassicUno.Classes.Logic
                 return false;
             }
 
-            /* Draw Two cards cannot be stacked. */
-            if (topCard.Type == CardType.DrawTwo && selectedCard.Type == CardType.DrawTwo)
+            switch (topCard.Type)
             {
-                return false;
+                /* Offical UNO stacking rules */
+                case CardType.DrawTwo:
+                    switch (selectedCard.Type)
+                    {
+                        case CardType.DrawTwo:
+                        case CardType.DrawFour:
+                            /* Draw Two cards cannot be stacked neither can Draw Four's (on a Draw Two). */
+                            return false;
+                    }
+                    break;
+
+                case CardType.DrawFour when selectedCard.Type == CardType.DrawTwo:
+                    return false;
             }
 
-            /* Wild Draw Four can only be played if the player has no cards matching the current colour. */
-            if (selectedCard.Type == CardType.DrawFour)
+            switch (selectedCard.Type)
             {
-                bool hasMatchingColor = playerHand.Any(card =>
-                    card != null && card.Color == currentColor && card.Type != CardType.Wild &&
-                    card.Type != CardType.DrawFour);
-                return !hasMatchingColor;
-            }
+                case CardType.DrawFour:
+                {
+                    /* Wild Draw Four can only be played if the player has no cards matching the current colour. */
+                    var hasMatchingColor = playerHand.Any(card =>
+                        card != null && card.Color == currentColor && card.Type != CardType.Wild &&
+                        card.Type != CardType.DrawFour);
+                    return !hasMatchingColor;
+                }
 
-            /* A regular Wild can always be played. */
-            if (selectedCard.Type == CardType.Wild)
-            {
-                return true;
+                case CardType.Wild:
+                    /* A regular Wild can always be played. */
+                    return true;
             }
 
             /* Match the current colour. */
@@ -44,19 +56,13 @@ namespace ClassicUno.Classes.Logic
             }
 
             /* Match the number on numeric cards. */
-            if (selectedCard.Type == CardType.Numeric && topCard.Type == CardType.Numeric &&
-                selectedCard.Value == topCard.Value)
+            if (selectedCard.Type == CardType.Numeric && topCard.Type == CardType.Numeric && selectedCard.Value == topCard.Value)
             {
                 return true;
             }
 
             /* Match the action type. */
-            if (selectedCard.Type == topCard.Type && selectedCard.Type != CardType.Numeric)
-            {
-                return true;
-            }
-
-            return false;
+            return selectedCard.Type == topCard.Type && selectedCard.Type != CardType.Numeric;
         }
     }
 }

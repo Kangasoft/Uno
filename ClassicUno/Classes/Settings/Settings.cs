@@ -50,9 +50,9 @@ namespace ClassicUno.Classes.Settings
 
             Options.NumberOfPlayers = 2;
             Options.Sounds.EnableVoice = true;
-            Options.Sounds.VoiceVolume = 95;
+            Options.Sounds.VoiceVolume = 90;
             Options.Sounds.EnableEffects = true;
-            Options.Sounds.EffectsVolume = 95;
+            Options.Sounds.EffectsVolume = 90;
             Options.Sounds.EnableMusic = true;
             Options.Sounds.MusicVolume = 70;
         }

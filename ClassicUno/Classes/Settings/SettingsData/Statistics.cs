@@ -25,6 +25,9 @@ namespace ClassicUno.Classes.Settings.SettingsData
         [XmlAttribute("longestGame")]
         public int LongestGame { get; set; }
 
+        [XmlAttribute("totalGameTime")]
+        public long TotalGameTime { get; set; }
+
         [XmlAttribute("highScore")]
         public int HighScore { get; set; }
     }

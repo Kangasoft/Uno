@@ -33,6 +33,7 @@ namespace ClassicUno.Forms
             if (NameData != null)
             {
                 txtName.Text = NameData.Name;
+                txtName.SelectionStart = txtName.TextLength;
                 cmbGender.SelectedIndex = (int) NameData.Gender;
             }
             else
