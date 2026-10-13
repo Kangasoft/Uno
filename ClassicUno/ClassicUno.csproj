@@ -96,9 +96,6 @@
     <Compile Include="Forms\FrmAbout.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmAbout.Designer.cs">
-      <DependentUpon>FrmAbout.cs</DependentUpon>
-    </Compile>
     <Compile Include="Forms\FrmGame.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -120,14 +117,8 @@
     <Compile Include="Forms\FrmStats.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmStats.Designer.cs">
-      <DependentUpon>FrmStats.cs</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Forms\FrmAbout.resx">
-      <DependentUpon>FrmAbout.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmGame.resx">
       <DependentUpon>FrmGame.cs</DependentUpon>
     </EmbeddedResource>
@@ -136,9 +127,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmOptions.resx">
       <DependentUpon>FrmOptions.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FrmStats.resx">
-      <DependentUpon>FrmStats.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

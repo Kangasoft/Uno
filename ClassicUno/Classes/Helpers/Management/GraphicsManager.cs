@@ -382,11 +382,12 @@ namespace ClassicUno.Classes.Helpers.Management
             for (var i = 0; i <= count - 1; i++)
             {
                 /* Show card back if player is not human (or show all card fronts if game over) */
-                var card = GetCardImage(player.Cards[i]);
-                Image image = player is HumanPlayer ? card : game.GameRunning ? CardBack : card;
+                var card = player.Cards[i];
+                var cardImage = GetCardImage(player.Cards[i]);
+                Image image = player is HumanPlayer ? cardImage : game.GameRunning ? CardBack : cardImage;
 
                 /* Add a small - Y offset on a card being drawn if hovering over it (human player only) */
-                var highlightOffsetY = player.Cards[i] == game.SelectedCard ? 23f : 0f;
+                var selectedOffsetY = player.Cards[i] == game.SelectedCard ? 23f : 0f;
 
                 if (image == null)
                 {
@@ -399,12 +400,17 @@ namespace ClassicUno.Classes.Helpers.Management
                 if (!sideways)
                 {
                     x = clientRectangle.Left + (clientRectangle.Width - totalWidth) / 2f + i * spacing;
-                    y = angle == 0 ? (clientRectangle.Bottom - highlightOffsetY) - cardHeight - 120f : clientRectangle.Top + 50f;
+                    y = angle == 0 ? (clientRectangle.Bottom - selectedOffsetY) - cardHeight - 120f : clientRectangle.Top + 50f;
+
                     DrawCard(g, image, clientRectangle, new PointF(x - clientRectangle.Left, y - clientRectangle.Top));
-                    if (game.HighlightedCard != null && game.HighlightedCard != game.SelectedCard)
+
+                    if (player is HumanPlayer)
                     {
-                        /* Draw highlight accent when mouse hovers over human player's cards */
-                        DrawHoverCardHighlight(g, game.HighlightedCard);
+                        if (game.HighlightedCard != null && game.HighlightedCard != game.SelectedCard && game.HighlightedCard == card)
+                        {
+                            /* Draw highlight accent when mouse hovers over human player's cards */
+                            DrawHoverCardHighlight(g, game.HighlightedCard);
+                        }
                     }
                 }
                 else
@@ -452,11 +458,16 @@ namespace ClassicUno.Classes.Helpers.Management
 
         private static void DrawHoverCardHighlight(Graphics g, Card card)
         {
+            /* This method is becoming a pain in my ass! */
             var r = card.Region;
             const float radius = 18f;
             const float diameter = radius * 2;
 
             var isLastCard = Math.Abs(r.Width - _cardWidth) < 0.1f;
+
+            /* Use the full card width for ALL cards so they maintain their natural rounded rectangle shape.
+             * Overlapping cards will naturally cover the rest of it. */
+            var renderWidth = isLastCard ? r.Width : _cardWidth;
 
             using (var path = new GraphicsPath())
             {
@@ -466,25 +477,25 @@ namespace ClassicUno.Classes.Helpers.Management
                 if (isLastCard)
                 {
                     /* Top-right rounded corner */
-                    path.AddArc(r.Right - diameter, r.Y, diameter, diameter, 270, 90);
+                    path.AddArc(r.X + renderWidth - diameter, r.Y, diameter, diameter, 270, 90);
 
                     /* Bottom-right rounded corner */
-                    path.AddArc(r.Right - diameter, r.Bottom - diameter, diameter, diameter, 0, 90);
+                    path.AddArc(r.X + renderWidth - diameter, r.Bottom - diameter, diameter, diameter, 0, 90);
                 }
                 else
                 {
-                    /* Straight top-right corner */
-                    path.AddLine(r.Right - radius, r.Y, r.Right, r.Y);
+                    /* Top-right rounded corner using full card width */
+                    path.AddArc(r.X + renderWidth - diameter, r.Y, diameter, diameter, 270, 90);
 
-                    /* Straight bottom-right corner */
-                    path.AddLine(r.Right, r.Y, r.Right, r.Bottom);
+                    /* Bottom-right rounded corner using full card width */
+                    path.AddArc(r.X + renderWidth - diameter, r.Bottom - diameter, diameter, diameter, 0, 90);
                 }
 
                 /* Bottom-left rounded corner */
                 path.AddArc(r.X, r.Bottom - diameter, diameter, diameter, 90, 90);
                 path.CloseFigure();
 
-                using (var brush = new SolidBrush(Color.FromArgb(6, Color.DeepSkyBlue)))
+                using (var brush = new SolidBrush(Color.FromArgb(60, Color.DeepSkyBlue)))
                 {
                     g.FillPath(brush, path);
                 }

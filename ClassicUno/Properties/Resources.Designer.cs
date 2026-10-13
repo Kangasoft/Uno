@@ -61,6 +61,20 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Version: v{0}.{1}
+        ///
+        ///Written by: Jason James Newland
+        ///
+        ///Copyright ©2026 - Kangasoft Software
+        ///All rights reserved..
+        /// </summary>
+        internal static string about {
+            get {
+                return ResourceManager.GetString("about", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap anticlockwise {

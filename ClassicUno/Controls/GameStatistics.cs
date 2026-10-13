@@ -4,8 +4,10 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Drawing;
+using System.Drawing.Design;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Controls
@@ -16,15 +18,7 @@ namespace ClassicUno.Controls
     public sealed class GameStatistics : UserControl
     {
         #region Fields
-        private int _gamesPlayed;
-        private int _score;
-        private int _gamesWon;
-        private int _gamesLost;
-        private int _currentWinningStreak;
-        private int _longestWinningStreak;
-        private TimeSpan _shortestGame = TimeSpan.Zero;
-        private TimeSpan _longestGame = TimeSpan.Zero;
-        private TimeSpan _averageGameTime = TimeSpan.Zero;
+        private Statistics _stats;
 
         private readonly Color _textColor = Color.FromArgb(30, 30, 30);
         private readonly Color _mutedTextColor = Color.FromArgb(85, 85, 85);
@@ -32,6 +26,16 @@ namespace ClassicUno.Controls
         private readonly Color _ringBackColor = Color.FromArgb(70, 70, 70);
         private readonly Color _tileBackColor = Color.White;
         private readonly Color _lineColor = Color.FromArgb(210, 210, 210);
+
+        public Statistics Statistics
+        {
+            get => _stats;
+            set
+            {
+                _stats = value;
+                Invalidate();
+            }
+        }
         #endregion
 
         #region Constructor
@@ -46,30 +50,6 @@ namespace ClassicUno.Controls
             Size = new Size(430, 320);
             Font = new Font("Arial", 10F, FontStyle.Regular);
             Margin = Padding.Empty;
-        }
-        #endregion
-
-        #region Public method
-        public void SetStatistics(Statistics stats)
-        {
-            /* Updates all displayed statistics. Durations are supplied in seconds. */
-            var played = stats.GamesPlayed;
-            _gamesPlayed = Math.Max(0, played);
-            _score = stats.HighScore;
-            _gamesWon = Math.Max(0, stats.GamesWon);
-            _gamesLost = Math.Max(0, stats.GamesLost);
-            _currentWinningStreak = Math.Max(0, stats.CurrentStreak);
-            _longestWinningStreak = Math.Max(0, stats.LongestStreak);
-            _shortestGame = TimeSpan.FromSeconds(Math.Max(0, stats.ShortestGame));
-            _longestGame = TimeSpan.FromSeconds(Math.Max(0, stats.LongestGame));
-
-            var averageGameTime = played > 0
-                ? stats.TotalGameTime / (double)played
-                : 0;
-
-            _averageGameTime = TimeSpan.FromSeconds(Math.Max(0, averageGameTime));
-
-            Invalidate();
         }
         #endregion
 
@@ -90,8 +70,7 @@ namespace ClassicUno.Controls
             const int sectionGap = 10;
 
             var ringDiameter = Math.Min(112, topSectionHeight - 12);
-            var ringBounds = new Rectangle(padding, padding + (topSectionHeight - ringDiameter) / 2 - 8, ringDiameter,
-                ringDiameter);
+            var ringBounds = new Rectangle(padding, padding + (topSectionHeight - ringDiameter) / 2 - 8, ringDiameter, ringDiameter);
 
             DrawWinRateRing(g, ringBounds);
 
@@ -100,18 +79,19 @@ namespace ClassicUno.Controls
             var statsY = padding + 10;
             const int statRowHeight = 25;
 
+            var played = _stats.GamesPlayed;
             using (var valueFont = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
             {
-                DrawStatRow(g, "Games played:", _gamesPlayed.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
+                DrawStatRow(g, "Games played:", played.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
                 statsY += statRowHeight;
 
-                DrawStatRow(g, "Score:", _score.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
+                DrawStatRow(g, "Score:", _stats.HighScore.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
                 statsY += statRowHeight;
 
-                DrawStatRow(g, "Wins:", _gamesWon.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
+                DrawStatRow(g, "Wins:", _stats.GamesWon.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
                 statsY += statRowHeight;
 
-                DrawStatRow(g, "Losses:", _gamesLost.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
+                DrawStatRow(g, "Losses:", _stats.GamesLost.ToString("N0"), contentLeft, statsY, contentWidth, valueFont);
             }
 
             const int streakY = padding + topSectionHeight;
@@ -127,13 +107,16 @@ namespace ClassicUno.Controls
             var durationWidth = Width - padding * 2;
             const int durationRowHeight = 25;
 
-            DrawDurationRow(g, "Shortest game:", _shortestGame, padding, durationY, durationWidth);
+            DrawDurationRow(g, "Shortest game:", _stats.ShortestGame, padding, durationY, durationWidth);
             durationY += durationRowHeight;
 
-            DrawDurationRow(g, "Longest game:", _longestGame, padding, durationY, durationWidth);
+            DrawDurationRow(g, "Longest game:", _stats.LongestGame, padding, durationY, durationWidth);
             durationY += durationRowHeight;
 
-            DrawDurationRow(g, "Average time per game:", _averageGameTime, padding, durationY, durationWidth);
+            var averageGameTime = played > 0
+                ? _stats.TotalGameTime / (double)played
+                : 0;
+            DrawDurationRow(g, "Average time per game:", (int)Math.Max(0, averageGameTime), padding, durationY, durationWidth);
         }
         #endregion
 
@@ -143,6 +126,7 @@ namespace ClassicUno.Controls
             const float thickness = 9F;
             var arcBounds = new RectangleF(bounds.X + thickness / 2F, bounds.Y + thickness / 2F,
                 bounds.Width - thickness, bounds.Height - thickness);
+            var played = _stats.GamesPlayed;
 
             using (var backgroundPen = new Pen(_ringBackColor, thickness))
             {
@@ -161,7 +145,7 @@ namespace ClassicUno.Controls
 
                                 g.DrawArc(backgroundPen, arcBounds, 0F, 359.9F);
 
-                                var rate = _gamesPlayed > 0 ? (double) _gamesWon / _gamesPlayed : 0.0;
+                                var rate = played > 0 ? (double) _stats.GamesWon / played : 0.0;
 
                                 var sweep = (float) (Math.Max(0.0, Math.Min(1.0, rate)) * 360.0);
                                 if (sweep > 0F)
@@ -172,7 +156,7 @@ namespace ClassicUno.Controls
                                 sf.Alignment = StringAlignment.Center;
                                 sf.LineAlignment = StringAlignment.Center;
 
-                                var percent = _gamesPlayed > 0 ? Math.Round(rate * 100.0).ToString() + "%" : "0%";
+                                var percent = played > 0 ? $"{Math.Round(rate * 100.0)}%" : "0%";
 
                                 g.DrawString(percent, percentFont, textBrush, bounds, sf);
                             }
@@ -192,8 +176,6 @@ namespace ClassicUno.Controls
                 {
                     using (var left = new StringFormat())
                     {
-
-
                         using (var right = new StringFormat())
                         {
                             left.Alignment = StringAlignment.Near;
@@ -245,21 +227,15 @@ namespace ClassicUno.Controls
                                         g.FillRectangle(tileBrush, bestTile);
                                         g.DrawRectangle(borderPen, bestTile);
 
-                                        var currentLabel = new RectangleF(currentTile.X + 3, currentTile.Y + 3,
-                                            currentTile.Width - 6, 16);
-                                        var currentValue = new RectangleF(currentTile.X + 3, currentTile.Y + 19,
-                                            currentTile.Width - 6, 29);
-                                        var bestLabel = new RectangleF(bestTile.X + 3, bestTile.Y + 3,
-                                            bestTile.Width - 6, 16);
-                                        var bestValue = new RectangleF(bestTile.X + 3, bestTile.Y + 19,
-                                            bestTile.Width - 6, 29);
+                                        var currentLabel = new RectangleF(currentTile.X + 3, currentTile.Y + 3, currentTile.Width - 6, 16);
+                                        var currentValue = new RectangleF(currentTile.X + 3, currentTile.Y + 19, currentTile.Width - 6, 29);
+                                        var bestLabel = new RectangleF(bestTile.X + 3, bestTile.Y + 3, bestTile.Width - 6, 16);
+                                        var bestValue = new RectangleF(bestTile.X + 3, bestTile.Y + 19, bestTile.Width - 6, 29);
 
                                         g.DrawString("CURRENT STREAK", labelFont, labelBrush, currentLabel, centered);
-                                        g.DrawString(FormatWins(_currentWinningStreak), valueFont, valueBrush,
-                                            currentValue, centered);
+                                        g.DrawString(FormatWins(_stats.CurrentStreak), valueFont, valueBrush, currentValue, centered);
                                         g.DrawString("BEST STREAK", labelFont, labelBrush, bestLabel, centered);
-                                        g.DrawString(FormatWins(_longestWinningStreak), valueFont, valueBrush,
-                                            bestValue, centered);
+                                        g.DrawString(FormatWins(_stats.LongestStreak), valueFont, valueBrush, bestValue, centered);
                                     }
                                 }
                             }
@@ -271,7 +247,7 @@ namespace ClassicUno.Controls
         #endregion
 
         #region Game durations
-        private void DrawDurationRow(Graphics g, string label, TimeSpan value, int x, int y, int width)
+        private void DrawDurationRow(Graphics g, string label, int value, int x, int y, int width)
         {
             using (Brush labelBrush = new SolidBrush(_textColor))
             {
@@ -290,7 +266,7 @@ namespace ClassicUno.Controls
 
                             var row = new RectangleF(x, y, width, 23F);
                             g.DrawString(label, Font, labelBrush, row, left);
-                            g.DrawString(FormatDuration(value), Font, valueBrush, row, right);
+                            g.DrawString(Utils.FormatTime(value), Font, valueBrush, row, right);
                         }
                     }
                 }
@@ -303,17 +279,6 @@ namespace ClassicUno.Controls
         private static string FormatWins(int wins)
         {
             return $"{wins:N0} {(wins == 1 ? "win" : "wins")}";
-        }
-
-        private static string FormatDuration(TimeSpan duration)
-        {
-            if (duration.TotalHours >= 1)
-            {
-                return $"{(int) duration.TotalHours}h {duration.Minutes:D2}m {duration.Seconds:D2}s";
-            }
-            return duration.TotalMinutes >= 1
-                ? $"{(int) duration.TotalMinutes}m {duration.Seconds:D2}s"
-                : $"{Math.Max(0, (int) duration.TotalSeconds)}s";
         }
         #endregion
     }
