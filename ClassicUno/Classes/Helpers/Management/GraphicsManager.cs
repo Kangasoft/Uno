@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
@@ -400,6 +401,11 @@ namespace ClassicUno.Classes.Helpers.Management
                     x = clientRectangle.Left + (clientRectangle.Width - totalWidth) / 2f + i * spacing;
                     y = angle == 0 ? (clientRectangle.Bottom - highlightOffsetY) - cardHeight - 120f : clientRectangle.Top + 50f;
                     DrawCard(g, image, clientRectangle, new PointF(x - clientRectangle.Left, y - clientRectangle.Top));
+                    if (game.HighlightedCard != null && game.HighlightedCard != game.SelectedCard)
+                    {
+                        /* Draw highlight accent when mouse hovers over human player's cards */
+                        DrawHoverCardHighlight(g, game.HighlightedCard);
+                    }
                 }
                 else
                 {
@@ -442,6 +448,47 @@ namespace ClassicUno.Classes.Helpers.Management
                 clientRectangle.Top + (clientRectangle.Height - cardWidth) / 2f, cardHeight, cardWidth);
 
             return handBounds;
+        }
+
+        private static void DrawHoverCardHighlight(Graphics g, Card card)
+        {
+            var r = card.Region;
+            const float radius = 18f;
+            const float diameter = radius * 2;
+
+            var isLastCard = Math.Abs(r.Width - _cardWidth) < 0.1f;
+
+            using (var path = new GraphicsPath())
+            {
+                /* Top-left rounded corner */
+                path.AddArc(r.X, r.Y, diameter, diameter, 180, 90);
+
+                if (isLastCard)
+                {
+                    /* Top-right rounded corner */
+                    path.AddArc(r.Right - diameter, r.Y, diameter, diameter, 270, 90);
+
+                    /* Bottom-right rounded corner */
+                    path.AddArc(r.Right - diameter, r.Bottom - diameter, diameter, diameter, 0, 90);
+                }
+                else
+                {
+                    /* Straight top-right corner */
+                    path.AddLine(r.Right - radius, r.Y, r.Right, r.Y);
+
+                    /* Straight bottom-right corner */
+                    path.AddLine(r.Right, r.Y, r.Right, r.Bottom);
+                }
+
+                /* Bottom-left rounded corner */
+                path.AddArc(r.X, r.Bottom - diameter, diameter, diameter, 90, 90);
+                path.CloseFigure();
+
+                using (var brush = new SolidBrush(Color.FromArgb(6, Color.DeepSkyBlue)))
+                {
+                    g.FillPath(brush, path);
+                }
+            }
         }
         #endregion
 

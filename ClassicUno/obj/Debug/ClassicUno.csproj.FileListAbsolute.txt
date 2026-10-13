@@ -11,3 +11,4 @@ D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmAbout.res
 D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmNew.resources
 D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmOptions.resources
 D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmStats.resources
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.csprojAssemblyReference.cache

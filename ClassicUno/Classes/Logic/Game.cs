@@ -60,6 +60,8 @@ namespace ClassicUno.Classes.Logic
 
         public IPlayer CurrentPlayer { get; set; }
 
+        public Card HighlightedCard { get; set; }
+
         public Card SelectedCard { get; set; }
 
         public PlayDirection CurrentDirection { get; set; }
@@ -148,7 +150,6 @@ namespace ClassicUno.Classes.Logic
             {
                 /* Play the card */
                 CurrentPlayer.PlayCard(SelectedCard);
-                SelectedCard = null;
             }
             else
             {
@@ -339,6 +340,7 @@ namespace ClassicUno.Classes.Logic
                 _ui.EnablePass(false);
                 _ui.EnablePlay(false);
                 _ui.ShowColorButtons(false);
+                HighlightedCard = null;
                 SelectedCard = null;
             }
 

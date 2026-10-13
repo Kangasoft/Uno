@@ -223,7 +223,6 @@ namespace ClassicUno.Forms
                             AudioManager.StopMusic();
                             break;
                     }
-
                     break;
 
                 case "OPTIONS":
@@ -291,6 +290,25 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Mouse
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (!(_currentGame?.CurrentPlayer is HumanPlayer))
+            {
+                base.OnMouseMove(e);
+                return;
+            }
+
+            if (_currentGame != null)
+            {
+                var c = HitTest(_currentGame.Players[0].Cards, e.Location);
+                _currentGame.HighlightedCard = c;
+                Invalidate();
+            }
+
+            base.OnMouseMove(e);
+        }
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             if (_currentGame?.CurrentPlayer is HumanPlayer && e.Button == MouseButtons.Left)
