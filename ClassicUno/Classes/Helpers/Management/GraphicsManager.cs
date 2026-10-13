@@ -385,7 +385,7 @@ namespace ClassicUno.Classes.Helpers.Management
                 Image image = player is HumanPlayer ? card : game.GameRunning ? CardBack : card;
 
                 /* Add a small - Y offset on a card being drawn if hovering over it (human player only) */
-                var highlightOffsetY = player.Cards[i] == game.HighlightCard ? 23f : 0f;
+                var highlightOffsetY = player.Cards[i] == game.SelectedCard ? 23f : 0f;
 
                 if (image == null)
                 {

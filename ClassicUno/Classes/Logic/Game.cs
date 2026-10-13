@@ -60,7 +60,7 @@ namespace ClassicUno.Classes.Logic
 
         public IPlayer CurrentPlayer { get; set; }
 
-        public Card HighlightCard { get; set; }
+        public Card SelectedCard { get; set; }
 
         public PlayDirection CurrentDirection { get; set; }
         #endregion
@@ -144,11 +144,11 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
             /* Now, we evaluate the selected card can even be played */
-            if (Validation.IsCardPlayable(DiscardPile[DiscardPile.Count - 1], HighlightCard, CurrentColor, CurrentPlayer.Cards))
+            if (Validation.IsCardPlayable(DiscardPile[DiscardPile.Count - 1], SelectedCard, CurrentColor, CurrentPlayer.Cards))
             {
                 /* Play the card */
-                CurrentPlayer.PlayCard(HighlightCard);
-                HighlightCard = null;
+                CurrentPlayer.PlayCard(SelectedCard);
+                SelectedCard = null;
             }
             else
             {
@@ -339,7 +339,7 @@ namespace ClassicUno.Classes.Logic
                 _ui.EnablePass(false);
                 _ui.EnablePlay(false);
                 _ui.ShowColorButtons(false);
-                HighlightCard = null;
+                SelectedCard = null;
             }
 
             if (player.Cards.Count == 0)

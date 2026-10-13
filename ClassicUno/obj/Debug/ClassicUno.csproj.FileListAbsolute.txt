@@ -1,0 +1,13 @@
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\bin\Debug\ClassicUno.exe.config
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\bin\Debug\ClassicUno.exe
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\bin\Debug\ClassicUno.pdb
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmGame.resources
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Properties.Resources.resources
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.csproj.GenerateResource.cache
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.csproj.CoreCompileInputs.cache
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.exe
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.pdb
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmAbout.resources
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmNew.resources
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmOptions.resources
+D:\Data\CSharp\Uno\ClassicUno\ClassicUno\obj\Debug\ClassicUno.Forms.FrmStats.resources

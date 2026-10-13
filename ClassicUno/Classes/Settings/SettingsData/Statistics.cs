@@ -19,6 +19,12 @@ namespace ClassicUno.Classes.Settings.SettingsData
         [XmlAttribute("gamesLost")]
         public int GamesLost { get; set; }
 
+        [XmlAttribute("currentStreak")]
+        public int CurrentStreak { get; set; }
+
+        [XmlAttribute("longestStreak")]
+        public int LongestStreak { get; set; }
+
         [XmlAttribute("shortestGame")]
         public int ShortestGame { get; set; }
 

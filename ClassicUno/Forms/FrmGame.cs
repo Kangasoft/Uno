@@ -146,7 +146,7 @@ namespace ClassicUno.Forms
                 new ToolStripItem[]
                 {
                     MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true,  OnMenuClick),
-                    new ToolStripSeparator(),
+                    new ToolStripSeparator(), 
                     MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
                     new ToolStripSeparator(), 
                     MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true,  OnMenuClick)
@@ -188,7 +188,11 @@ namespace ClassicUno.Forms
                 case "STATS":
                     using (var stats = new FrmStats())
                     {
+                        stats.Statistics = SettingsManager.Settings.Statistics;
                         stats.ShowDialog(this);
+
+                        /* Update settings if it was cleared in the dialog */
+                        SettingsManager.Settings.Statistics = stats.Statistics;
                     }
                     break;
 
@@ -287,61 +291,30 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Mouse
-
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if (_currentGame == null)
-            {
-                base.OnMouseMove(e);
-                return;
-            }
-
-            if (_currentGame.CurrentPlayer is HumanPlayer)
+            if (_currentGame?.CurrentPlayer is HumanPlayer && e.Button == MouseButtons.Left)
             {
                 /* Your turn */
                 var c = HitTest(_currentGame.Players[0].Cards, e.Location);
-                _currentGame.HighlightCard = c;
+                _currentGame.SelectedCard = c;
                 Invalidate();
             }
-            btnPlay.Enabled = _currentGame.HighlightCard != null;
+            btnPlay.Enabled = _currentGame?.SelectedCard != null;
 
             base.OnMouseDown(e);
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            //if (_currentGame == null)
-            //{
-            //    base.OnMouseMove(e);
-            //    return;
-            //}
-
-            //if (_currentGame.CurrentPlayer is HumanPlayer)
-            //{
-            //    /* Your turn */
-            //    var c = HitTest(_currentGame.Players[0].Cards, e.Location);
-            //    _currentGame.HighlightCard = c;
-            //    Invalidate();
-            //}
-
-            base.OnMouseMove(e);
-        }
-
         protected override void OnMouseDoubleClick(MouseEventArgs e)
         {
-            if (_currentGame.CurrentPlayer == null) 
-            {
-                /* Do nothing */
-                return;
-            }
-
-            if (!(_currentGame.CurrentPlayer is HumanPlayer))
+            if (!(_currentGame?.CurrentPlayer is HumanPlayer))
             {
                 /* Do nothing as it's not your turn */
+                base.OnMouseDoubleClick(e);
                 return;
             }
 
-            if (_currentGame.HighlightCard != null && e.Button == MouseButtons.Left)
+            if (_currentGame?.SelectedCard != null && e.Button == MouseButtons.Left)
             {
                 _currentGame.HumanPlaysCard();
             }
@@ -456,10 +429,19 @@ namespace ClassicUno.Forms
             {
                 SettingsManager.Settings.Statistics.GamesWon++;
                 SettingsManager.Settings.Statistics.HighScore += score;
+
+                /* Streaks */
+                SettingsManager.Settings.Statistics.CurrentStreak++;
+                var streak = SettingsManager.Settings.Statistics.CurrentStreak;
+                if (streak > SettingsManager.Settings.Statistics.LongestStreak)
+                {
+                    SettingsManager.Settings.Statistics.LongestStreak = streak;
+                }
             }
             else
             {
                 SettingsManager.Settings.Statistics.GamesLost++;
+                SettingsManager.Settings.Statistics.CurrentStreak = 0;
             }
 
             SettingsManager.Settings.Statistics.ShortestGame =
