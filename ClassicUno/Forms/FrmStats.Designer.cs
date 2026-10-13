@@ -56,9 +56,9 @@
             this.lblPlayed.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPlayed.Location = new System.Drawing.Point(179, 0);
             this.lblPlayed.Name = "lblPlayed";
-            this.lblPlayed.Size = new System.Drawing.Size(48, 17);
+            this.lblPlayed.Size = new System.Drawing.Size(61, 17);
             this.lblPlayed.TabIndex = 2;
-            this.lblPlayed.Text = "100000";
+            this.lblPlayed.Text = "1,000,000";
             // 
             // btnClose
             // 
@@ -77,9 +77,9 @@
             this.lblTotalScore.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTotalScore.Location = new System.Drawing.Point(179, 23);
             this.lblTotalScore.Name = "lblTotalScore";
-            this.lblTotalScore.Size = new System.Drawing.Size(69, 17);
+            this.lblTotalScore.Size = new System.Drawing.Size(61, 17);
             this.lblTotalScore.TabIndex = 4;
-            this.lblTotalScore.Text = "100000000";
+            this.lblTotalScore.Text = "1,000,000";
             // 
             // lblWins
             // 
@@ -88,9 +88,9 @@
             this.lblWins.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblWins.Location = new System.Drawing.Point(179, 46);
             this.lblWins.Name = "lblWins";
-            this.lblWins.Size = new System.Drawing.Size(55, 17);
+            this.lblWins.Size = new System.Drawing.Size(61, 17);
             this.lblWins.TabIndex = 5;
-            this.lblWins.Text = "1000000";
+            this.lblWins.Text = "1,000,000";
             // 
             // lblInfo5
             // 
@@ -165,9 +165,9 @@
             this.lblLosses.Font = new System.Drawing.Font("Segoe UI Semibold", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblLosses.Location = new System.Drawing.Point(179, 69);
             this.lblLosses.Name = "lblLosses";
-            this.lblLosses.Size = new System.Drawing.Size(41, 17);
+            this.lblLosses.Size = new System.Drawing.Size(61, 17);
             this.lblLosses.TabIndex = 16;
-            this.lblLosses.Text = "10000";
+            this.lblLosses.Text = "1,000,000";
             // 
             // tblData
             // 

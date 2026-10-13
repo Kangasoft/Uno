@@ -4,7 +4,6 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -56,10 +55,6 @@ namespace ClassicUno.Forms
             _time.Tick += TimerCount;
 
             _sync = new UiSynchronize(this);
-
-            SettingsManager.Load();
-            GraphicsManager.Initialize();
-            AudioManager.Initialize();
 
             BuildMenuGame(mnuGame);
             BuildMenuOptions(mnuOptions);
@@ -268,6 +263,10 @@ namespace ClassicUno.Forms
                     _currentGame.HumanPass();
                     break;
 
+                case "PLAY":
+                    _currentGame.HumanPlaysCard();
+                    break;
+
                 case "RED":
                     _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Red);
                     break;
@@ -288,7 +287,8 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Mouse
-        protected override void OnMouseMove(MouseEventArgs e)
+
+        protected override void OnMouseDown(MouseEventArgs e)
         {
             if (_currentGame == null)
             {
@@ -296,13 +296,33 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            if (_currentGame.CurrentPlayer != null && _currentGame.CurrentPlayer is HumanPlayer)
+            if (_currentGame.CurrentPlayer is HumanPlayer)
             {
                 /* Your turn */
                 var c = HitTest(_currentGame.Players[0].Cards, e.Location);
                 _currentGame.HighlightCard = c;
                 Invalidate();
             }
+            btnPlay.Enabled = _currentGame.HighlightCard != null;
+
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            //if (_currentGame == null)
+            //{
+            //    base.OnMouseMove(e);
+            //    return;
+            //}
+
+            //if (_currentGame.CurrentPlayer is HumanPlayer)
+            //{
+            //    /* Your turn */
+            //    var c = HitTest(_currentGame.Players[0].Cards, e.Location);
+            //    _currentGame.HighlightCard = c;
+            //    Invalidate();
+            //}
 
             base.OnMouseMove(e);
         }
@@ -526,6 +546,17 @@ namespace ClassicUno.Forms
             }
 
             btnPass.Enabled = enabled;
+        }
+
+        public void EnablePlay(bool enabled)
+        {
+            if (InvokeRequired)
+            {
+                _sync.Execute(() => EnablePlay(enabled));
+                return;
+            }
+
+            btnPlay.Enabled = enabled;
         }
 
         public void ShowColorButtons(bool visible)

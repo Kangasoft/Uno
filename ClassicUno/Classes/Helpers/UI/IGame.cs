@@ -20,6 +20,8 @@ namespace ClassicUno.Classes.Helpers.UI
 
         void EnablePass(bool enabled);
 
+        void EnablePlay(bool enabled);
+
         void ShowColorButtons(bool visible);
 
         void UpdateStatus(string text);

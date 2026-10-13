@@ -30,9 +30,9 @@ namespace ClassicUno.Forms
         {
             var played = SettingsManager.Settings.Statistics.GamesPlayed;
 
-            lblPlayed.Text = $@"{played}";
+            lblPlayed.Text = $@"{played:N0}";
 
-            lblTotalScore.Text = SettingsManager.Settings.Statistics.HighScore.ToString();
+            lblTotalScore.Text = SettingsManager.Settings.Statistics.HighScore.ToString("N0");
 
             var gamesWon = SettingsManager.Settings.Statistics.GamesWon;
             var gamesLost = SettingsManager.Settings.Statistics.GamesLost;
@@ -40,8 +40,8 @@ namespace ClassicUno.Forms
 
             pctWheel.Value = winPercentage;
 
-            lblWins.Text = gamesWon.ToString();
-            lblLosses.Text = gamesLost.ToString();
+            lblWins.Text = gamesWon.ToString("N0");
+            lblLosses.Text = gamesLost.ToString("N0");
 
             lblShortest.Text = Utils.FormatTime(SettingsManager.Settings.Statistics.ShortestGame);
             lblLongest.Text = Utils.FormatTime(SettingsManager.Settings.Statistics.LongestGame);

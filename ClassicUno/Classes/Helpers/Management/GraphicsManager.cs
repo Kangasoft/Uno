@@ -58,10 +58,12 @@ namespace ClassicUno.Classes.Helpers.Management
         public static Bitmap CardBack { get; private set; }
         #endregion
 
+        #region Initialization
         public static void Initialize()
         {
             BuildCardImages();
         }
+        #endregion
 
         #region Card image building
         private static void BuildCardImages()
@@ -164,9 +166,10 @@ namespace ClassicUno.Classes.Helpers.Management
 
             DrawStatus(game, g, clientRectangle, position);
             DrawPlayerCards(game, g, clientRectangle);
-            DrawPlayerNames(game, g, GetPlayerHandBounds(clientRectangle, _cardWidth, _cardHeight));
+            DrawPlayerNames(game, g, GetPlayerHandBounds(clientRectangle, _cardWidth, _cardHeight), clientRectangle);
         }
-        
+
+        #region Game status
         private static void DrawStatus(Game game, Graphics g, Rectangle clientRectangle, PointF position)
         {
             /* Draw direction indicator. Vertical bounds of the cards. */
@@ -192,8 +195,8 @@ namespace ClassicUno.Classes.Helpers.Management
             g.DrawImage(directionImage, new RectangleF(directionX, directionY, directionWidth, directionHeight));
 
             /* Draw what the direction text is, either clockwise, or anti-clockwise */
-            DrawText(g, Utils.GetDescriptionFromEnumValue(game.CurrentDirection), Color.FromArgb(255, 225, 140),
-                new RectangleF(position.X - 100f, directionY + directionHeight, 200f, 28f), false);
+            g.DrawText(Utils.GetDescriptionFromEnumValue(game.CurrentDirection), Color.FromArgb(255, 225, 140),
+                new RectangleF(position.X - 100f, directionY + directionHeight, 200f, 28f), StringAlignment.Center);
 
             /* Orb at the bottom of the pick-up/discard cards. */
             var orbX = position.X - orbSize / 2f;
@@ -209,7 +212,9 @@ namespace ClassicUno.Classes.Helpers.Management
             position.X = centerX + (_cardWidth - 20f) * 2f;
             DrawDiscardPile(game, g, clientRectangle, position);
         }
+        #endregion
 
+        #region Pick-up pile
         private static void DrawPickupPile(Game game, Graphics g, Rectangle clientRectangle, PointF position)
         {
             /* Draw the pick-up pile - Get the center of the clientRectangle */
@@ -238,10 +243,12 @@ namespace ClassicUno.Classes.Helpers.Management
             }
 
             /* Draw card count text under deck - not sure I like or want to keep this code... */
-            DrawText(g, $"{game.Deck.Count} (108)", Color.FromArgb(255, 225, 140),
-                new RectangleF(position.X - 50f, position.Y + _cardHeight + 6f, 200f, 28f), false);
+            g.DrawText($"{game.Deck.Count} (108)", Color.FromArgb(255, 225, 140),
+                new RectangleF(position.X - 50f, position.Y + _cardHeight + 6f, 200f, 28f), StringAlignment.Center);
         }
+        #endregion
 
+        #region Color orb
         private static void DrawOrbColor(Game game, Graphics g, PointF position, float orbSize)
         {
             /* When a wild card/wild draw four is the top card, after the color has been assigned - give the user
@@ -279,7 +286,9 @@ namespace ClassicUno.Classes.Helpers.Management
 
             g.DrawImage(orb, position.X, position.Y, orbSize, orbSize);
         }
+        #endregion
 
+        #region Discard pile
         private static void DrawDiscardPile(Game game, Graphics g, Rectangle clientRectangle, PointF position)
         {
             var count = game.DiscardPile.Count;
@@ -322,7 +331,9 @@ namespace ClassicUno.Classes.Helpers.Management
             card = game.DiscardPile[game.DiscardPile.Count - 1];
             DrawRotatedCard(g, GetCardImage(card), topCentreX, topCentreY, card.DrawAngle);
         }
+        #endregion
 
+        #region Player card drawing
         private static void DrawPlayerCards(Game game, Graphics g, Rectangle clientRectangle)
         {
             /* Clockwise: bottom, left, top, right. */
@@ -330,7 +341,9 @@ namespace ClassicUno.Classes.Helpers.Management
             foreach (var player in game.Players)
             {
                 DrawPlayerHand(game, player, g, clientRectangle, angle);
-                angle += 90;
+                /* If player count is greater than 2, we add 90 degrees; otherwise we just display the players
+                 * top and bottom of the client rectangle. */
+                angle += game.Players.Count > 2 ? 90 : 180;
             }
         }
 
@@ -403,65 +416,6 @@ namespace ClassicUno.Classes.Helpers.Management
             }
         }
 
-        private static void DrawCard(Graphics g, Image cardImage, Rectangle clientRectangle, PointF position)
-        {
-            /* This draws a card anywhere on screen (related to "position") scaled; and is kept track of on resize */
-            g.DrawImage(cardImage, new RectangleF(clientRectangle.Left + position.X, clientRectangle.Top + position.Y, _cardWidth, _cardHeight));
-        }
-
-        private static void DrawRotatedCard(Graphics g, Image cardImage, float centerX, float centerY, float angle)
-        {
-            var state = g.Save();
-
-            try
-            {
-                g.TranslateTransform(centerX, centerY);
-                g.RotateTransform(angle);
-                g.DrawImage(cardImage, new RectangleF(-_cardWidth / 2f, -_cardHeight / 2f, _cardWidth, _cardHeight));
-            }
-            finally
-            {
-                g.Restore(state);
-            }
-        }
-
-        private static void DrawPlayerNames(Game game, Graphics g, IReadOnlyList<RectangleF> handBounds)
-        {
-            const float gap = 6f;
-            const float nameHeight = 28f;
-            const float sideNameWidth = 120f;
-
-            if (handBounds == null || handBounds.Count < 4)
-            {
-                return;
-            }
-
-            /* Player order: bottom, left, top, right. */
-            var nameBounds = new RectangleF[4];
-
-            /* Bottom name: directly UNDER the bottom cards. */
-            nameBounds[0] = new RectangleF(handBounds[0].Left, handBounds[0].Bottom + gap, handBounds[0].Width, nameHeight);
-
-            /* Left name: aligned with the top of the left hand. */
-            nameBounds[1] = new RectangleF(handBounds[1].Right + gap, handBounds[1].Top, sideNameWidth, nameHeight);
-
-            /* Top name: just below the top hand. */
-            nameBounds[2] = new RectangleF(handBounds[2].Left, handBounds[2].Bottom + gap, handBounds[2].Width, nameHeight);
-
-            /* Right name: aligned with the top of the right hand. */
-            nameBounds[3] = new RectangleF(handBounds[3].Left - sideNameWidth - gap, handBounds[3].Top, sideNameWidth, nameHeight);
-
-            var playerCount = Math.Min(game.Players.Count, 4);
-
-            for (var i = 0; i < playerCount; i++)
-            {
-                DrawText(g, game.Players[i].ToString(),
-                    game.CurrentPlayer == game.Players[i]
-                        ? Color.DeepSkyBlue
-                        : Color.FromArgb(255, 225, 140), nameBounds[i], true);
-            }
-        }
-
         private static RectangleF[] GetPlayerHandBounds(Rectangle clientRectangle, float cardWidth, float cardHeight)
         {
             const float edgeMargin = 20f;
@@ -489,36 +443,77 @@ namespace ClassicUno.Classes.Helpers.Management
 
             return handBounds;
         }
+        #endregion
 
-        private static void DrawText(Graphics g, string text, Color color, RectangleF bounds, bool endEllipsis)
+        #region Player names
+        private static void DrawPlayerNames(Game game, Graphics g, IReadOnlyList<RectangleF> handBounds, Rectangle clientRectangle)
         {
-            using (var font = new Font("Arial", 14, FontStyle.Bold))
-            {
-                using (Brush shadowBrush = new SolidBrush(Color.Black))
-                {
-                    using (Brush textBrush = new SolidBrush(color))
-                    {
-                        using (var sf = new StringFormat())
-                        {
-                            sf.Alignment = StringAlignment.Center;
-                            sf.LineAlignment = StringAlignment.Center;
-                            sf.FormatFlags = StringFormatFlags.NoWrap;
-                            sf.Trimming = endEllipsis ? StringTrimming.EllipsisCharacter : StringTrimming.None;
-                            
-                            var shadowBounds = bounds;
-                            shadowBounds.Offset(2f, 2f);
+            const float gap = 6f;
+            const float nameHeight = 28f;
+            const float sideNameWidth = 245f;
 
-                            /* Draw shadow. */
-                            g.DrawString(text, font, shadowBrush, shadowBounds, sf);
-                            /* Draw text */
-                            g.DrawString(text, font, textBrush, bounds, sf);
-                        }
-                    }
-                }
+            if (handBounds == null || handBounds.Count < 4)
+            {
+                return;
+            }
+
+            var nameBounds = new RectangleF[4];
+
+            /* Bottom name: centred horizontally under the bottom hand. */
+            nameBounds[0] = new RectangleF(clientRectangle.Left + (clientRectangle.Width - sideNameWidth) / 2f,
+                handBounds[0].Bottom + gap, sideNameWidth, nameHeight);
+
+            /* Left name: immediately to the right of the left hand. */
+            nameBounds[1] = new RectangleF(handBounds[1].Right + gap + 10f, handBounds[1].Top, sideNameWidth, nameHeight);
+
+            /* Top name: centred horizontally below the top hand. */
+            nameBounds[2] = new RectangleF(clientRectangle.Left + (clientRectangle.Width - sideNameWidth) / 2f,
+                handBounds[2].Bottom + gap, sideNameWidth, nameHeight);
+
+            /* Right name: immediately to the left of the right hand. */
+            nameBounds[3] = new RectangleF(handBounds[3].Left - sideNameWidth - gap - 10f, handBounds[3].Top, sideNameWidth, nameHeight);
+
+            var playerCount = Math.Min(game.Players.Count, 4);
+
+            for (var i = 0; i < playerCount; i++)
+            {
+                var pos = playerCount == 2 && i == 1 ? 2 : i; /* If there's only two players, we draw them top and bottom of screen */
+                g.DrawText(game.Players[i].ToString(),
+                    game.CurrentPlayer == game.Players[i] ? Color.DeepSkyBlue : Color.FromArgb(255, 225, 140),
+                    nameBounds[pos],
+                    playerCount > 2
+                        ? i == 1 ? StringAlignment.Near :
+                        i == 3 ? StringAlignment.Far : StringAlignment.Center
+                        : StringAlignment.Center);
             }
         }
         #endregion
+        #endregion
 
+        #region Card drawing methods
+        private static void DrawCard(Graphics g, Image cardImage, Rectangle clientRectangle, PointF position)
+        {
+            /* This draws a card anywhere on screen (related to "position") scaled; and is kept track of on resize */
+            g.DrawImage(cardImage, new RectangleF(clientRectangle.Left + position.X, clientRectangle.Top + position.Y, _cardWidth, _cardHeight));
+        }
+
+        private static void DrawRotatedCard(Graphics g, Image cardImage, float centerX, float centerY, float angle)
+        {
+            var state = g.Save();
+
+            try
+            {
+                g.TranslateTransform(centerX, centerY);
+                g.RotateTransform(angle);
+                g.DrawImage(cardImage, new RectangleF(-_cardWidth / 2f, -_cardHeight / 2f, _cardWidth, _cardHeight));
+            }
+            finally
+            {
+                g.Restore(state);
+            }
+        }
+        #endregion
+        
         #region Card image helpers
         private static Bitmap GetCardImage(Card card)
         {

@@ -4,18 +4,21 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Windows.Forms;
+using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Forms;
 
 namespace ClassicUno
 {
-    static class Program
+    internal static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
-        static void Main()
+        private static void Main()
         {
+            /* Initalize static classes */
+            SettingsManager.Load();
+            GraphicsManager.Initialize();
+            AudioManager.Initialize();
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new FrmGame());

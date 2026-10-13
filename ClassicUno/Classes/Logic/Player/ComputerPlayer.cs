@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using ClassicUno.Classes.Settings.SettingsData;
 
@@ -15,6 +14,7 @@ namespace ClassicUno.Classes.Logic.Player
     [Serializable]
     public class ComputerPlayer : IPlayer
     {
+        #region Fields
         private Card _discardCard;
         private CardColor _currentColor;
 
@@ -40,13 +40,17 @@ namespace ClassicUno.Classes.Logic.Player
         public event Action<IPlayer, Card> PlayerPlaysCard;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
+        #endregion
 
+        #region Constructor
         public ComputerPlayer()
         {
             NameData = new PlayerNameData();
             Cards = new List<Card>();
         }
+        #endregion
 
+        #region IPlayer
         public void BeginTurn(Card card, CardColor currentColor)
         {
             HasPassed = false;
@@ -101,12 +105,9 @@ namespace ClassicUno.Classes.Logic.Player
             _hasRequestedDraw = false;
             PlayerEndTurn?.Invoke(this);
         }
+        #endregion
 
-        public override string ToString()
-        {
-            return NameData.Name;
-        }
-
+        #region Background worker
         private void BackgroundWorkerCallback(object sender, DoWorkEventArgs e)
         {
             /* Analyze upper card on discard pile (_discardCard) */
@@ -149,7 +150,9 @@ namespace ClassicUno.Classes.Logic.Player
 
             EndTurn();
         }
+        #endregion
 
+        #region Private helpers
         private Card SelectComputerCard()
         {
             if (Cards.Count == 0)
@@ -227,5 +230,13 @@ namespace ClassicUno.Classes.Logic.Player
                 .Select(g => g.Key)
                 .FirstOrDefault();
         }
+        #endregion
+
+        #region ToString
+        public override string ToString()
+        {
+            return NameData.Name;
+        }
+        #endregion
     }
 }

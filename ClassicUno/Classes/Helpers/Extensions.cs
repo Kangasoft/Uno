@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace ClassicUno.Classes.Helpers
 {
@@ -22,6 +23,35 @@ namespace ClassicUno.Classes.Helpers
                 var value = list[k];
                 list[k] = list[n];
                 list[n] = value;
+            }
+        }
+
+        /* Graphics extension */
+        public static void DrawText(this Graphics g, string text, Color color, RectangleF bounds, StringAlignment alignment)
+        {
+            using (var font = new Font("Arial", 14, FontStyle.Bold))
+            {
+                using (Brush shadowBrush = new SolidBrush(Color.Black))
+                {
+                    using (Brush textBrush = new SolidBrush(color))
+                    {
+                        using (var sf = new StringFormat())
+                        {
+                            sf.Alignment = alignment;
+                            sf.LineAlignment = StringAlignment.Center;
+                            sf.FormatFlags = StringFormatFlags.NoWrap;
+                            sf.Trimming = StringTrimming.None;
+
+                            var shadowBounds = bounds;
+                            shadowBounds.Offset(2f, 2f);
+
+                            /* Draw shadow. */
+                            g.DrawString(text, font, shadowBrush, shadowBounds, sf);
+                            /* Draw text */
+                            g.DrawString(text, font, textBrush, bounds, sf);
+                        }
+                    }
+                }
             }
         }
     }

@@ -5,11 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
 using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Helpers.UI;
@@ -18,6 +16,7 @@ using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic
 {
+    #region Enum
     [Serializable]
     public enum PlayDirection
     {
@@ -27,10 +26,12 @@ namespace ClassicUno.Classes.Logic
         [Description("Anti-Clockwise")]
         AntiClockwise = 1
     }
+    #endregion
 
     [Serializable]
     public class Game : IDisposable
     {
+        #region Fields
         private IGame _ui;
 
         private BackgroundWorker _worker;
@@ -62,7 +63,7 @@ namespace ClassicUno.Classes.Logic
         public Card HighlightCard { get; set; }
 
         public PlayDirection CurrentDirection { get; set; }
-
+        #endregion
 
         #region Constructor
         public Game(IGame ui, GameOptionData data)
@@ -174,6 +175,7 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region IPlayer callbacks
+        #region Draws
         private void PlayerDraw(IPlayer player)
         {
             var c = Draw();
@@ -182,7 +184,9 @@ namespace ClassicUno.Classes.Logic
             _gameText = $"{player} draws a card.";
             _ui.UpdateStatus(_gameText);
         }
+        #endregion
 
+        #region Plays card
         private void PlayerPlaysCard(IPlayer player, Card card)
         {
             /* Here is the logic for most of the game play. Player chooses a card in their hand, it goes to the discard pile and card is evaluated here
@@ -208,8 +212,6 @@ namespace ClassicUno.Classes.Logic
             _gameText = GetGameText(player, nextPlayer, card);
             _ui.UpdateStatus(_gameText);
 
-            Debug.Print(_gameText + " :" + CurrentDirection);
-
             switch (card.Type)
             {
                 case CardType.Wild:
@@ -218,6 +220,7 @@ namespace ClassicUno.Classes.Logic
                         /* Human played the card */
                         _ui.EnableDraw(false);
                         _ui.EnablePass(false);
+                        _ui.EnablePlay(false);
                         _ui.ShowColorButtons(true);
                         return;
                     }
@@ -251,7 +254,9 @@ namespace ClassicUno.Classes.Logic
                 player.EndTurn();
             }
         }
+        #endregion
 
+        #region Passes
         private void PlayerPasses(IPlayer player)
         {
             /* Raise audio request */
@@ -259,10 +264,10 @@ namespace ClassicUno.Classes.Logic
 
             _gameText = $"{player} passes.";
             _ui.UpdateStatus(_gameText);
-
-            Debug.Print(_gameText + " :" + CurrentDirection);
         }
+        #endregion
 
+        #region Begin turn
         private void PlayerBeginTurn(IPlayer player)
         {
             /* Loop back mainly for the human player so the UI can be update by showing the "DRAW" and "PASS" buttons */
@@ -320,7 +325,9 @@ namespace ClassicUno.Classes.Logic
                 _ui.EnableDraw(true);
             }
         }
+        #endregion
 
+        #region End turn
         private void PlayerEndTurn(IPlayer player)
         {
             /* Play moves to next player - dependant on direction */
@@ -330,7 +337,9 @@ namespace ClassicUno.Classes.Logic
                 _ui.ShowButtons(false);
                 _ui.EnableDraw(false);
                 _ui.EnablePass(false);
+                _ui.EnablePlay(false);
                 _ui.ShowColorButtons(false);
+                HighlightCard = null;
             }
 
             if (player.Cards.Count == 0)
@@ -361,8 +370,10 @@ namespace ClassicUno.Classes.Logic
             _ui.Invalidate();
         }
         #endregion
+        #endregion
 
         #region Game setup
+        #region Build pick-up pile
         private void BuildDeck()
         {
             /* Build the deck of 108 cards (four wilds/four wild draw four's) */
@@ -451,7 +462,9 @@ namespace ClassicUno.Classes.Logic
                 Deck.Shuffle();
             }
         }
+        #endregion
 
+        #region Create player array
         private void CreatePlayers(GameOptionData data)
         {
             /* Add players: min 2 max 4. First add the human player */
@@ -485,6 +498,7 @@ namespace ClassicUno.Classes.Logic
                 p.PlayerEndTurn += PlayerEndTurn;
             }
         }
+        #endregion
         #endregion
 
         #region Deal
@@ -626,6 +640,7 @@ namespace ClassicUno.Classes.Logic
                 {
                     _ui.EnableDraw(false);
                     _ui.EnablePass(false);
+                    _ui.EnablePlay(false);
                     _ui.ShowColorButtons(true);
                     return;
                 }
@@ -708,6 +723,11 @@ namespace ClassicUno.Classes.Logic
                     break;
             }
 
+            if (player.Cards.Count == 1)
+            {
+                sb.Append($" {player} has UNO!");
+            }
+
             return sb.ToString();
         }
 
@@ -715,32 +735,24 @@ namespace ClassicUno.Classes.Logic
         {
             var totalScore = 0;
 
-            foreach (var player in Players)
+            foreach (var card in Players.Where(player => player.Cards != null).SelectMany(player => player.Cards.Where(card => card != null)))
             {
-                if (player.Cards == null)
+                switch (card.Type)
                 {
-                    continue;
-                }
+                    case CardType.Numeric:
+                        totalScore += card.Value;
+                        break;
 
-                foreach (var card in player.Cards.Where(card => card != null))
-                {
-                    switch (card.Type)
-                    {
-                        case CardType.Numeric:
-                            totalScore += card.Value;
-                            break;
+                    case CardType.Skip:
+                    case CardType.Reverse:
+                    case CardType.DrawTwo:
+                        totalScore += 20;
+                        break;
 
-                        case CardType.Skip:
-                        case CardType.Reverse:
-                        case CardType.DrawTwo:
-                            totalScore += 20;
-                            break;
-
-                        case CardType.Wild:
-                        case CardType.DrawFour:
-                            totalScore += 50;
-                            break;
-                    }
+                    case CardType.Wild:
+                    case CardType.DrawFour:
+                        totalScore += 50;
+                        break;
                 }
             }
 

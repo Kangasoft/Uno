@@ -11,6 +11,7 @@ namespace ClassicUno.Classes.Logic.Player
     [Serializable]
     public class HumanPlayer : IPlayer
     {
+        #region Fields
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
@@ -26,13 +27,17 @@ namespace ClassicUno.Classes.Logic.Player
         public event Action<IPlayer, Card> PlayerPlaysCard;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
+        #endregion
 
+        #region Constructor
         public HumanPlayer()
         {
             NameData = new PlayerNameData();
             Cards = new List<Card>();
         }
+        #endregion
 
+        #region IPlayer
         public void BeginTurn(Card card, CardColor currentColor)
         {
             /* Discard card "card" isn't necessary for human player */
@@ -69,10 +74,13 @@ namespace ClassicUno.Classes.Logic.Player
             IsSkipped = false; /* Make sure this variable is RESET */
             PlayerEndTurn?.Invoke(this);
         }
+        #endregion
 
+        #region ToString
         public override string ToString()
         {
             return NameData.Name;
         }
+        #endregion
     }
 }

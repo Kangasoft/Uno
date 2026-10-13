@@ -33,11 +33,11 @@ namespace ClassicUno.Classes
         }
 
         /* Search methods */
-        public void BeginSearch(DirectoryInfo initalDirectory, string fileMask, string directoryMask, bool recursive)
+        public void BeginSearch(DirectoryInfo initialDirectory, string fileMask, string directoryMask, bool recursive)
         {
-            if (initalDirectory != null)
+            if (initialDirectory != null)
             {
-                _initialDirectory = initalDirectory;
+                _initialDirectory = initialDirectory;
             }
             else
             {

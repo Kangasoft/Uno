@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("ClassicUno")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Classic UNO! 2026")]
+[assembly: AssemblyDescription("Classic card game for Windows")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("ClassicUno")]
+[assembly: AssemblyCompany("Kangasoft")]
+[assembly: AssemblyProduct("Classic Uno")]
 [assembly: AssemblyCopyright("Copyright ©  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -168,12 +168,9 @@ namespace ClassicUno.Classes.DirectSound
 
         public void Resume()
         {
-            if (_media != null)
+            if (_media?.Run() < 0)
             {
-                if (_media.Run() < 0)
-                {
-                    return;
-                }
+                return;
             }
             _play = new Timer(TimerTick, null, 0, 200);
         }
