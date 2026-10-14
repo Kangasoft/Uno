@@ -18,7 +18,7 @@ namespace ClassicUno.Controls
     public sealed class GameStatistics : UserControl
     {
         #region Fields
-        private Statistics _stats;
+        private StatisticsData _stats;
 
         private readonly Color _textColor = Color.FromArgb(30, 30, 30);
         private readonly Color _mutedTextColor = Color.FromArgb(85, 85, 85);
@@ -27,7 +27,7 @@ namespace ClassicUno.Controls
         private readonly Color _tileBackColor = Color.White;
         private readonly Color _lineColor = Color.FromArgb(210, 210, 210);
 
-        public Statistics Statistics
+        public StatisticsData Statistics
         {
             get => _stats;
             set

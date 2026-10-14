@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,8 +17,15 @@ using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic
 {
-    #region Enum
-    [Serializable]
+    #region Enums
+    public enum GameState
+    {
+        Stopped = 0,
+        Dealing = 1,
+        Running = 2,
+        Paused = 3
+    }
+
     public enum PlayDirection
     {
         [Description("Clockwise")]
@@ -28,13 +36,44 @@ namespace ClassicUno.Classes.Logic
     }
     #endregion
 
-    [Serializable]
+    #region Game play data class
+    public class GameData : ICloneable
+    {
+        /* I separated this to its own class from the main class as to add a "restart" feature
+         * at a later date. */
+        public List<IPlayer> Players { get; set; }
+
+        public List<Card> Deck { get; set; }
+
+        public List<Card> DiscardPile { get; set; }
+
+        public CardColor CurrentColor { get; set; }
+
+        public IPlayer CurrentPlayer { get; set; }
+
+        public PlayDirection CurrentDirection { get; set; }
+
+        public object Clone()
+        {
+            return new GameData
+            {
+                Players = Players.Select(p => p.Clone()).ToList(),
+                Deck = Deck.Select(c => (Card)c.Clone()).ToList(),
+                DiscardPile = DiscardPile.Select(c => (Card)c.Clone()).ToList(),
+                CurrentColor = CurrentColor,
+                CurrentDirection = CurrentDirection
+            };
+        }
+    }
+    #endregion
+
     public class Game : IDisposable
     {
         #region Fields
-        private IGame _ui;
+        private readonly IGame _ui;
 
         private BackgroundWorker _worker;
+
         private bool _stop;
 
         private int _cardsToDraw;
@@ -48,23 +87,17 @@ namespace ClassicUno.Classes.Logic
 
         private static readonly Random Rnd = new Random();
 
-        public bool GameRunning { get; set; }
-        
-        public List<IPlayer> Players { get; set; }
+        private GameData _restart;
 
-        public List<Card> Deck { get; set; }
+        public GameData GameData;
 
-        public List<Card> DiscardPile { get; set; }
-
-        public CardColor CurrentColor { get; set; }
-
-        public IPlayer CurrentPlayer { get; set; }
+        public GameState GameState { get; set; }
 
         public Card HighlightedCard { get; set; }
 
         public Card SelectedCard { get; set; }
 
-        public PlayDirection CurrentDirection { get; set; }
+        public int CurrentTime { get; set; }
         #endregion
 
         #region Constructor
@@ -72,13 +105,14 @@ namespace ClassicUno.Classes.Logic
         {
             _ui = ui;
 
+            GameData = new GameData();
             _waitToStart = true;
 
-            Players = new List<IPlayer>();
-            Deck = new List<Card>();
-            DiscardPile = new List<Card>();
+            GameData.Players = new List<IPlayer>();
+            GameData.Deck = new List<Card>();
+            GameData.DiscardPile = new List<Card>();
 
-            CurrentDirection = PlayDirection.Clockwise;
+            GameData.CurrentDirection = PlayDirection.Clockwise;
 
             BuildDeck();
             CreatePlayers(data);
@@ -99,29 +133,44 @@ namespace ClassicUno.Classes.Logic
             _worker?.Dispose();
 
             /* Remove handlers */
-            foreach (var p in Players)
-            {
-                p.PlayerDraw -= PlayerDraw;
-                p.PlayerChoosesColor -= PlayerChoosesColor;
-                p.PlayerPlaysCard -= PlayerPlaysCard;
-                p.PlayerPass -= PlayerPasses;
-                p.PlayerBeginTurn -= PlayerBeginTurn;
-                p.PlayerEndTurn -= PlayerEndTurn;
-            }
+            RemovePlayerCallbacks();
         }
         #endregion
 
         #region Public methods
+
+        public void Restart()
+        {
+            RemovePlayerCallbacks();
+            GameData = (GameData) _restart.Clone();
+            AddPlayerCallbacks();
+
+            GameState = GameState.Running;
+
+            CurrentTime = 0;
+            _waitToStart = true;
+
+            var card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
+            GameData.CurrentPlayer = GameData.Players[0];
+
+            if (card.Type != CardType.Wild)
+            {
+                GameData.CurrentColor = card.Color;
+            }
+
+            GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
+        }
+
         public void HumanDrawCard()
         {
-            if (!(CurrentPlayer is HumanPlayer))
+            if (!(GameData.CurrentPlayer is HumanPlayer))
             {
                 /* Not your turn */
                 return;
             }
 
             var c = Draw();
-            CurrentPlayer.DrawCard(c);
+            GameData.CurrentPlayer.DrawCard(c);
             _ui.EnableDraw(false);
             _ui.EnablePass(true);
             _ui.Invalidate();
@@ -129,27 +178,27 @@ namespace ClassicUno.Classes.Logic
 
         public void HumanPass()
         {
-            if (!(CurrentPlayer is HumanPlayer))
+            if (!(GameData.CurrentPlayer is HumanPlayer))
             {
                 /* Not your turn */
                 return;
             }
-            CurrentPlayer.Pass();
-            CurrentPlayer.EndTurn();
+            GameData.CurrentPlayer.Pass();
+            GameData.CurrentPlayer.EndTurn();
         }
 
         public void HumanPlaysCard()
         {
-            if (!(CurrentPlayer is HumanPlayer))
+            if (!(GameData.CurrentPlayer is HumanPlayer))
             {
                 /* Not your turn */
                 return;
             }
             /* Now, we evaluate the selected card can even be played */
-            if (Validation.IsCardPlayable(DiscardPile[DiscardPile.Count - 1], SelectedCard, CurrentColor, CurrentPlayer.Cards))
+            if (Validation.IsCardPlayable(GameData.DiscardPile[GameData.DiscardPile.Count - 1], SelectedCard, GameData.CurrentColor, GameData.CurrentPlayer.Cards))
             {
                 /* Play the card */
-                CurrentPlayer.PlayCard(SelectedCard);
+                GameData.CurrentPlayer.PlayCard(SelectedCard);
             }
             else
             {
@@ -164,7 +213,7 @@ namespace ClassicUno.Classes.Logic
         public void PlayerChoosesColor(IPlayer player, CardColor color)
         {
             /* Change color */
-            CurrentColor = color;
+            GameData.CurrentColor = color;
             _ui.UpdateStatus(_gameText);
             _ui.Invalidate();
 
@@ -192,11 +241,11 @@ namespace ClassicUno.Classes.Logic
         {
             /* Here is the logic for most of the game play. Player chooses a card in their hand, it goes to the discard pile and card is evaluated here
              * to determine coarse of action. */
-            CurrentColor = card.Color;
+            GameData.CurrentColor = card.Color;
 
             /* Set the angle for drawing on the discard pile */
             card.DrawAngle = (float)(Rnd.NextDouble() * 10.0 - 5.0);
-            DiscardPile.Add(card);
+            GameData.DiscardPile.Add(card);
 
             _ui.SoundEffectRequest(SoundType.Drop);
             _ui.Invalidate();
@@ -208,7 +257,7 @@ namespace ClassicUno.Classes.Logic
                 _ui.VoiceRequest(VoiceType.Uno, player);
             }
 
-            var nextPlayer = GetNextPlayer(player, CurrentDirection);
+            var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
 
             _gameText = GetGameText(player, nextPlayer, card);
             _ui.UpdateStatus(_gameText);
@@ -216,7 +265,7 @@ namespace ClassicUno.Classes.Logic
             switch (card.Type)
             {
                 case CardType.Wild:
-                    if (CurrentPlayer is HumanPlayer)
+                    if (GameData.CurrentPlayer is HumanPlayer)
                     {
                         /* Human played the card */
                         _ui.EnableDraw(false);
@@ -234,7 +283,7 @@ namespace ClassicUno.Classes.Logic
 
                 case CardType.Reverse:
                     /* Change direction */
-                    CurrentDirection = CurrentDirection == PlayDirection.Clockwise
+                    GameData.CurrentDirection = GameData.CurrentDirection == PlayDirection.Clockwise
                         ? PlayDirection.AntiClockwise
                         : PlayDirection.Clockwise;
                     break;
@@ -279,11 +328,11 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
             /* Evaluted top card on discard pile */
-            var c = DiscardPile[DiscardPile.Count - 1];
+            var c = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
             if (_waitToStart)
             {
                 _waitToStart = false;
-                CurrentColor = c.Color;
+                GameData.CurrentColor = c.Color;
 
                 _gameText = "Round started!";
                 _ui.UpdateStatus(_gameText);
@@ -302,7 +351,7 @@ namespace ClassicUno.Classes.Logic
 
                     case CardType.Reverse:
                         /* Change direction */
-                        CurrentDirection = CurrentDirection == PlayDirection.Clockwise
+                        GameData.CurrentDirection = GameData.CurrentDirection == PlayDirection.Clockwise
                             ? PlayDirection.AntiClockwise
                             : PlayDirection.Clockwise;
                         break;
@@ -316,7 +365,7 @@ namespace ClassicUno.Classes.Logic
 
             _ui.ShowButtons(true);
 
-            if (CurrentColor == CardColor.None && c.Type == CardType.Wild)
+            if (GameData.CurrentColor == CardColor.None && c.Type == CardType.Wild)
             {
                 /* Human needs to choose a color */
                 _ui.ShowColorButtons(true);
@@ -347,7 +396,7 @@ namespace ClassicUno.Classes.Logic
             if (player.Cards.Count == 0)
             {
                 /* Check if they have no cards, then they've won */
-                GameRunning = false;
+                GameState = GameState.Stopped;
 
                 _gameText = $"Game over! {player} won!";
                 _ui.UpdateStatus(_gameText);
@@ -356,18 +405,18 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
 
-            var card = DiscardPile[DiscardPile.Count - 1];
+            var card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
             /* If there are only two players, and last played card is a reverse, this acts as a skip as well - stay on same player */
-            if (Players.Count == 2 && card.Type == CardType.Reverse && !player.HasPassed)
+            if (GameData.Players.Count == 2 && card.Type == CardType.Reverse && !player.HasPassed)
             {
                 /* Added "HasPassed", or else this gets stuck in a loop (on passing) until the computer draws a card it can use... */
-                player.BeginTurn(card, CurrentColor);
+                player.BeginTurn(card, GameData.CurrentColor);
                 _ui.Invalidate();
                 return;
             }
 
-            CurrentPlayer = GetNextPlayer(player, CurrentDirection);
-            CurrentPlayer.BeginTurn(card, CurrentColor);
+            GameData.CurrentPlayer = GetNextPlayer(player, GameData.CurrentDirection);
+            GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
 
             _ui.Invalidate();
         }
@@ -429,7 +478,7 @@ namespace ClassicUno.Classes.Logic
                                         card = color == 0
                                             ? new Card {Color = CardColor.None, Type = CardType.Wild}
                                             : new Card {Color = CardColor.None, Type = CardType.DrawFour};
-                                        Deck.Add(card);
+                                        GameData.Deck.Add(card);
                                     }
                                     continue;
                                 }
@@ -453,15 +502,15 @@ namespace ClassicUno.Classes.Logic
                         /* Add card to deck */
                         if (card != null)
                         {
-                            Deck.Add(card);
+                            GameData.Deck.Add(card);
                         }
                     }
                 }
             }
             /* Shuffle the deck - sanity check it is greater than 0, which it should be... */
-            if (Deck.Count > 0)
+            if (GameData.Deck.Count > 0)
             {
-                Deck.Shuffle();
+                GameData.Deck.Shuffle();
             }
         }
         #endregion
@@ -470,7 +519,7 @@ namespace ClassicUno.Classes.Logic
         private void CreatePlayers(GameOptionData data)
         {
             /* Add players: min 2 max 4. First add the human player */
-            Players.Add(new HumanPlayer
+            GameData.Players.Add(new HumanPlayer
             {
                 NameData = data.NameData, VoiceIndex = AudioManager.GetRandomVoice(data.NameData.Gender), AudioPan = 50
             });
@@ -486,19 +535,11 @@ namespace ClassicUno.Classes.Logic
                     VoiceIndex = AudioManager.GetRandomVoice(name.Gender),
                     AudioPan = panValues[players] /* Give the player's voice a slight pan left or right depending on position */
                 };
-                Players.Add(player);
+                GameData.Players.Add(player);
             }
 
             /* Add callbacks */
-            foreach (var p in Players)
-            {
-                p.PlayerDraw += PlayerDraw;
-                p.PlayerChoosesColor += PlayerChoosesColor;
-                p.PlayerPlaysCard += PlayerPlaysCard;
-                p.PlayerPass += PlayerPasses;
-                p.PlayerBeginTurn += PlayerBeginTurn;
-                p.PlayerEndTurn += PlayerEndTurn;
-            }
+            AddPlayerCallbacks();
         }
         #endregion
         #endregion
@@ -506,7 +547,7 @@ namespace ClassicUno.Classes.Logic
         #region Deal
         private void BeginDeal()
         {
-            GameRunning = true;
+            GameState = GameState.Dealing;
 
             _worker = new BackgroundWorker {WorkerSupportsCancellation = true};
             _worker.DoWork += DealWorkerCallback;
@@ -529,15 +570,15 @@ namespace ClassicUno.Classes.Logic
                 {
                     return;
                 }
-                foreach (var p in Players)
+                foreach (var p in GameData.Players)
                 {
                     if (_stop)
                     {
                         return;
                     }
-                    var card = Deck[0];
+                    var card = GameData.Deck[0];
                     p.Cards.Add(card);
-                    Deck.RemoveAt(0);
+                    GameData.Deck.RemoveAt(0);
                     /* Play sound and update UI */
                     _ui.SoundEffectRequest(SoundType.Deal);
                     _ui.Invalidate();
@@ -546,22 +587,22 @@ namespace ClassicUno.Classes.Logic
                 }
             }
             /* Top card */
-            var topCard = Deck[0];
-            Deck.RemoveAt(0);
+            var topCard = GameData.Deck[0];
+            GameData.Deck.RemoveAt(0);
             /* We make sure the top card is not a draw four */
             Card startingCard;
             if (topCard.Type == CardType.DrawFour)
             {
                 /* Use LINQ to find the first card that is NOT a Wild Draw Four */
-                startingCard = Deck.FirstOrDefault(c => c.Type != CardType.DrawFour);
+                startingCard = GameData.Deck.FirstOrDefault(c => c.Type != CardType.DrawFour);
                 if (startingCard != null)
                 {
                     /* Remove that specific card from the deck directly */
-                    Deck.Remove(startingCard);
+                    GameData.Deck.Remove(startingCard);
                     /* Put the original card back at the top */
-                    Deck.Add(topCard);
+                    GameData.Deck.Add(topCard);
                     /* Reshuffle */
-                    Deck.Shuffle();
+                    GameData.Deck.Shuffle();
                 }
                 else
                 {
@@ -576,7 +617,7 @@ namespace ClassicUno.Classes.Logic
             }
 
             startingCard.DrawAngle = (float)(Rnd.NextDouble() * 10.0 - 5.0);
-            DiscardPile.Add(startingCard);
+            GameData.DiscardPile.Add(startingCard);
 
             Thread.Sleep(300);
         }
@@ -584,6 +625,7 @@ namespace ClassicUno.Classes.Logic
         private void DealEnded(object sender, RunWorkerCompletedEventArgs e)
         {
             /* Dealing ended - game came begin */
+            GameState = GameState.Running;
             _ui.SoundEffectRequest(SoundType.Drop);
 
             _worker.DoWork -= DealWorkerCallback;
@@ -592,15 +634,18 @@ namespace ClassicUno.Classes.Logic
             _worker = null;
 
             /*At some point I may add a bit of code to include who the dealer is and who the next player is; for now, we'll start with the human player */
-            var card = DiscardPile[DiscardPile.Count - 1];
-            CurrentPlayer = Players[0];
+            var card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
+            GameData.CurrentPlayer = GameData.Players[0];
 
             if (card.Type != CardType.Wild)
             {
-                CurrentColor = card.Color;
+                GameData.CurrentColor = card.Color;
             }
 
-            CurrentPlayer.BeginTurn(card, CurrentColor);
+            /* Store a restart game point */
+            _restart = (GameData)GameData.Clone();
+
+            GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
         }
         #endregion
 
@@ -661,35 +706,64 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region Private helpers
+        private void AddPlayerCallbacks()
+        {
+            /* Add callbacks */
+            foreach (var p in GameData.Players)
+            {
+                p.PlayerDraw += PlayerDraw;
+                p.PlayerChoosesColor += PlayerChoosesColor;
+                p.PlayerPlaysCard += PlayerPlaysCard;
+                p.PlayerPass += PlayerPasses;
+                p.PlayerBeginTurn += PlayerBeginTurn;
+                p.PlayerEndTurn += PlayerEndTurn;
+            }
+        }
+
+        private void RemovePlayerCallbacks()
+        {
+            /* Add callbacks */
+            foreach (var p in GameData.Players)
+            {
+                p.PlayerDraw -= PlayerDraw;
+                p.PlayerChoosesColor -= PlayerChoosesColor;
+                p.PlayerPlaysCard -= PlayerPlaysCard;
+                p.PlayerPass -= PlayerPasses;
+                p.PlayerBeginTurn -= PlayerBeginTurn;
+                p.PlayerEndTurn -= PlayerEndTurn;
+            }
+        }
+
         private IPlayer GetNextPlayer(IPlayer currentPlayer, PlayDirection direction)
         {
-            var index = Players.IndexOf(currentPlayer);
-            return Players[(index + (direction == PlayDirection.Clockwise ? 1 : -1) + Players.Count) % Players.Count];
+            var index = GameData.Players.IndexOf(currentPlayer);
+            return GameData.Players[(index + (direction == PlayDirection.Clockwise ? 1 : -1) + GameData.Players.Count) % GameData.Players.Count];
         }
 
         private Card Draw()
         {
             /* This method ensures during game play that once the deck get's down to one card, it is refreshed from the
              * discard pile and shuffled */
-            if (Deck.Count == 1)
+            if (GameData.Deck.Count == 1)
             {
                 /* Keep the top card */
-                var topCard = DiscardPile[DiscardPile.Count - 1];
-                DiscardPile.RemoveAt(DiscardPile.Count - 1);
+                var count = GameData.DiscardPile.Count - 1;
+                var topCard = GameData.DiscardPile[count];
+                GameData.DiscardPile.RemoveAt(count);
 
                 /* Copy the rest of the discard pile*/
-                Deck.AddRange(DiscardPile);
-                DiscardPile.Clear();
-                DiscardPile.Add(topCard);
+                GameData.Deck.AddRange(GameData.DiscardPile);
+                GameData.DiscardPile.Clear();
+                GameData.DiscardPile.Add(topCard);
 
-                Deck.Shuffle();
+                GameData.Deck.Shuffle();
             }
 
             _ui.SoundEffectRequest(SoundType.Draw);
             _ui.Invalidate();
 
-            var card = Deck[0];
-            Deck.RemoveAt(0);
+            var card = GameData.Deck[0];
+            GameData.Deck.RemoveAt(0);
             return card;
         }
 
@@ -737,7 +811,7 @@ namespace ClassicUno.Classes.Logic
         {
             var totalScore = 0;
 
-            foreach (var card in Players.Where(player => player.Cards != null).SelectMany(player => player.Cards.Where(card => card != null)))
+            foreach (var card in GameData.Players.Where(player => player.Cards != null).SelectMany(player => player.Cards.Where(card => card != null)))
             {
                 switch (card.Type)
                 {

@@ -55,6 +55,8 @@ namespace ClassicUno.Classes.Helpers.Management
         private static float _cardWidth;
         private static float _cardHeight;
 
+        private static readonly Color TextColor = Color.FromArgb(255, 225, 140);
+
         /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
         public static Bitmap CardBack { get; private set; }
         #endregion
@@ -162,12 +164,28 @@ namespace ClassicUno.Classes.Helpers.Management
                 return;
             }
 
-            var position = new PointF(clientRectangle.Width / 2f,
-                (clientRectangle.Height - _cardHeight * 2) / 2f);
+            var position = new PointF(clientRectangle.Width / 2f, (clientRectangle.Height - _cardHeight * 2) / 2f);
 
             DrawStatus(game, g, clientRectangle, position);
             DrawPlayerCards(game, g, clientRectangle);
             DrawPlayerNames(game, g, GetPlayerHandBounds(clientRectangle, _cardWidth, _cardHeight), clientRectangle);
+
+            if (game.GameState != GameState.Paused)
+            {
+                return;
+            }
+
+            const string text = "GAME PAUSED";
+            const int fontSize = 28;
+
+            SizeF size;
+            using (var font = new Font("Arial", fontSize, FontStyle.Bold))
+            {
+                size = g.MeasureString(text, font);
+            }
+
+            var bounds = new RectangleF(position.X - size.Width / 2f, clientRectangle.Height / 2f + size.Height, size.Width, size.Height);
+            g.DrawText(text, TextColor, bounds, StringAlignment.Center, fontSize);
         }
 
         #region Game status
@@ -178,7 +196,7 @@ namespace ClassicUno.Classes.Helpers.Management
             var cardsBottom = position.Y + _cardHeight;
 
             /* Direction image: preserve its original aspect ratio. Resource image is 64 pixels high. */
-            Image directionImage = game.CurrentDirection == PlayDirection.Clockwise
+            Image directionImage = game.GameData.CurrentDirection == PlayDirection.Clockwise
                 ? Resources.clockwise
                 : Resources.anticlockwise;
 
@@ -196,7 +214,7 @@ namespace ClassicUno.Classes.Helpers.Management
             g.DrawImage(directionImage, new RectangleF(directionX, directionY, directionWidth, directionHeight));
 
             /* Draw what the direction text is, either clockwise, or anti-clockwise */
-            g.DrawText(Utils.GetDescriptionFromEnumValue(game.CurrentDirection), Color.FromArgb(255, 225, 140),
+            g.DrawText(Utils.GetDescriptionFromEnumValue(game.GameData.CurrentDirection), TextColor,
                 new RectangleF(position.X - 100f, directionY + directionHeight, 200f, 28f), StringAlignment.Center);
 
             /* Orb at the bottom of the pick-up/discard cards. */
@@ -219,7 +237,7 @@ namespace ClassicUno.Classes.Helpers.Management
         private static void DrawPickupPile(Game game, Graphics g, Rectangle clientRectangle, PointF position)
         {
             /* Draw the pick-up pile - Get the center of the clientRectangle */
-            var totalCards = game.Deck.Count;
+            var totalCards = game.GameData.Deck.Count;
 
             if (totalCards == 0)
             {
@@ -244,7 +262,7 @@ namespace ClassicUno.Classes.Helpers.Management
             }
 
             /* Draw card count text under deck - not sure I like or want to keep this code... */
-            g.DrawText($"{game.Deck.Count} (108)", Color.FromArgb(255, 225, 140),
+            g.DrawText($"{game.GameData.Deck.Count} (108)", TextColor,
                 new RectangleF(position.X - 50f, position.Y + _cardHeight + 6f, 200f, 28f), StringAlignment.Center);
         }
         #endregion
@@ -254,14 +272,14 @@ namespace ClassicUno.Classes.Helpers.Management
         {
             /* When a wild card/wild draw four is the top card, after the color has been assigned - give the user
              * a visual cue/marker. */
-            if (game.CurrentColor == CardColor.None)
+            if (game.GameData.CurrentColor == CardColor.None)
             {
                 return;
             }
 
             Bitmap orb = null;
 
-            switch (game.CurrentColor)
+            switch (game.GameData.CurrentColor)
             {
                 case CardColor.Red:
                     orb = Resources.redOrb;
@@ -292,7 +310,7 @@ namespace ClassicUno.Classes.Helpers.Management
         #region Discard pile
         private static void DrawDiscardPile(Game game, Graphics g, Rectangle clientRectangle, PointF position)
         {
-            var count = game.DiscardPile.Count;
+            var count = game.GameData.DiscardPile.Count;
 
             if (count == 0)
             {
@@ -319,7 +337,7 @@ namespace ClassicUno.Classes.Helpers.Management
                     var y = clientRectangle.Top + position.Y - offset * 2
                             + _cardHeight / 2f;
 
-                    card = game.DiscardPile[cardIndex];
+                    card = game.GameData.DiscardPile[cardIndex];
 
                     DrawRotatedCard(g, CardBack, x, y, card.DrawAngle);
                 }
@@ -329,7 +347,7 @@ namespace ClassicUno.Classes.Helpers.Management
             var topCentreX = clientRectangle.Left + position.X + _cardWidth / 2f;
             var topCentreY = clientRectangle.Top + position.Y + _cardHeight / 2f;
 
-            card = game.DiscardPile[game.DiscardPile.Count - 1];
+            card = game.GameData.DiscardPile[game.GameData.DiscardPile.Count - 1];
             DrawRotatedCard(g, GetCardImage(card), topCentreX, topCentreY, card.DrawAngle);
         }
         #endregion
@@ -339,12 +357,12 @@ namespace ClassicUno.Classes.Helpers.Management
         {
             /* Clockwise: bottom, left, top, right. */
             var angle = 0;
-            foreach (var player in game.Players)
+            foreach (var player in game.GameData.Players)
             {
                 DrawPlayerHand(game, player, g, clientRectangle, angle);
                 /* If player count is greater than 2, we add 90 degrees; otherwise we just display the players
                  * top and bottom of the client rectangle. */
-                angle += game.Players.Count > 2 ? 90 : 180;
+                angle += game.GameData.Players.Count > 2 ? 90 : 180;
             }
         }
 
@@ -384,7 +402,7 @@ namespace ClassicUno.Classes.Helpers.Management
                 /* Show card back if player is not human (or show all card fronts if game over) */
                 var card = player.Cards[i];
                 var cardImage = GetCardImage(player.Cards[i]);
-                Image image = player is HumanPlayer ? cardImage : game.GameRunning ? CardBack : cardImage;
+                Image image = player is HumanPlayer ? cardImage : game.GameState != GameState.Stopped ? CardBack : cardImage;
 
                 /* Add a small - Y offset on a card being drawn if hovering over it (human player only) */
                 var selectedOffsetY = player.Cards[i] == game.SelectedCard ? 23f : 0f;
@@ -531,13 +549,13 @@ namespace ClassicUno.Classes.Helpers.Management
             /* Right name: immediately to the left of the right hand. */
             nameBounds[3] = new RectangleF(handBounds[3].Left - sideNameWidth - gap - 10f, handBounds[3].Top, sideNameWidth, nameHeight);
 
-            var playerCount = Math.Min(game.Players.Count, 4);
+            var playerCount = Math.Min(game.GameData.Players.Count, 4);
 
             for (var i = 0; i < playerCount; i++)
             {
                 var pos = playerCount == 2 && i == 1 ? 2 : i; /* If there's only two players, we draw them top and bottom of screen */
-                g.DrawText(game.Players[i].ToString(),
-                    game.CurrentPlayer == game.Players[i] ? Color.DeepSkyBlue : Color.FromArgb(255, 225, 140),
+                g.DrawText(game.GameData.Players[i].ToString(),
+                    game.GameData.CurrentPlayer == game.GameData.Players[i] ? Color.DeepSkyBlue : TextColor,
                     nameBounds[pos],
                     playerCount > 2
                         ? i == 1 ? StringAlignment.Near :

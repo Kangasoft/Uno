@@ -27,9 +27,9 @@ namespace ClassicUno.Classes.Helpers
         }
 
         /* Graphics extension */
-        public static void DrawText(this Graphics g, string text, Color color, RectangleF bounds, StringAlignment alignment)
+        public static void DrawText(this Graphics g, string text, Color color, RectangleF bounds, StringAlignment alignment, int fontSize = 14)
         {
-            using (var font = new Font("Arial", 14, FontStyle.Bold))
+            using (var font = new Font("Arial", fontSize, FontStyle.Bold))
             {
                 using (Brush shadowBrush = new SolidBrush(Color.Black))
                 {

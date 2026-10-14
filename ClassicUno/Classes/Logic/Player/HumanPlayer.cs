@@ -4,11 +4,11 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
 {
-    [Serializable]
     public class HumanPlayer : IPlayer
     {
         #region Fields
@@ -80,6 +80,21 @@ namespace ClassicUno.Classes.Logic.Player
         public override string ToString()
         {
             return NameData.Name;
+        }
+        #endregion
+
+        #region Clone
+        public IPlayer Clone()
+        {
+            return new HumanPlayer
+            {
+                NameData = NameData,
+                VoiceIndex = VoiceIndex,
+                AudioPan = AudioPan,
+                Cards = Cards.Select(c => (Card)c.Clone()).ToList(),
+                IsSkipped = IsSkipped,
+                HasPassed = HasPassed
+            };
         }
         #endregion
     }

@@ -5,7 +5,6 @@
 using System;
 using System.Drawing;
 using System.Xml.Serialization;
-using ClassicUno.Classes.Serialization;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Settings
@@ -13,48 +12,37 @@ namespace ClassicUno.Classes.Settings
     [Serializable, XmlRoot("settings")]
     public sealed class Settings
     {
-        [XmlAttribute("location")]
-        public string LocationString
-        {
-            get => XmlFormatting.WritePointFormat(Location);
-            set => Location = XmlFormatting.ParsePointFormat(value);
-        }
+        [XmlElement("game")]
+        public GameOptionData Game = new GameOptionData();
 
-        [XmlAttribute("size")]
-        public string SizeString
-        {
-            get => XmlFormatting.WriteSizeFormat(Size);
-            set => Size = XmlFormatting.ParseSizeFormat(value);
-        }
+        [XmlElement("general")]
+        public GeneralData General = new GeneralData();
 
-        [XmlAttribute("max")]
-        public bool Maximized { get; set; }
-
-        [XmlIgnore]
-        public Point Location { get; set; }
-
-        [XmlIgnore]
-        public Size Size { get; set; }
-
-        [XmlElement("options")]
-        public GameOptionData Options = new GameOptionData();
+        [XmlElement("sound")]
+        public SoundData Sound = new SoundData();
 
         [XmlElement("statistics")]
-        public Statistics Statistics = new Statistics();
+        public StatisticsData Statistics = new StatisticsData();
 
         /* Constructor */
         public Settings()
         {
             /* Set default settings */
-            Size = new Size(720, 470);
+            Game.NumberOfPlayers = 2;
 
-            Options.NumberOfPlayers = 2;
-            Options.Sounds.EnableVoice = true;
-            Options.Sounds.VoiceVolume = 90;
-            Options.Sounds.EnableEffects = true;
-            Options.Sounds.EffectsVolume = 90;
-            Options.Sounds.EnableMusic = true;
-            Options.Sounds.MusicVolume = 70;
+            /* Window defaults */
+            General.Window.Size = new Size(720, 470);
+
+            General.Confirm.OnExit = true;
+            General.Confirm.OnNew = true;
+
+            /* Sound options */
+            Sound.EnableVoice = true;
+            Sound.VoiceVolume = 90;
+            Sound.EnableEffects = true;
+            Sound.EffectsVolume = 90;
+            Sound.EnableMusic = true;
+            Sound.MusicVolume = 70;
         }
     }
 }

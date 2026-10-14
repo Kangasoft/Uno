@@ -24,7 +24,7 @@ namespace ClassicUno.Forms
             ShowIcon = false;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            Text = @"About Classic UNO!";
+            Text = $@"About {Resources.uno}";
             AcceptButton = _btnOk;
 
             /* Controls */
@@ -34,7 +34,6 @@ namespace ClassicUno.Forms
                 BackgroundImage = Resources.unoIcon,
                 BackgroundImageLayout = ImageLayout.Center,
                 Location = new Point(14, 14),
-                Name = "pnlIcon",
                 Size = new Size(64, 64),
                 TabIndex = 0
             };
@@ -47,7 +46,7 @@ namespace ClassicUno.Forms
                 Location = new Point(84, 14),
                 Size = new Size(153, 32),
                 TabIndex = 2,
-                Text = @"Classic UNO!"
+                Text = Resources.uno
             };
 
             var lblInfo = new Label

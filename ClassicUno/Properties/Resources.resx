@@ -171,4 +171,7 @@ Written by: Jason James Newland
 Copyright ©2026 - Kangasoft Software
 All rights reserved.</value>
   </data>
+  <data name="uno" xml:space="preserve">
+    <value>Classic UNO! 2026</value>
+  </data>
 </root>

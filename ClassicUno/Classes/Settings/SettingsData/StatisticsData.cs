@@ -8,7 +8,7 @@ using System.Xml.Serialization;
 namespace ClassicUno.Classes.Settings.SettingsData
 {
     [Serializable]
-    public class Statistics
+    public class StatisticsData
     {
         [XmlAttribute("gamesPlayed")]
         public int GamesPlayed { get; set; }

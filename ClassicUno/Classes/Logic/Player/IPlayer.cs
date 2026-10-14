@@ -38,5 +38,7 @@ namespace ClassicUno.Classes.Logic.Player
         void Pass();
 
         void EndTurn();
+
+        IPlayer Clone();
     }
 }

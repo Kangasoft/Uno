@@ -14,6 +14,7 @@ using ClassicUno.Classes.Helpers.UI;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Controls;
+using ClassicUno.Properties;
 
 namespace ClassicUno.Forms
 {
@@ -24,7 +25,6 @@ namespace ClassicUno.Forms
         private readonly Timer _tmrNew;
 
         private readonly Timer _time;
-        private int _currentTime;
 
         private readonly UiSynchronize _sync;
         #endregion
@@ -40,13 +40,21 @@ namespace ClassicUno.Forms
             /* Get version information */
             var version = assembly.GetName().Version;
 
-            Text = $@"Classic UNO! 2026 - v{version.Major}.{version.Minor}";
+            Text = $@"{Resources.uno} - v{version.Major}.{version.Minor}";
             Icon = Icon.ExtractAssociatedIcon(assembly.Location);
 
             foreach (var btn in tblButtons.Controls.Cast<Button>().Where(btn => btn != null))
             {
                 btn.Click += OnButtonClick;
             }
+
+            var renderer = new UnoToolStripRenderer();
+
+            mnuMain.RenderMode = ToolStripRenderMode.Professional;
+            mnuMain.Renderer = renderer;
+
+            statusBar.RenderMode = ToolStripRenderMode.Professional;
+            statusBar.Renderer = renderer;
 
             _tmrNew = new Timer {Interval = 10, Enabled = true};
             _tmrNew.Tick += ShowNewGameDialog;
@@ -59,6 +67,7 @@ namespace ClassicUno.Forms
             BuildMenuGame(mnuGame);
             BuildMenuOptions(mnuOptions);
 
+            mnuGame.DropDownOpening += OnMenuGameOpening;
             mnuOptions.DropDownOpening += OnMenuOptionsOpening;
 
             /* Help menu */
@@ -73,7 +82,7 @@ namespace ClassicUno.Forms
         protected override void OnLoad(EventArgs e)
         {
             /* Set window position and size */
-            var loc = SettingsManager.Settings.Location;
+            var loc = SettingsManager.Settings.General.Window.Location;
             if (loc == Point.Empty)
             {
                 /* Scale form to less than the screen width/height */
@@ -87,8 +96,8 @@ namespace ClassicUno.Forms
             else
             {
                 Location = loc;
-                Size = SettingsManager.Settings.Size;
-                if (SettingsManager.Settings.Maximized)
+                Size = SettingsManager.Settings.General.Window.Size;
+                if (SettingsManager.Settings.General.Window.Maximized)
                 {
                     WindowState = FormWindowState.Maximized;
                 }
@@ -111,22 +120,28 @@ namespace ClassicUno.Forms
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (_currentGame?.GameRunning == true)
+            if (_currentGame?.GameState == GameState.Running)
             {
-                if (MessageBox.Show(this, @"Are you sure you want to resign this current game?", @"Classic UNO! 2026",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                if (SettingsManager.Settings.General.Confirm.OnExit)
                 {
-                    e.Cancel = true;
-                    return;
+                    if (MessageBox.Show(this, @"Are you sure you want to resign this current game?",
+                        Resources.uno,
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
                 }
             }
+            
             if (WindowState == FormWindowState.Normal)
             {
-                SettingsManager.Settings.Location = Location;
-                SettingsManager.Settings.Size = Size;
+                SettingsManager.Settings.General.Window.Location = Location;
+                SettingsManager.Settings.General.Window.Size = Size;
             }
-            SettingsManager.Settings.Maximized = WindowState == FormWindowState.Maximized;
+            SettingsManager.Settings.General.Window.Maximized = WindowState == FormWindowState.Maximized;
             SettingsManager.Save();
+
             base.OnFormClosing(e);
         }
 
@@ -142,15 +157,29 @@ namespace ClassicUno.Forms
         {
             m.DropDownItems.Clear();
 
+            var paused = _currentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game";
+
             m.DropDownItems.AddRange(
                 new ToolStripItem[]
                 {
-                    MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true,  OnMenuClick),
-                    new ToolStripSeparator(), 
+                    MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, OnMenuClick),
+                    new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.None,
+                        _currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused,
+                        OnMenuClick),
+                    MenuHelper.AddMenuItem(_currentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
+                        "PAUSE", Keys.None, _currentGame != null && _currentGame?.GameState != GameState.Dealing,
+                        OnMenuClick),
+                    new ToolStripSeparator(),
                     MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
-                    new ToolStripSeparator(), 
-                    MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true,  OnMenuClick)
+                    new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, OnMenuClick)
                 });
+        }
+
+        private void OnMenuGameOpening(object sender, EventArgs e)
+        {
+            BuildMenuGame(mnuGame);
         }
 
         private void OnMenuOptionsOpening(object sender, EventArgs e)
@@ -166,11 +195,11 @@ namespace ClassicUno.Forms
                 new ToolStripItem[]
                 {
                     MenuHelper.AddMenuItem("Enable voice", "VOICE", Keys.Alt | Keys.V, true,
-                        SettingsManager.Settings.Options.Sounds.EnableVoice, null, OnMenuClick),
+                        SettingsManager.Settings.Sound.EnableVoice, null, OnMenuClick),
                     MenuHelper.AddMenuItem("Enable card sound effects", "SFX", Keys.Alt | Keys.E, true,
-                        SettingsManager.Settings.Options.Sounds.EnableEffects, null, OnMenuClick),
+                        SettingsManager.Settings.Sound.EnableEffects, null, OnMenuClick),
                     MenuHelper.AddMenuItem("Enable music", "MUSIC", Keys.Alt | Keys.M, true,
-                        SettingsManager.Settings.Options.Sounds.EnableMusic, null, OnMenuClick),
+                        SettingsManager.Settings.Sound.EnableMusic, null, OnMenuClick),
                     new ToolStripSeparator(),
                     MenuHelper.AddMenuItem("Options", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick),
                 });
@@ -183,6 +212,45 @@ namespace ClassicUno.Forms
             {
                 case "NEW":
                     NewGame();
+                    break;
+
+                case "RESTART":
+                    if (_currentGame != null)
+                    {
+                        if (_currentGame.GameState == GameState.Running || _currentGame.GameState == GameState.Paused)
+                        {
+                            if (MessageBox.Show(this,
+                                @"Are you sure you want to restart this game? All progress will be lost.",
+                                Resources.uno, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                            {
+                                if (_currentGame.GameState == GameState.Paused)
+                                {
+                                    AudioManager.ResumeMusic();
+                                }
+                                _currentGame.Restart();
+                                Invalidate();
+                            }
+                        }
+                    }
+                    break;
+
+                case "PAUSE":
+                    if (_currentGame != null)
+                    {
+                        switch (_currentGame.GameState)
+                        {
+                            case GameState.Running:
+                                _currentGame.GameState = GameState.Paused;
+                                AudioManager.PauseMusic();
+                                break;
+
+                            case GameState.Paused:
+                                _currentGame.GameState = GameState.Running;
+                                AudioManager.ResumeMusic();
+                                break;
+                        }
+                        Invalidate();
+                    }
                     break;
 
                 case "STATS":
@@ -201,18 +269,16 @@ namespace ClassicUno.Forms
                     break;
 
                 case "VOICE":
-                    SettingsManager.Settings.Options.Sounds.EnableVoice =
-                        !SettingsManager.Settings.Options.Sounds.EnableVoice;
+                    SettingsManager.Settings.Sound.EnableVoice = !SettingsManager.Settings.Sound.EnableVoice;
                     break;
 
                 case "SFX":
-                    SettingsManager.Settings.Options.Sounds.EnableEffects =
-                        !SettingsManager.Settings.Options.Sounds.EnableEffects;
+                    SettingsManager.Settings.Sound.EnableEffects = !SettingsManager.Settings.Sound.EnableEffects;
                     break;
 
                 case "MUSIC":
-                    var music = !SettingsManager.Settings.Options.Sounds.EnableMusic;
-                    SettingsManager.Settings.Options.Sounds.EnableMusic = music;
+                    var music = !SettingsManager.Settings.Sound.EnableMusic;
+                    SettingsManager.Settings.Sound.EnableMusic = music;
                     switch (music)
                     {
                         case true:
@@ -271,19 +337,19 @@ namespace ClassicUno.Forms
                     break;
 
                 case "RED":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Red);
+                    _currentGame.PlayerChoosesColor(_currentGame.GameData.CurrentPlayer, CardColor.Red);
                     break;
 
                 case "BLUE":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Blue);
+                    _currentGame.PlayerChoosesColor(_currentGame.GameData.CurrentPlayer, CardColor.Blue);
                     break;
 
                 case "GREEN":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Green);
+                    _currentGame.PlayerChoosesColor(_currentGame.GameData.CurrentPlayer, CardColor.Green);
                     break;
 
                 case "YELLOW":
-                    _currentGame.PlayerChoosesColor(_currentGame.CurrentPlayer, CardColor.Yellow);
+                    _currentGame.PlayerChoosesColor(_currentGame.GameData.CurrentPlayer, CardColor.Yellow);
                     break;
             }
         }
@@ -293,7 +359,13 @@ namespace ClassicUno.Forms
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (!(_currentGame?.CurrentPlayer is HumanPlayer))
+            if (_currentGame?.GameState == GameState.Paused)
+            {
+                base.OnMouseMove(e);
+                return;
+            }
+
+            if (!(_currentGame?.GameData.CurrentPlayer is HumanPlayer))
             {
                 base.OnMouseMove(e);
                 return;
@@ -301,7 +373,7 @@ namespace ClassicUno.Forms
 
             if (_currentGame != null)
             {
-                var c = HitTest(_currentGame.Players[0].Cards, e.Location);
+                var c = HitTest(_currentGame.GameData.Players[0].Cards, e.Location);
                 _currentGame.HighlightedCard = c;
                 Invalidate();
             }
@@ -311,10 +383,16 @@ namespace ClassicUno.Forms
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if (_currentGame?.CurrentPlayer is HumanPlayer && e.Button == MouseButtons.Left)
+            if (_currentGame?.GameState == GameState.Paused)
+            {
+                base.OnMouseDown(e);
+                return;
+            }
+
+            if (_currentGame?.GameData.CurrentPlayer is HumanPlayer && e.Button == MouseButtons.Left)
             {
                 /* Your turn */
-                var c = HitTest(_currentGame.Players[0].Cards, e.Location);
+                var c = HitTest(_currentGame.GameData.Players[0].Cards, e.Location);
                 _currentGame.SelectedCard = c;
                 Invalidate();
             }
@@ -325,7 +403,13 @@ namespace ClassicUno.Forms
 
         protected override void OnMouseDoubleClick(MouseEventArgs e)
         {
-            if (!(_currentGame?.CurrentPlayer is HumanPlayer))
+            if (_currentGame?.GameState == GameState.Paused)
+            {
+                base.OnMouseDoubleClick(e);
+                return;
+            }
+
+            if (!(_currentGame?.GameData.CurrentPlayer is HumanPlayer))
             {
                 /* Do nothing as it's not your turn */
                 base.OnMouseDoubleClick(e);
@@ -354,22 +438,23 @@ namespace ClassicUno.Forms
 
         private void TimerCount(object sender, EventArgs e)
         {
-            if (_currentGame == null)
+            if (_currentGame?.GameState != GameState.Running)
             {
                 return;
             }
-            _currentTime++;
-            slTime.Text = $@"Time: {Utils.FormatTime(_currentTime)}";
+
+            _currentGame.CurrentTime++;
+            slTime.Text = $@"Time: {Utils.FormatTime(_currentGame.CurrentTime)}";
         }
         #endregion
 
         #region Private methods
         private void NewGame()
         {
-            if (_currentGame?.GameRunning == true)
+            if (_currentGame?.GameState == GameState.Running && SettingsManager.Settings.General.Confirm.OnNew)
             {
-                if (MessageBox.Show(this, @"Are you sure you want to resign this current game?", @"Classic UNO! 2026",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.OK)
+                if (MessageBox.Show(this, @"Are you sure you want to resign this current game?", Resources.uno,
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
                 {
                     return;
                 }
@@ -390,7 +475,7 @@ namespace ClassicUno.Forms
 
             slTime.Text = @"Time: 0s";
 
-            var data = SettingsManager.Settings.Options;
+            var data = SettingsManager.Settings.Game;
             var form = new FrmNew
             {
                 NameData = data.NameData,
@@ -408,7 +493,6 @@ namespace ClassicUno.Forms
             _currentGame = new Game(this, data);
             AudioManager.PlayEffect(SoundType.Shuffle);
 
-            _currentTime = 0;
             _time.Enabled = true;
             slTime.Visible = true;
 
@@ -462,21 +546,23 @@ namespace ClassicUno.Forms
                 SettingsManager.Settings.Statistics.CurrentStreak = 0;
             }
 
+            var time = _currentGame.CurrentTime;
+
             SettingsManager.Settings.Statistics.ShortestGame =
                 SettingsManager.Settings.Statistics.ShortestGame == 0
-                    ? _currentTime
-                    : Math.Min(SettingsManager.Settings.Statistics.ShortestGame, _currentTime);
+                    ? time
+                    : Math.Min(SettingsManager.Settings.Statistics.ShortestGame, time);
 
             SettingsManager.Settings.Statistics.LongestGame =
-                Math.Max(SettingsManager.Settings.Statistics.LongestGame, _currentTime);
+                Math.Max(SettingsManager.Settings.Statistics.LongestGame, time);
 
-            SettingsManager.Settings.Statistics.TotalGameTime += _currentTime;
+            SettingsManager.Settings.Statistics.TotalGameTime += time;
 
             var msg = player is HumanPlayer
                 ? $"You have won and earned {score} points!"
                 : $"{player} has won!";
 
-            if (MessageBox.Show(this, $@"{msg} Play again?", @"Classic UNO! 2026", MessageBoxButtons.YesNo,
+            if (MessageBox.Show(this, $@"{msg} Play again?", Resources.uno, MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 NewGame();

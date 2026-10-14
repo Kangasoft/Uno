@@ -76,9 +76,9 @@ namespace ClassicUno.Classes.Helpers.Management
                     LoadSound(Utils.MainDir(@"\data\sound\card-error.wav"), SoundType.Error)
                 });
 
-            SetVoiceVolume(SettingsManager.Settings.Options.Sounds.VoiceVolume);
-            SetEffectsVolume(SettingsManager.Settings.Options.Sounds.EffectsVolume);
-            SetMusicVolume(SettingsManager.Settings.Options.Sounds.MusicVolume);
+            SetVoiceVolume(SettingsManager.Settings.Sound.VoiceVolume);
+            SetEffectsVolume(SettingsManager.Settings.Sound.EffectsVolume);
+            SetMusicVolume(SettingsManager.Settings.Sound.MusicVolume);
 
             var voice = new DirectoryInfo(Utils.MainDir(@"data\voice\", false));
             voiceSearch.BeginSearch(voice, "*.wav", "*", false);
@@ -129,7 +129,7 @@ namespace ClassicUno.Classes.Helpers.Management
 
         public static void PlayVoice(VoiceType type, IPlayer player)
         {
-            if (!SettingsManager.Settings.Options.Sounds.EnableVoice)
+            if (!SettingsManager.Settings.Sound.EnableVoice)
             {
                 return;
             }
@@ -147,7 +147,7 @@ namespace ClassicUno.Classes.Helpers.Management
 
         public static void PlayEffect(SoundType type)
         {
-            if (!SettingsManager.Settings.Options.Sounds.EnableEffects)
+            if (!SettingsManager.Settings.Sound.EnableEffects)
             {
                 return;
             }
@@ -160,7 +160,7 @@ namespace ClassicUno.Classes.Helpers.Management
 
         public static void PlayMusic(bool next = false)
         {
-            if (!SettingsManager.Settings.Options.Sounds.EnableMusic || Music.Count == 0)
+            if (!SettingsManager.Settings.Sound.EnableMusic || Music.Count == 0)
             {
                 return;
             }

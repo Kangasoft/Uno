@@ -11,7 +11,6 @@ using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
 {
-    [Serializable]
     public class ComputerPlayer : IPlayer
     {
         #region Fields
@@ -236,6 +235,21 @@ namespace ClassicUno.Classes.Logic.Player
         public override string ToString()
         {
             return NameData.Name;
+        }
+        #endregion
+
+        #region Clone
+        public IPlayer Clone()
+        {
+            return new ComputerPlayer
+            {
+                NameData = NameData,
+                VoiceIndex = VoiceIndex,
+                AudioPan = AudioPan,
+                Cards = Cards.Select(c => (Card)c.Clone()).ToList(),
+                IsSkipped = IsSkipped,
+                HasPassed = HasPassed
+            };
         }
         #endregion
     }

@@ -12,12 +12,12 @@ namespace ClassicUno.Forms
 {
     public sealed class FrmStats : FormEx
     {
-        private Statistics _stats;
+        private StatisticsData _stats;
 
         private readonly GameStatistics _ctlStats;
         private readonly Button _btnClose;
 
-        public Statistics Statistics
+        public StatisticsData Statistics
         {
             get => _stats;
             set
@@ -92,7 +92,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            _stats = new Statistics();
+            _stats = new StatisticsData();
             _ctlStats.Statistics = _stats;
         }
     }

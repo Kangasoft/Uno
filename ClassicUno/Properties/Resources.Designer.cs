@@ -205,6 +205,15 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Classic UNO! 2026.
+        /// </summary>
+        internal static string uno {
+            get {
+                return ResourceManager.GetString("uno", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap unoIcon {

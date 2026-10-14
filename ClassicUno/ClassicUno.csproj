@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Helpers\UI\UnoToolStripRenderer.cs" />
     <Compile Include="Classes\Logic\Card.cs" />
     <Compile Include="Classes\DirectSound\Core\Control.cs" />
     <Compile Include="Classes\DirectSound\Core\Core.cs" />
@@ -67,8 +68,9 @@
     <Compile Include="Classes\Logic\Validation.cs" />
     <Compile Include="Classes\Settings\Settings.cs" />
     <Compile Include="Classes\Settings\SettingsData\GameOptionData.cs" />
+    <Compile Include="Classes\Settings\SettingsData\GeneralData.cs" />
     <Compile Include="Classes\Settings\SettingsData\SoundData.cs" />
-    <Compile Include="Classes\Settings\SettingsData\Statistics.cs" />
+    <Compile Include="Classes\Settings\SettingsData\StatisticsData.cs" />
     <Compile Include="Controls\CustomButton.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -89,6 +91,18 @@
     </Compile>
     <Compile Include="Controls\GameStatistics.cs">
       <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Options\OptionsAudio.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Options\OptionsAudio.Designer.cs">
+      <DependentUpon>OptionsAudio.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\Options\OptionsGeneral.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\Options\OptionsGeneral.Designer.cs">
+      <DependentUpon>OptionsGeneral.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\VuMeterTrackBar.cs">
       <SubType>Component</SubType>
@@ -119,6 +133,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Controls\Options\OptionsAudio.resx">
+      <DependentUpon>OptionsAudio.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\Options\OptionsGeneral.resx">
+      <DependentUpon>OptionsGeneral.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmGame.resx">
       <DependentUpon>FrmGame.cs</DependentUpon>
     </EmbeddedResource>

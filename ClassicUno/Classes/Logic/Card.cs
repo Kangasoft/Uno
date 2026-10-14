@@ -8,7 +8,6 @@ using System.Drawing;
 
 namespace ClassicUno.Classes.Logic
 {
-    [Serializable]
     public enum CardColor
     {
         [Description("None")]
@@ -27,7 +26,6 @@ namespace ClassicUno.Classes.Logic
         Blue = 4
     }
 
-    [Serializable]
     public enum CardType
     {
         None = 0,
@@ -39,8 +37,7 @@ namespace ClassicUno.Classes.Logic
         Wild = 6
     }
 
-    [Serializable]
-    public class Card
+    public class Card : ICloneable
     {
         public CardType Type { get; set; }
 
@@ -51,5 +48,17 @@ namespace ClassicUno.Classes.Logic
         public RectangleF Region { get; set; }
 
         public float DrawAngle { get; set; }
+
+        public object Clone()
+        {
+            return new Card
+            {
+                Type = Type,
+                Color = Color,
+                Value = Value,
+                Region = Region,
+                DrawAngle = DrawAngle
+            };
+        }
     }
 }
