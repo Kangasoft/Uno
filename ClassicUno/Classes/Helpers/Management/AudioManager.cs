@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using ClassicUno.Classes.DirectSound;
@@ -15,7 +16,8 @@ namespace ClassicUno.Classes.Helpers.Management
     public enum VoiceType
     {
         Pass = 0,
-        Uno = 1
+        Uno = 1,
+        Test = 2
     }
 
     public enum SoundType
@@ -34,7 +36,7 @@ namespace ClassicUno.Classes.Helpers.Management
         public Sound Player { get; set; }
     }
 
-    internal class VoiceData
+    public class VoiceData
     {
         public int VoiceIndex { get; set; }
 
@@ -53,6 +55,11 @@ namespace ClassicUno.Classes.Helpers.Management
         private static readonly List<VoiceData> Voices = new List<VoiceData>();
         private static readonly List<AudioData> Sounds = new List<AudioData>();
         private static readonly List<string> Music = new List<string>();
+
+        public static Sound TestVoice { get; set; }
+
+        public static Sound TestFx { get; set; }
+
 
         private static int _voiceVolume;
         private static int _effectsVolume;
@@ -76,6 +83,20 @@ namespace ClassicUno.Classes.Helpers.Management
                     LoadSound(Utils.MainDir(@"\data\sound\card-error.wav"), SoundType.Error)
                 });
 
+            /* Set test voice */
+            TestVoice = new Sound
+            {
+                Clip = Utils.MainDir(@"data\voice\test-voice.wav", false),
+                Pan = 50
+            };
+
+            /* Set test FX */
+            TestFx = new Sound
+            {
+                Clip = Utils.MainDir(@"data\sound\test-fx.wav", false),
+                Pan = 50
+            };
+
             SetVoiceVolume(SettingsManager.Settings.Sound.VoiceVolume);
             SetEffectsVolume(SettingsManager.Settings.Sound.EffectsVolume);
             SetMusicVolume(SettingsManager.Settings.Sound.MusicVolume);
@@ -94,6 +115,8 @@ namespace ClassicUno.Classes.Helpers.Management
         public static void SetVoiceVolume(int volume)
         {
             _voiceVolume = volume;
+            TestVoice.Volume = volume;
+
             if (Voices.Count == 0)
             {
                 return;
@@ -107,6 +130,8 @@ namespace ClassicUno.Classes.Helpers.Management
         public static void SetEffectsVolume(int volume)
         {
             _effectsVolume = volume;
+            TestFx.Volume = volume;
+
             if (Sounds.Count == 0)
             {
                 return;
@@ -198,6 +223,7 @@ namespace ClassicUno.Classes.Helpers.Management
             /* Parse file name */
             var fileName = Path.GetFileNameWithoutExtension(file).ToUpper();
             var parts = fileName.Split(new[] {'-'}, StringSplitOptions.RemoveEmptyEntries);
+
             if (parts.Length < 3)
             {
                 return;

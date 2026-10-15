@@ -32,7 +32,11 @@ namespace ClassicUno.Controls.Options
             chkMusic.CheckedChanged += CheckStateChanged;
 
             tbVoice.ValueChanged += TrackBarValueChanged;
+            tbVoice.MouseUp += TrackBarMouseUp;
+
             tbSfx.ValueChanged += TrackBarValueChanged;
+            tbSfx.MouseUp += TrackBarMouseUp;
+
             tbMusic.ValueChanged += TrackBarValueChanged;
         }
 
@@ -94,6 +98,31 @@ namespace ClassicUno.Controls.Options
                 case "TBMUSIC":
                     _settingsData.MusicVolume = tb.Value;
                     AudioManager.SetMusicVolume(tb.Value);
+                    break;
+            }
+        }
+
+        private static void TrackBarMouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left)
+            {
+                return;
+            }
+
+            var tb = (VuMeterTrackBar)sender;
+            if (tb == null)
+            {
+                return;
+            }
+
+            switch (tb.Tag.ToString())
+            {
+                case "TBVOICE":
+                    AudioManager.TestVoice.PlayAsync();
+                    break;
+
+                case "TBSFX":
+                    AudioManager.TestFx.PlayAsync();
                     break;
             }
         }

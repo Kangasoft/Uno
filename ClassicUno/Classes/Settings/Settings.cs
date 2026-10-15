@@ -35,6 +35,7 @@ namespace ClassicUno.Classes.Settings
 
             General.Confirm.OnExit = true;
             General.Confirm.OnNew = true;
+            General.ShowStatus = true;
 
             /* Sound options */
             Sound.EnableVoice = true;

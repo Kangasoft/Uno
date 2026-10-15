@@ -178,6 +178,12 @@ All rights reserved.</value>
     <value>Are you sure you want to resign this current game?</value>
   </data>
   <data name="userPath" xml:space="preserve">
-    <value>\\KangaSoft\\Uno\\{0}</value>
+    <value>\KangaSoft\Uno\{0}</value>
+  </data>
+  <data name="animatedUno" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Images\animatedUno.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="gameLoad" xml:space="preserve">
+    <value>{0}. Restarting has been disabled.</value>
   </data>
 </root>

@@ -77,6 +77,16 @@ namespace ClassicUno.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap animatedUno {
+            get {
+                object obj = ResourceManager.GetObject("animatedUno", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap anticlockwise {
             get {
                 object obj = ResourceManager.GetObject("anticlockwise", resourceCulture);
@@ -194,6 +204,15 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0}. Restarting has been disabled..
+        /// </summary>
+        internal static string gameLoad {
+            get {
+                return ResourceManager.GetString("gameLoad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap greenOrb {
@@ -233,7 +252,7 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to \\KangaSoft\\Uno\\{0}.
+        ///   Looks up a localized string similar to \KangaSoft\Uno\{0}.
         /// </summary>
         internal static string userPath {
             get {

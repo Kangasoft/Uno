@@ -31,7 +31,7 @@ namespace ClassicUno.Forms
         private readonly UiSynchronize _sync;
 
         private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
-        private string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true);
+        private string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true); /* TODO */
         #endregion
 
         #region Constructor
@@ -60,6 +60,7 @@ namespace ClassicUno.Forms
 
             statusBar.RenderMode = ToolStripRenderMode.Professional;
             statusBar.Renderer = renderer;
+            statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
 
             _tmrNew = new Timer {Interval = 10, Enabled = true};
             _tmrNew.Tick += ShowNewGameDialog;
@@ -202,16 +203,28 @@ namespace ClassicUno.Forms
                 {
                     MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, OnMenuClick),
                     new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.None, restart, OnMenuClick),
-                    MenuHelper.AddMenuItem(_currentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
-                        "PAUSE", Keys.Control | Keys.P,
-                        _currentGame != null && _currentGame?.GameState != GameState.Dealing,
+                    MenuHelper.AddMenuItem("Load game", "LOAD", Keys.Control | Keys.O, true, OnMenuClick),
+                    MenuHelper.AddMenuItem("Save game", "SAVE", Keys.Control | Keys.S,
+                        _currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused,
                         OnMenuClick),
-                    new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
-                    new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, OnMenuClick)
+                    new ToolStripSeparator(), 
+                    MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.Control | Keys.R, restart, OnMenuClick),
                 });
+
+            var pause = MenuHelper.AddMenuItem(_currentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
+                "PAUSE", Keys.None,
+                _currentGame != null && _currentGame?.GameState != GameState.Dealing,
+                OnMenuClick);
+            pause.ShortcutKeyDisplayString = @"Pause";
+
+            m.DropDownItems.AddRange(new ToolStripItem[]
+            {
+                pause,
+                new ToolStripSeparator(),
+                MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
+                new ToolStripSeparator(),
+                MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, OnMenuClick)
+            });
         }
 
         private void OnMenuGameOpening(object sender, EventArgs e)
@@ -233,6 +246,8 @@ namespace ClassicUno.Forms
                     MenuHelper.AddMenuItem("Enable music", "MUSIC", Keys.Alt | Keys.M, true,
                         SettingsManager.Settings.Sound.EnableMusic, null, OnMenuClick),
                     new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Show status bar", "STATUS", Keys.None, true, SettingsManager.Settings.General.ShowStatus, null, OnMenuClick),
+                    new ToolStripSeparator(), 
                     MenuHelper.AddMenuItem("Options", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick),
                 });
         }
@@ -268,26 +283,6 @@ namespace ClassicUno.Forms
                                 Invalidate();
                             }
                         }
-                    }
-                    break;
-
-                case "PAUSE":
-                    if (_currentGame != null)
-                    {
-                        switch (_currentGame.GameState)
-                        {
-                            case GameState.Running:
-                                _currentGame.GameState = GameState.Paused;
-                                AudioManager.PauseMusic();
-                                break;
-
-                            case GameState.Paused:
-                                _currentGame.GameState = GameState.Running;
-                                AudioManager.ResumeMusic();
-                                break;
-                        }
-                        BuildMenuGame(mnuGame);
-                        Invalidate();
                     }
                     break;
 
@@ -329,10 +324,17 @@ namespace ClassicUno.Forms
                     }
                     break;
 
+                case "STATUS":
+                    var status = !SettingsManager.Settings.General.ShowStatus;
+                    statusBar.Visible = status;
+                    SettingsManager.Settings.General.ShowStatus = status;
+                    break;
+
                 case "OPTIONS":
                     using (var options = new FrmOptions())
                     {
                         options.ShowDialog(this);
+                        statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
                     }
                     break;
 
@@ -344,6 +346,33 @@ namespace ClassicUno.Forms
                     break;
             }
         }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            /* Handle the "Pause/Break" key */
+            if (keyData == Keys.Pause)
+            {
+                if (_currentGame != null)
+                {
+                    switch (_currentGame.GameState)
+                    {
+                        case GameState.Running:
+                            _currentGame.GameState = GameState.Paused;
+                            AudioManager.PauseMusic();
+                            break;
+
+                        case GameState.Paused:
+                            _currentGame.GameState = GameState.Running;
+                            AudioManager.ResumeMusic();
+                            break;
+                    }
+                    BuildMenuGame(mnuGame);
+                    Invalidate();
+                }
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         #endregion
 
         #region Control buttons
@@ -473,7 +502,7 @@ namespace ClassicUno.Forms
 
             if (File.Exists(_recoveryFile) && SettingsManager.Settings.General.Recovery.Load)
             {
-                /* Recover the saved game state from on exit */
+                /* Recover game state that was saved from on-exit. */
                 var state = new GameStateData();
                 if (BinarySerialize<GameStateData>.Load(_recoveryFile, ref state))
                 {
@@ -486,12 +515,14 @@ namespace ClassicUno.Forms
                             slTime.Visible = true;
                             _currentGame.CurrentTime = state.CurrentTime;
                             _currentGame.Start();
+                            UpdateStatus(string.Format(Resources.gameLoad, "Game reloaded from recovery file"));
                             return;
                         }
                     }
                 }
             }
 
+            /* Else, we start a new game. */
             NewGame();
         }
 
@@ -502,6 +533,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
+            /* Update the game time */
             _currentGame.CurrentTime++;
             slTime.Text = $@"Time: {Utils.FormatTime(_currentGame.CurrentTime)}";
         }

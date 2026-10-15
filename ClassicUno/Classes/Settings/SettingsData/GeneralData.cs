@@ -59,6 +59,9 @@ namespace ClassicUno.Classes.Settings.SettingsData
         [XmlAttribute("tabIndex")]
         public int TabIndex { get; set; }
 
+        [XmlAttribute("status")]
+        public bool ShowStatus { get; set; }
+
         [XmlElement("window")]
         public WindowData Window = new WindowData();
 

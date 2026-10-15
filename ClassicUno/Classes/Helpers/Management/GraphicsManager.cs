@@ -513,7 +513,7 @@ namespace ClassicUno.Classes.Helpers.Management
                 path.AddArc(r.X, r.Bottom - diameter, diameter, diameter, 90, 90);
                 path.CloseFigure();
 
-                using (var brush = new SolidBrush(Color.FromArgb(60, Color.DeepSkyBlue)))
+                using (var brush = new SolidBrush(Color.FromArgb(80, Color.DeepSkyBlue)))
                 {
                     g.FillPath(brush, path);
                 }

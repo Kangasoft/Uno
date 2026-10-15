@@ -32,10 +32,13 @@
             this.chkNew = new System.Windows.Forms.CheckBox();
             this.chkExit = new System.Windows.Forms.CheckBox();
             this.gbExit = new System.Windows.Forms.GroupBox();
-            this.chkSave = new System.Windows.Forms.CheckBox();
             this.chkLoad = new System.Windows.Forms.CheckBox();
+            this.chkSave = new System.Windows.Forms.CheckBox();
+            this.gbGeneral = new System.Windows.Forms.GroupBox();
+            this.chkStatus = new System.Windows.Forms.CheckBox();
             this.gbConfirm.SuspendLayout();
             this.gbExit.SuspendLayout();
+            this.gbGeneral.SuspendLayout();
             this.SuspendLayout();
             // 
             // gbConfirm
@@ -82,17 +85,6 @@
             this.gbExit.TabStop = false;
             this.gbExit.Text = "On exit/start:";
             // 
-            // chkSave
-            // 
-            this.chkSave.AutoSize = true;
-            this.chkSave.Location = new System.Drawing.Point(10, 22);
-            this.chkSave.Name = "chkSave";
-            this.chkSave.Size = new System.Drawing.Size(169, 19);
-            this.chkSave.TabIndex = 2;
-            this.chkSave.Tag = "SAVE";
-            this.chkSave.Text = "Save current running game";
-            this.chkSave.UseVisualStyleBackColor = true;
-            // 
             // chkLoad
             // 
             this.chkLoad.AutoSize = true;
@@ -105,11 +97,44 @@
             this.chkLoad.Text = "Reload on start-up";
             this.chkLoad.UseVisualStyleBackColor = true;
             // 
+            // chkSave
+            // 
+            this.chkSave.AutoSize = true;
+            this.chkSave.Location = new System.Drawing.Point(10, 22);
+            this.chkSave.Name = "chkSave";
+            this.chkSave.Size = new System.Drawing.Size(169, 19);
+            this.chkSave.TabIndex = 2;
+            this.chkSave.Tag = "SAVE";
+            this.chkSave.Text = "Save current running game";
+            this.chkSave.UseVisualStyleBackColor = true;
+            // 
+            // gbGeneral
+            // 
+            this.gbGeneral.Controls.Add(this.chkStatus);
+            this.gbGeneral.Location = new System.Drawing.Point(3, 163);
+            this.gbGeneral.Name = "gbGeneral";
+            this.gbGeneral.Size = new System.Drawing.Size(300, 50);
+            this.gbGeneral.TabIndex = 2;
+            this.gbGeneral.TabStop = false;
+            this.gbGeneral.Text = "General:";
+            // 
+            // chkStatus
+            // 
+            this.chkStatus.AutoSize = true;
+            this.chkStatus.Location = new System.Drawing.Point(10, 22);
+            this.chkStatus.Name = "chkStatus";
+            this.chkStatus.Size = new System.Drawing.Size(109, 19);
+            this.chkStatus.TabIndex = 3;
+            this.chkStatus.Tag = "STATUS";
+            this.chkStatus.Text = "Show status bar";
+            this.chkStatus.UseVisualStyleBackColor = true;
+            // 
             // OptionsGeneral
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Transparent;
+            this.Controls.Add(this.gbGeneral);
             this.Controls.Add(this.gbExit);
             this.Controls.Add(this.gbConfirm);
             this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -119,6 +144,8 @@
             this.gbConfirm.PerformLayout();
             this.gbExit.ResumeLayout(false);
             this.gbExit.PerformLayout();
+            this.gbGeneral.ResumeLayout(false);
+            this.gbGeneral.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -131,5 +158,7 @@
         private System.Windows.Forms.GroupBox gbExit;
         private System.Windows.Forms.CheckBox chkLoad;
         private System.Windows.Forms.CheckBox chkSave;
+        private System.Windows.Forms.GroupBox gbGeneral;
+        private System.Windows.Forms.CheckBox chkStatus;
     }
 }
