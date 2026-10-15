@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -26,6 +25,7 @@ namespace ClassicUno.Classes.Logic
         Paused = 3
     }
 
+    [Serializable]
     public enum PlayDirection
     {
         [Description("Clockwise")]
@@ -91,6 +91,8 @@ namespace ClassicUno.Classes.Logic
 
         public GameData GameData;
 
+        public bool Restartable => _restart != null;
+
         public GameState GameState { get; set; }
 
         public Card HighlightedCard { get; set; }
@@ -100,7 +102,20 @@ namespace ClassicUno.Classes.Logic
         public int CurrentTime { get; set; }
         #endregion
 
-        #region Constructor
+        #region Constructors
+
+        public Game(IGame ui, GameStateData state)
+        {
+            /* Restore a previous game state */
+            _ui = ui;
+
+            GameData = GameStateManager.RestoreGameState(state);
+
+            CurrentTime = state.CurrentTime;
+
+            AddPlayerCallbacks();
+        }
+
         public Game(IGame ui, GameOptionData data)
         {
             _ui = ui;
@@ -139,19 +154,9 @@ namespace ClassicUno.Classes.Logic
 
         #region Public methods
 
-        public void Restart()
+        public void Start()
         {
-            RemovePlayerCallbacks();
-            GameData = (GameData) _restart.Clone();
-            AddPlayerCallbacks();
-
-            GameState = GameState.Running;
-
-            CurrentTime = 0;
-            _waitToStart = true;
-
             var card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
-            GameData.CurrentPlayer = GameData.Players[0];
 
             if (card.Type != CardType.Wild)
             {
@@ -159,6 +164,24 @@ namespace ClassicUno.Classes.Logic
             }
 
             GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
+            GameState = GameState.Running;
+        }
+
+        public void Restart()
+        {
+            if (_restart == null)
+            {
+                return;
+            }
+            RemovePlayerCallbacks();
+            GameData = (GameData) _restart.Clone();
+            AddPlayerCallbacks();
+            
+            CurrentTime = 0;
+            _waitToStart = true;
+            GameData.CurrentPlayer = GameData.Players[0];
+
+            Start();
         }
 
         public void HumanDrawCard()
@@ -318,6 +341,7 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region Begin turn
+
         private void PlayerBeginTurn(IPlayer player)
         {
             /* Loop back mainly for the human player so the UI can be update by showing the "DRAW" and "PASS" buttons */
@@ -327,6 +351,7 @@ namespace ClassicUno.Classes.Logic
             {
                 return;
             }
+
             /* Evaluted top card on discard pile */
             var c = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
             if (_waitToStart)
@@ -365,14 +390,14 @@ namespace ClassicUno.Classes.Logic
 
             _ui.ShowButtons(true);
 
-            if (GameData.CurrentColor == CardColor.None && c.Type == CardType.Wild)
+            var hasDrawn = player.HasDrawn;
+            _ui.EnableDraw(!hasDrawn);
+            _ui.EnablePass(hasDrawn);
+
+            if (GameData.CurrentColor == CardColor.None && (c.Type == CardType.Wild || c.Type == CardType.DrawFour))
             {
                 /* Human needs to choose a color */
                 _ui.ShowColorButtons(true);
-            }
-            else
-            {
-                _ui.EnableDraw(true);
             }
         }
         #endregion
@@ -397,6 +422,7 @@ namespace ClassicUno.Classes.Logic
             {
                 /* Check if they have no cards, then they've won */
                 GameState = GameState.Stopped;
+                _ui.GameStateChanged();
 
                 _gameText = $"Game over! {player} won!";
                 _ui.UpdateStatus(_gameText);
@@ -548,6 +574,7 @@ namespace ClassicUno.Classes.Logic
         private void BeginDeal()
         {
             GameState = GameState.Dealing;
+            _ui.GameStateChanged();
 
             _worker = new BackgroundWorker {WorkerSupportsCancellation = true};
             _worker.DoWork += DealWorkerCallback;
@@ -625,7 +652,6 @@ namespace ClassicUno.Classes.Logic
         private void DealEnded(object sender, RunWorkerCompletedEventArgs e)
         {
             /* Dealing ended - game came begin */
-            GameState = GameState.Running;
             _ui.SoundEffectRequest(SoundType.Drop);
 
             _worker.DoWork -= DealWorkerCallback;
@@ -644,6 +670,9 @@ namespace ClassicUno.Classes.Logic
 
             /* Store a restart game point */
             _restart = (GameData)GameData.Clone();
+
+            GameState = GameState.Running;
+            _ui.GameStateChanged();
 
             GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
         }

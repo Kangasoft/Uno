@@ -3,6 +3,7 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace ClassicUno.Classes.Helpers.UI
@@ -10,6 +11,8 @@ namespace ClassicUno.Classes.Helpers.UI
     /* Menu and statusbar renderer */
     public class UnoToolStripRenderer : ToolStripProfessionalRenderer
     {
+        /* When this baby hits runtime; you're going to see some serious shit! */
+
         private static readonly Color Background = Color.FromArgb(38, 40, 46);
 
         private static readonly Color DropdownBackground = Color.FromArgb(48, 50, 57);
@@ -31,12 +34,43 @@ namespace ClassicUno.Classes.Helpers.UI
 
         protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
         {
-            var background = e.ToolStrip is StatusStrip ? Background :
-                e.ToolStrip is ToolStripDropDown ? DropdownBackground : Background;
+            var bounds = e.AffectedBounds;
 
-            using (var brush = new SolidBrush(background))
+            if (bounds.Width <= 0 || bounds.Height <= 0)
             {
-                e.Graphics.FillRectangle(brush, e.AffectedBounds);
+                return;
+            }
+
+            var isStatusStrip = e.ToolStrip is StatusStrip;
+            var isDropDown = e.ToolStrip is ToolStripDropDown;
+
+            if (isDropDown)
+            {
+                using (var brush = new SolidBrush(DropdownBackground))
+                {
+                    e.Graphics.FillRectangle(brush, bounds);
+                }
+
+                return;
+            }
+
+            var topColor = isStatusStrip ? Color.FromArgb(28, 29, 34) : Color.FromArgb(65, 68, 76);
+            var bottomColor = isStatusStrip ? Color.FromArgb(48, 50, 57) : Color.FromArgb(32, 34, 39);
+
+            using (var brush = new LinearGradientBrush(bounds, topColor, bottomColor, LinearGradientMode.Vertical))
+            {
+                e.Graphics.FillRectangle(brush, bounds);
+            }
+
+            using (var pen = new Pen(isStatusStrip ? Color.FromArgb(90, 92, 100) : Color.FromArgb(100, 102, 110)))
+            {
+                var y = bounds.Top;
+                e.Graphics.DrawLine(pen, bounds.Left, y, bounds.Right - 1, y);
+            }
+
+            using (var pen = new Pen(isStatusStrip ? Color.FromArgb(15, 15, 18) : Color.FromArgb(20, 21, 25)))
+            {
+                e.Graphics.DrawLine(pen, bounds.Left, bounds.Bottom - 1, bounds.Right - 1, bounds.Bottom - 1);
             }
         }
 
@@ -65,17 +99,21 @@ namespace ClassicUno.Classes.Helpers.UI
 
         protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
         {
-            var borderColor = e.ToolStrip is StatusStrip ? UnoRed : Color.FromArgb(75, 78, 87);
+            var isStatusStrip = e.ToolStrip is StatusStrip;
 
-            using (var pen = new Pen(borderColor))
+            using (var pen = new Pen(
+                isStatusStrip
+                    ? UnoRed
+                    : Color.FromArgb(75, 78, 87)))
             {
-                if (e.ToolStrip is StatusStrip)
+                if (isStatusStrip)
                 {
-                    e.Graphics.DrawLine(pen, 0, 0, e.ToolStrip.Width, 0);
+                    e.Graphics.DrawLine(pen, 0, 0, e.ToolStrip.Width - 1, 0);
                 }
-                else
+                else if (!(e.ToolStrip is ToolStripDropDown))
                 {
-                    e.Graphics.DrawRectangle(pen, 0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
+                    e.Graphics.DrawLine(pen, 0, e.ToolStrip.Height - 1,
+                        e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
                 }
             }
         }

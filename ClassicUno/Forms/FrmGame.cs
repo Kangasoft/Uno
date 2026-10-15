@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
@@ -13,6 +14,7 @@ using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Helpers.UI;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
+using ClassicUno.Classes.Serialization;
 using ClassicUno.Controls;
 using ClassicUno.Properties;
 
@@ -27,6 +29,9 @@ namespace ClassicUno.Forms
         private readonly Timer _time;
 
         private readonly UiSynchronize _sync;
+
+        private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
+        private string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true);
         #endregion
 
         #region Constructor
@@ -40,7 +45,7 @@ namespace ClassicUno.Forms
             /* Get version information */
             var version = assembly.GetName().Version;
 
-            Text = $@"{Resources.uno} - v{version.Major}.{version.Minor}";
+            Text = $@"{Resources.appTitle} - v{version.Major}.{version.Minor}";
             Icon = Icon.ExtractAssociatedIcon(assembly.Location);
 
             foreach (var btn in tblButtons.Controls.Cast<Button>().Where(btn => btn != null))
@@ -120,20 +125,46 @@ namespace ClassicUno.Forms
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (_currentGame?.GameState == GameState.Running)
+            if (_currentGame != null)
             {
-                if (SettingsManager.Settings.General.Confirm.OnExit)
+                if (_currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused)
                 {
-                    if (MessageBox.Show(this, @"Are you sure you want to resign this current game?",
-                        Resources.uno,
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                    if (SettingsManager.Settings.General.Recovery.Save)
                     {
-                        e.Cancel = true;
-                        return;
+                        /* Save the current game state to the recovery file */
+                        var state = GameStateManager.CreateGameState(_currentGame.GameData, _currentGame.CurrentTime);
+                        if (state != null)
+                        {
+                            BinarySerialize<GameStateData>.Save(_recoveryFile, state);
+                        }
+                    }
+
+                    if (SettingsManager.Settings.General.Confirm.OnExit)
+                    {
+                        if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
+                            MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                        {
+                            e.Cancel = true;
+                            return;
+                        }
                     }
                 }
+                else
+                {
+                    /* If we're dealing a round, cancel close request */
+                    e.Cancel = true;
+                    return;
+                }
             }
-            
+            else
+            {
+                /* We need to delete the recovery file */
+                if (File.Exists(_recoveryFile))
+                {
+                    File.Delete(_recoveryFile);
+                }
+            }
+
             if (WindowState == FormWindowState.Normal)
             {
                 SettingsManager.Settings.General.Window.Location = Location;
@@ -153,22 +184,28 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Menus
+
         private void BuildMenuGame(ToolStripDropDownItem m)
         {
             m.DropDownItems.Clear();
 
-            var paused = _currentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game";
+            var restart = false;
+            if (_currentGame != null)
+            {
+                /* Is the current game able to be restarted? */
+                restart = _currentGame.Restartable && _currentGame.GameState == GameState.Running ||
+                          _currentGame.GameState == GameState.Paused;
+            }
 
             m.DropDownItems.AddRange(
                 new ToolStripItem[]
                 {
                     MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, OnMenuClick),
                     new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.None,
-                        _currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused,
-                        OnMenuClick),
+                    MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.None, restart, OnMenuClick),
                     MenuHelper.AddMenuItem(_currentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
-                        "PAUSE", Keys.None, _currentGame != null && _currentGame?.GameState != GameState.Dealing,
+                        "PAUSE", Keys.Control | Keys.P,
+                        _currentGame != null && _currentGame?.GameState != GameState.Dealing,
                         OnMenuClick),
                     new ToolStripSeparator(),
                     MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
@@ -181,12 +218,7 @@ namespace ClassicUno.Forms
         {
             BuildMenuGame(mnuGame);
         }
-
-        private void OnMenuOptionsOpening(object sender, EventArgs e)
-        {
-            BuildMenuOptions(mnuOptions);
-        }
-
+        
         private void BuildMenuOptions(ToolStripDropDownItem m)
         {
             m.DropDownItems.Clear();
@@ -205,6 +237,11 @@ namespace ClassicUno.Forms
                 });
         }
 
+        private void OnMenuOptionsOpening(object sender, EventArgs e)
+        {
+            BuildMenuOptions(mnuOptions);
+        }
+
         private void OnMenuClick(object sender, EventArgs e)
         {
             var o = (ToolStripItem)sender;
@@ -221,7 +258,7 @@ namespace ClassicUno.Forms
                         {
                             if (MessageBox.Show(this,
                                 @"Are you sure you want to restart this game? All progress will be lost.",
-                                Resources.uno, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                                Resources.appTitle, MessageBoxButtons.YesNo) == DialogResult.Yes)
                             {
                                 if (_currentGame.GameState == GameState.Paused)
                                 {
@@ -249,6 +286,7 @@ namespace ClassicUno.Forms
                                 AudioManager.ResumeMusic();
                                 break;
                         }
+                        BuildMenuGame(mnuGame);
                         Invalidate();
                     }
                     break;
@@ -433,6 +471,27 @@ namespace ClassicUno.Forms
             _tmrNew.Tick -= ShowNewGameDialog;
             _tmrNew.Dispose();
 
+            if (File.Exists(_recoveryFile) && SettingsManager.Settings.General.Recovery.Load)
+            {
+                /* Recover the saved game state from on exit */
+                var state = new GameStateData();
+                if (BinarySerialize<GameStateData>.Load(_recoveryFile, ref state))
+                {
+                    if (state != null)
+                    {
+                        _currentGame = new Game(this, state);
+                        if (_currentGame != null)
+                        {
+                            _time.Enabled = true;
+                            slTime.Visible = true;
+                            _currentGame.CurrentTime = state.CurrentTime;
+                            _currentGame.Start();
+                            return;
+                        }
+                    }
+                }
+            }
+
             NewGame();
         }
 
@@ -451,12 +510,15 @@ namespace ClassicUno.Forms
         #region Private methods
         private void NewGame()
         {
-            if (_currentGame?.GameState == GameState.Running && SettingsManager.Settings.General.Confirm.OnNew)
+            if (SettingsManager.Settings.General.Confirm.OnNew)
             {
-                if (MessageBox.Show(this, @"Are you sure you want to resign this current game?", Resources.uno,
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                if (_currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused)
                 {
-                    return;
+                    if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -516,6 +578,28 @@ namespace ClassicUno.Forms
             slGame.Text = text;
         }
 
+        public void GameStateChanged()
+        {
+            if (InvokeRequired)
+            {
+                _sync.Execute(GameStateChanged);
+                return;
+            }
+
+            switch (_currentGame?.GameState)
+            {
+                case GameState.Running:
+                    _time.Enabled = true;
+                    break;
+
+                case GameState.Stopped:
+                case GameState.Paused:
+                    _time.Enabled = false;
+                    break;
+            }
+            BuildMenuGame(mnuGame);
+        }
+
         public void GameOver(IPlayer player, int score)
         {
             if (InvokeRequired)
@@ -524,7 +608,6 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            _time.Enabled = false;
             /* Record statistics */
             SettingsManager.Settings.Statistics.GamesPlayed++;
             if (player is HumanPlayer)
@@ -562,7 +645,7 @@ namespace ClassicUno.Forms
                 ? $"You have won and earned {score} points!"
                 : $"{player} has won!";
 
-            if (MessageBox.Show(this, $@"{msg} Play again?", Resources.uno, MessageBoxButtons.YesNo,
+            if (MessageBox.Show(this, $@"{msg} Play again?", Resources.appTitle, MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 NewGame();
@@ -619,7 +702,6 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => EnableDraw(enabled));
                 return;
             }
-
             btnDraw.Enabled = enabled;
         }
 

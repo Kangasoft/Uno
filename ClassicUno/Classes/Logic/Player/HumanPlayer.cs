@@ -15,11 +15,17 @@ namespace ClassicUno.Classes.Logic.Player
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
+
         public int AudioPan { get; set; }
 
-        public List<Card> Cards { get; set; }
+        public List<Card> Cards { get; set; } 
+
         public bool IsSkipped { get; set; }
+
         public bool HasPassed { get; set; }
+
+        public bool HasDrawn { get; set; }
+
 
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw; /* Not used on human players */
@@ -60,6 +66,7 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void DrawCard(Card card)
         {
+            HasDrawn = true;
             Cards.Add(card);
         }
 
@@ -72,6 +79,7 @@ namespace ClassicUno.Classes.Logic.Player
         public void EndTurn()
         {
             IsSkipped = false; /* Make sure this variable is RESET */
+            HasDrawn = false;
             PlayerEndTurn?.Invoke(this);
         }
         #endregion
@@ -93,7 +101,8 @@ namespace ClassicUno.Classes.Logic.Player
                 AudioPan = AudioPan,
                 Cards = Cards.Select(c => (Card)c.Clone()).ToList(),
                 IsSkipped = IsSkipped,
-                HasPassed = HasPassed
+                HasPassed = HasPassed,
+                HasDrawn = HasDrawn
             };
         }
         #endregion

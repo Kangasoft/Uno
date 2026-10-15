@@ -39,13 +39,13 @@ namespace ClassicUno.Forms
             this.slGame = new System.Windows.Forms.ToolStripStatusLabel();
             this.slTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.tblButtons = new System.Windows.Forms.TableLayoutPanel();
+            this.btnPlay = new ClassicUno.Controls.CustomButton();
             this.btnDraw = new ClassicUno.Controls.CustomButton();
             this.btnPass = new ClassicUno.Controls.CustomButton();
             this.btnYellow = new ClassicUno.Controls.CustomButton();
             this.btnGreen = new ClassicUno.Controls.CustomButton();
             this.btnBlue = new ClassicUno.Controls.CustomButton();
             this.btnRed = new ClassicUno.Controls.CustomButton();
-            this.btnPlay = new ClassicUno.Controls.CustomButton();
             this.mnuMain.SuspendLayout();
             this.statusBar.SuspendLayout();
             this.tblButtons.SuspendLayout();
@@ -123,7 +123,7 @@ namespace ClassicUno.Forms
             this.tblButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
             this.tblButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
             this.tblButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
-            this.tblButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
+            this.tblButtons.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 62F));
             this.tblButtons.Controls.Add(this.btnPlay, 2, 0);
             this.tblButtons.Controls.Add(this.btnDraw, 0, 0);
             this.tblButtons.Controls.Add(this.btnPass, 1, 0);
@@ -138,6 +138,20 @@ namespace ClassicUno.Forms
             this.tblButtons.Size = new System.Drawing.Size(472, 63);
             this.tblButtons.TabIndex = 4;
             this.tblButtons.Visible = false;
+            // 
+            // btnPlay
+            // 
+            this.btnPlay.BackColor = System.Drawing.Color.Transparent;
+            this.btnPlay.BackgroundImage = global::ClassicUno.Properties.Resources.btnPlay;
+            this.btnPlay.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.btnPlay.Enabled = false;
+            this.btnPlay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnPlay.Location = new System.Drawing.Point(143, 3);
+            this.btnPlay.Name = "btnPlay";
+            this.btnPlay.Size = new System.Drawing.Size(61, 55);
+            this.btnPlay.TabIndex = 5;
+            this.btnPlay.Tag = "PLAY";
+            this.btnPlay.UseVisualStyleBackColor = false;
             // 
             // btnDraw
             // 
@@ -222,20 +236,6 @@ namespace ClassicUno.Forms
             this.btnRed.Tag = "RED";
             this.btnRed.UseVisualStyleBackColor = false;
             this.btnRed.Visible = false;
-            // 
-            // btnPlay
-            // 
-            this.btnPlay.BackColor = System.Drawing.Color.Transparent;
-            this.btnPlay.BackgroundImage = global::ClassicUno.Properties.Resources.btnPlay;
-            this.btnPlay.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
-            this.btnPlay.Enabled = false;
-            this.btnPlay.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnPlay.Location = new System.Drawing.Point(143, 3);
-            this.btnPlay.Name = "btnPlay";
-            this.btnPlay.Size = new System.Drawing.Size(61, 55);
-            this.btnPlay.TabIndex = 5;
-            this.btnPlay.Tag = "PLAY";
-            this.btnPlay.UseVisualStyleBackColor = false;
             // 
             // FrmGame
             // 

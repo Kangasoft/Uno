@@ -47,6 +47,15 @@ namespace ClassicUno.Classes.Settings.SettingsData
             public bool OnNew { get; set; }
         }
 
+        public class RecoveryData
+        {
+            [XmlAttribute("save")]
+            public bool Save { get; set; }
+
+            [XmlAttribute("load")]
+            public bool Load { get; set; }
+        }
+
         [XmlAttribute("tabIndex")]
         public int TabIndex { get; set; }
 
@@ -55,5 +64,8 @@ namespace ClassicUno.Classes.Settings.SettingsData
 
         [XmlElement("confirm")]
         public ConfirmData Confirm = new ConfirmData();
+
+        [XmlElement("recovery")]
+        public RecoveryData Recovery = new RecoveryData();
     }
 }

@@ -17,21 +17,26 @@ namespace ClassicUno.Classes.Logic.Player
         private Card _discardCard;
         private CardColor _currentColor;
 
-        private bool _hasDrawn;
-        private bool _hasRequestedDraw;
-
         private BackgroundWorker _worker;
 
         private readonly Random _rnd = new Random();
 
+        private bool _hasRequestedDraw;
+
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
+
         public int AudioPan { get; set; }
 
         public List<Card> Cards { get; set; }
+
         public bool IsSkipped { get; set; }
+
         public bool HasPassed { get; set; }
+
+        public bool HasDrawn { get; set; }
+
 
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw;
@@ -80,7 +85,7 @@ namespace ClassicUno.Classes.Logic.Player
         public void DrawCard(Card card)
         {
             Cards.Add(card);
-            if (!_hasDrawn)
+            if (!HasDrawn)
             {
                 return;
             }
@@ -100,7 +105,7 @@ namespace ClassicUno.Classes.Logic.Player
         public void EndTurn()
         {
             IsSkipped = false; /* Make sure this variable is RESET */
-            _hasDrawn = false;
+            HasDrawn = false;
             _hasRequestedDraw = false;
             PlayerEndTurn?.Invoke(this);
         }
@@ -115,10 +120,10 @@ namespace ClassicUno.Classes.Logic.Player
             if (card == null)
             {
                 Thread.Sleep(_rnd.Next(300, 1500));
-                if (!_hasDrawn)
+                if (!HasDrawn)
                 {
                     /* Need to draw */
-                    _hasDrawn = true;
+                    HasDrawn = true;
                     _hasRequestedDraw = true;
                     PlayerDraw?.Invoke(this);
                     return;
@@ -248,7 +253,8 @@ namespace ClassicUno.Classes.Logic.Player
                 AudioPan = AudioPan,
                 Cards = Cards.Select(c => (Card)c.Clone()).ToList(),
                 IsSkipped = IsSkipped,
-                HasPassed = HasPassed
+                HasPassed = HasPassed,
+                HasDrawn = HasDrawn
             };
         }
         #endregion

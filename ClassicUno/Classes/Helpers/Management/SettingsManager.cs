@@ -4,13 +4,15 @@
  * ©2026 - Kangasoft Software */
 using System.IO;
 using ClassicUno.Classes.Serialization;
+using ClassicUno.Properties;
 
 namespace ClassicUno.Classes.Helpers.Management
 {
     public static class SettingsManager
     {
         /* It's worse than that, he's DEAD Jim! */
-        private const string FilePath = @"\KangaSoft\Uno\settings.xml";
+        private static readonly string
+            FilePath = Utils.MainDir(string.Format(Resources.userPath, "settings.xml"), true);
 
         public static Settings.Settings Settings { get; set; }
 
@@ -21,15 +23,14 @@ namespace ClassicUno.Classes.Helpers.Management
 
         public static void Load()
         {
-            var file = Utils.MainDir(FilePath, true);
-            if (!File.Exists(file))
+            if (!File.Exists(FilePath))
             {
-                XmlSerialize<Settings.Settings>.Save(file, Settings);
+                XmlSerialize<Settings.Settings>.Save(FilePath, Settings);
                 return;
             }
 
             var s = new Settings.Settings();
-            if (XmlSerialize<Settings.Settings>.Load(file, ref s))
+            if (XmlSerialize<Settings.Settings>.Load(FilePath, ref s))
             {
                 Settings = s;
             }
@@ -37,7 +38,7 @@ namespace ClassicUno.Classes.Helpers.Management
 
         public static void Save()
         {
-            XmlSerialize<Settings.Settings>.Save(Utils.MainDir(FilePath, true), Settings);
+            XmlSerialize<Settings.Settings>.Save(FilePath, Settings);
         }
     }
 }

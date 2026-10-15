@@ -24,7 +24,7 @@ namespace ClassicUno.Forms
             ShowIcon = false;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            Text = $@"About {Resources.uno}";
+            Text = $@"About {Resources.appTitle}";
             AcceptButton = _btnOk;
 
             /* Controls */
@@ -46,7 +46,7 @@ namespace ClassicUno.Forms
                 Location = new Point(84, 14),
                 Size = new Size(153, 32),
                 TabIndex = 2,
-                Text = Resources.uno
+                Text = Resources.appTitle
             };
 
             var lblInfo = new Label
@@ -84,7 +84,7 @@ namespace ClassicUno.Forms
 
             /* Get version information */
             var version = assembly.GetName().Version;
-            lblInfo.Text = string.Format(Resources.about, version.Major, version.Minor);
+            lblInfo.Text = string.Format(Resources.aboutInfo, version.Major, version.Minor);
         }
     }
 }

@@ -163,7 +163,7 @@
   <data name="yellowOrb" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\yellowOrb.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="about" xml:space="preserve">
+  <data name="aboutInfo" xml:space="preserve">
     <value>Version: v{0}.{1}
 
 Written by: Jason James Newland
@@ -171,7 +171,13 @@ Written by: Jason James Newland
 Copyright ©2026 - Kangasoft Software
 All rights reserved.</value>
   </data>
-  <data name="uno" xml:space="preserve">
+  <data name="appTitle" xml:space="preserve">
     <value>Classic UNO! 2026</value>
+  </data>
+  <data name="resignGame" xml:space="preserve">
+    <value>Are you sure you want to resign this current game?</value>
+  </data>
+  <data name="userPath" xml:space="preserve">
+    <value>\\KangaSoft\\Uno\\{0}</value>
   </data>
 </root>

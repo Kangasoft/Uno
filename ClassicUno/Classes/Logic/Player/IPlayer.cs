@@ -15,12 +15,16 @@ namespace ClassicUno.Classes.Logic.Player
         PlayerNameData NameData { get; set; }
 
         int VoiceIndex { get; set; }
+
         int AudioPan { get; set; }
 
         List<Card> Cards { get; set; }
 
         bool IsSkipped { get; set; }
+
         bool HasPassed { get; set; }
+
+        bool HasDrawn { get; set; }
 
         event Action<IPlayer> PlayerBeginTurn;
         event Action<IPlayer> PlayerDraw;

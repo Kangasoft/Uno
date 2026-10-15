@@ -8,6 +8,8 @@ using System.Drawing;
 
 namespace ClassicUno.Classes.Logic
 {
+    /* This manages saved games */
+    [Serializable]
     public enum CardColor
     {
         [Description("None")]
@@ -26,6 +28,7 @@ namespace ClassicUno.Classes.Logic
         Blue = 4
     }
 
+    [Serializable]
     public enum CardType
     {
         None = 0,
@@ -37,6 +40,7 @@ namespace ClassicUno.Classes.Logic
         Wild = 6
     }
 
+    [Serializable]
     public class Card : ICloneable
     {
         public CardType Type { get; set; }

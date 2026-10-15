@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Helpers\Management\GameStateManager.cs" />
     <Compile Include="Classes\Helpers\UI\UnoToolStripRenderer.cs" />
     <Compile Include="Classes\Logic\Card.cs" />
     <Compile Include="Classes\DirectSound\Core\Control.cs" />
@@ -66,6 +67,7 @@
     <Compile Include="Classes\Helpers\UI\UiSynchronize.cs" />
     <Compile Include="Classes\Helpers\Utils.cs" />
     <Compile Include="Classes\Logic\Validation.cs" />
+    <Compile Include="Classes\Serialization\BinarySerialize.cs" />
     <Compile Include="Classes\Settings\Settings.cs" />
     <Compile Include="Classes\Settings\SettingsData\GameOptionData.cs" />
     <Compile Include="Classes\Settings\SettingsData\GeneralData.cs" />
@@ -174,6 +176,8 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="mainIcon.ico" />
+    <None Include="Resources\uno2.png" />
+    <None Include="Resources\animated.gif" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

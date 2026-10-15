@@ -68,9 +68,9 @@ namespace ClassicUno.Properties {
         ///Copyright ©2026 - Kangasoft Software
         ///All rights reserved..
         /// </summary>
-        internal static string about {
+        internal static string aboutInfo {
             get {
-                return ResourceManager.GetString("about", resourceCulture);
+                return ResourceManager.GetString("aboutInfo", resourceCulture);
             }
         }
         
@@ -81,6 +81,15 @@ namespace ClassicUno.Properties {
             get {
                 object obj = ResourceManager.GetObject("anticlockwise", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Classic UNO! 2026.
+        /// </summary>
+        internal static string appTitle {
+            get {
+                return ResourceManager.GetString("appTitle", resourceCulture);
             }
         }
         
@@ -205,11 +214,11 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Classic UNO! 2026.
+        ///   Looks up a localized string similar to Are you sure you want to resign this current game?.
         /// </summary>
-        internal static string uno {
+        internal static string resignGame {
             get {
-                return ResourceManager.GetString("uno", resourceCulture);
+                return ResourceManager.GetString("resignGame", resourceCulture);
             }
         }
         
@@ -220,6 +229,15 @@ namespace ClassicUno.Properties {
             get {
                 object obj = ResourceManager.GetObject("unoIcon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to \\KangaSoft\\Uno\\{0}.
+        /// </summary>
+        internal static string userPath {
+            get {
+                return ResourceManager.GetString("userPath", resourceCulture);
             }
         }
         

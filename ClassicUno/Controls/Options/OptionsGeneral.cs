@@ -24,8 +24,15 @@ namespace ClassicUno.Controls.Options
             chkExit.Checked = _data.Confirm.OnExit;
             chkNew.Checked = data.Confirm.OnNew;
 
+            chkSave.Checked = _data.Recovery.Save;
+            chkLoad.Checked = _data.Recovery.Load;
+            chkLoad.Enabled = chkSave.Checked;
+
             chkExit.CheckedChanged += CheckStateChanged;
             chkNew.CheckedChanged += CheckStateChanged;
+
+            chkSave.CheckedChanged += CheckStateChanged;
+            chkLoad.CheckedChanged += CheckStateChanged;
         }
 
         private void CheckStateChanged(object sender, EventArgs e)
@@ -44,6 +51,15 @@ namespace ClassicUno.Controls.Options
 
                 case "NEW":
                     _data.Confirm.OnNew = o.Checked;
+                    break;
+
+                case "SAVE":
+                    chkLoad.Enabled = o.Checked;
+                    _data.Recovery.Save = o.Checked;
+                    break;
+
+                case "LOAD":
+                    _data.Recovery.Load = o.Checked;
                     break;
             }
         }

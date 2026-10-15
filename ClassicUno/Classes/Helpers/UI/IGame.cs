@@ -26,6 +26,8 @@ namespace ClassicUno.Classes.Helpers.UI
 
         void UpdateStatus(string text);
 
+        void GameStateChanged();
+
         void GameOver(IPlayer player, int score);
 
         void Invalidate();
