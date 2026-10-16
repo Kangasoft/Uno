@@ -4,7 +4,6 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using ClassicUno.Classes.DirectSound;
@@ -16,8 +15,7 @@ namespace ClassicUno.Classes.Helpers.Management
     public enum VoiceType
     {
         Pass = 0,
-        Uno = 1,
-        Test = 2
+        Uno = 1
     }
 
     public enum SoundType

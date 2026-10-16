@@ -31,7 +31,7 @@ namespace ClassicUno.Forms
         private readonly UiSynchronize _sync;
 
         private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
-        private string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true); /* TODO */
+        private string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true);
         #endregion
 
         #region Constructor
@@ -114,7 +114,7 @@ namespace ClassicUno.Forms
 
         protected override void OnResize(EventArgs e)
         {
-            GraphicsManager.Rescale(ClientSize);
+            GraphicsManager.Rescale(ClientRectangle);
             /* Move button table layout */
             var x = ClientRectangle.Width / 2 - (tblButtons.Width - (!btnRed.Visible ? 260 : 0)) / 2;
 
@@ -133,17 +133,13 @@ namespace ClassicUno.Forms
                     if (SettingsManager.Settings.General.Recovery.Save)
                     {
                         /* Save the current game state to the recovery file */
-                        var state = GameStateManager.CreateGameState(_currentGame.GameData, _currentGame.CurrentTime);
-                        if (state != null)
-                        {
-                            BinarySerialize<GameStateData>.Save(_recoveryFile, state);
-                        }
+                        SaveGame(_recoveryFile);
                     }
 
                     if (SettingsManager.Settings.General.Confirm.OnExit)
                     {
                         if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
-                            MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                            MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                         {
                             e.Cancel = true;
                             return;
@@ -179,7 +175,7 @@ namespace ClassicUno.Forms
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            GraphicsManager.DrawGame(_currentGame, e.Graphics, ClientRectangle);
+            GraphicsManager.DrawGame(_currentGame, e.Graphics);
             base.OnPaint(e);
         }
         #endregion
@@ -259,11 +255,39 @@ namespace ClassicUno.Forms
 
         private void OnMenuClick(object sender, EventArgs e)
         {
-            var o = (ToolStripItem)sender;
+            var o = (ToolStripItem) sender;
             switch (o.Tag.ToString())
             {
                 case "NEW":
                     NewGame();
+                    break;
+
+                case "LOAD":
+                    if ((_currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused))
+                    {
+                        if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle, MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question) == DialogResult.No)
+                        {
+                            return;
+                        }
+                    }
+                    /* Restore saved game */
+                    UpdateStatus(LoadGame(_saveFile)
+                        ? string.Format(Resources.gameLoad, "Game loaded successfully")
+                        : "No games loaded.");
+
+                    break;
+
+                case "SAVE":
+                    if ((_currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused) &&
+                        SaveGame(_saveFile))
+                    {
+                        UpdateStatus("Game successfully saved.");
+                    }
+                    else
+                    {
+                        UpdateStatus("Nothing saved.");
+                    }
                     break;
 
                 case "RESTART":
@@ -279,6 +303,7 @@ namespace ClassicUno.Forms
                                 {
                                     AudioManager.ResumeMusic();
                                 }
+
                                 _currentGame.Restart();
                                 Invalidate();
                             }
@@ -503,22 +528,10 @@ namespace ClassicUno.Forms
             if (File.Exists(_recoveryFile) && SettingsManager.Settings.General.Recovery.Load)
             {
                 /* Recover game state that was saved from on-exit. */
-                var state = new GameStateData();
-                if (BinarySerialize<GameStateData>.Load(_recoveryFile, ref state))
+                if (LoadGame(_recoveryFile))
                 {
-                    if (state != null)
-                    {
-                        _currentGame = new Game(this, state);
-                        if (_currentGame != null)
-                        {
-                            _time.Enabled = true;
-                            slTime.Visible = true;
-                            _currentGame.CurrentTime = state.CurrentTime;
-                            _currentGame.Start();
-                            UpdateStatus(string.Format(Resources.gameLoad, "Game reloaded from recovery file"));
-                            return;
-                        }
-                    }
+                    UpdateStatus(string.Format(Resources.gameLoad, "Game reloaded from recovery file"));
+                    return;
                 }
             }
 
@@ -547,7 +560,7 @@ namespace ClassicUno.Forms
                 if (_currentGame?.GameState == GameState.Running || _currentGame?.GameState == GameState.Paused)
                 {
                     if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                     {
                         return;
                     }
@@ -630,6 +643,7 @@ namespace ClassicUno.Forms
                     break;
             }
             BuildMenuGame(mnuGame);
+            Invalidate();
         }
 
         public void GameOver(IPlayer player, int score)
@@ -773,6 +787,48 @@ namespace ClassicUno.Forms
             btnYellow.Visible = visible;
 
             OnResize(new EventArgs());
+        }
+        #endregion
+
+        #region Load/save
+
+        private bool LoadGame(string path)
+        {
+            var state = new GameStateData();
+
+            if (BinarySerialize<GameStateData>.Load(path, ref state))
+            {
+                if (state != null)
+                {
+                    _currentGame = new Game(this, state);
+                    if (_currentGame != null)
+                    {
+                        _time.Enabled = true;
+                        slTime.Visible = true;
+                        _currentGame.CurrentTime = state.CurrentTime;
+                        _currentGame.Start();
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool SaveGame(string path)
+        {
+            if (_currentGame == null)
+            {
+                return false;
+            }
+            var state = GameStateManager.CreateGameState(_currentGame.GameData, _currentGame.CurrentTime);
+            if (state != null)
+            {
+                BinarySerialize<GameStateData>.Save(path, state);
+                return true;
+            }
+
+            return false;
         }
         #endregion
     }
