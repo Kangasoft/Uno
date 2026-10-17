@@ -10,9 +10,9 @@ using System.Text;
 using System.Threading;
 using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Helpers.Management;
-using ClassicUno.Classes.Helpers.UI;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.UI;
 
 namespace ClassicUno.Classes.Logic
 {

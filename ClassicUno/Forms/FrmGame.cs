@@ -11,10 +11,10 @@ using System.Reflection;
 using System.Windows.Forms;
 using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Helpers.Management;
-using ClassicUno.Classes.Helpers.UI;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Serialization;
+using ClassicUno.Classes.UI;
 using ClassicUno.Properties;
 
 namespace ClassicUno.Forms

@@ -1,4 +1,5 @@
-﻿using ClassicUno.Controls;
+﻿using ClassicUno.Classes.UI.Controls;
+using ClassicUno.Controls;
 
 namespace ClassicUno.Forms
 {
@@ -39,13 +40,13 @@ namespace ClassicUno.Forms
             this.slGame = new System.Windows.Forms.ToolStripStatusLabel();
             this.slTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.tblButtons = new System.Windows.Forms.TableLayoutPanel();
-            this.btnPlay = new ClassicUno.Controls.CustomButton();
-            this.btnDraw = new ClassicUno.Controls.CustomButton();
-            this.btnPass = new ClassicUno.Controls.CustomButton();
-            this.btnYellow = new ClassicUno.Controls.CustomButton();
-            this.btnGreen = new ClassicUno.Controls.CustomButton();
-            this.btnBlue = new ClassicUno.Controls.CustomButton();
-            this.btnRed = new ClassicUno.Controls.CustomButton();
+            this.btnPlay = new CustomButton();
+            this.btnDraw = new CustomButton();
+            this.btnPass = new CustomButton();
+            this.btnYellow = new CustomButton();
+            this.btnGreen = new CustomButton();
+            this.btnBlue = new CustomButton();
+            this.btnRed = new CustomButton();
             this.mnuMain.SuspendLayout();
             this.statusBar.SuspendLayout();
             this.tblButtons.SuspendLayout();
