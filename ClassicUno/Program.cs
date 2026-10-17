@@ -16,7 +16,6 @@ namespace ClassicUno
         {
             /* Initalize static classes */
             SettingsManager.Load();
-            GraphicsManager.Initialize();
             AudioManager.Initialize();
 
             Application.EnableVisualStyles();
