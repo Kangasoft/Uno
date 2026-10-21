@@ -19,7 +19,7 @@ using ClassicUno.Properties;
 
 namespace ClassicUno.Forms
 {
-    public sealed partial class FrmGame : GraphicsManager, IGame
+    public sealed partial class FrmGame : GraphicsRenderer, IGame
     {
         #region Fields
         private readonly Timer _tmrNew;
@@ -30,6 +30,8 @@ namespace ClassicUno.Forms
 
         private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
         private readonly string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true);
+
+        private readonly List<string> _logText = new List<string>();
         #endregion
 
         #region Constructor
@@ -351,6 +353,9 @@ namespace ClassicUno.Forms
                     {
                         options.ShowDialog(this);
                         statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
+
+                        LogRenderer.UpdateBounds(ClientRectangle);
+                        LogRenderer.Update(SettingsManager.Settings.General.ShowLogText ? _logText : null);
                     }
                     break;
 
@@ -439,16 +444,9 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Mouse
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (CurrentGame?.GameState == GameState.Paused)
-            {
-                base.OnMouseMove(e);
-                return;
-            }
-
-            if (!(CurrentGame?.GameData.CurrentPlayer is HumanPlayer))
+            if (CurrentGame?.GameState == GameState.Paused || CurrentGame?.GameState == GameState.Dealing || !(CurrentGame?.GameData.CurrentPlayer is HumanPlayer))
             {
                 base.OnMouseMove(e);
                 return;
@@ -562,6 +560,8 @@ namespace ClassicUno.Forms
             {
                 CurrentGame.Dispose();
                 CurrentGame = null;
+                _logText.Clear();
+                LogRenderer.Update(_logText);
                 Invalidate();
             }
 
@@ -596,6 +596,9 @@ namespace ClassicUno.Forms
             _time.Enabled = true;
             slTime.Visible = true;
 
+            _logText.Clear();
+            LogRenderer.Update(null);
+
             Invalidate();
         }
 
@@ -614,6 +617,25 @@ namespace ClassicUno.Forms
                 return;
             }
             slGame.Text = text;
+        }
+
+        public void UpdateLogText(string text)
+        {
+            if (InvokeRequired)
+            {
+                _sync.Execute(() => UpdateLogText(text));
+                return;
+            }
+
+            _logText.Add(text);
+            if (LogRenderer == null || !SettingsManager.Settings.General.ShowLogText)
+            {
+                return;
+            }
+
+            LogRenderer.UpdateBounds(ClientRectangle);
+            LogRenderer.Update(_logText);
+            Invalidate(LogRenderer.Bounds);
         }
 
         public void GameStateChanged()
@@ -646,6 +668,8 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => GameOver(player, score));
                 return;
             }
+
+            UpdateStatus($"Game over! { player} won!");
 
             /* Record statistics */
             SettingsManager.Settings.Statistics.GamesPlayed++;
@@ -800,6 +824,10 @@ namespace ClassicUno.Forms
                     {
                         _time.Enabled = true;
                         slTime.Visible = true;
+
+                        _logText.Clear();
+                        LogRenderer.Update(null);
+
                         CurrentGame.CurrentTime = state.CurrentTime;
                         CurrentGame.Start();
                         return true;

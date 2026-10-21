@@ -83,8 +83,6 @@ namespace ClassicUno.Classes.Logic
 
         private bool _waitToStart;
 
-        private string _gameText;
-
         private static readonly Random Rnd = new Random();
 
         private GameData _restart;
@@ -196,6 +194,8 @@ namespace ClassicUno.Classes.Logic
             GameData.CurrentPlayer.DrawCard(c);
             _ui.EnableDraw(false);
             _ui.EnablePass(true);
+
+            _ui.UpdateLogText($"{GameData.CurrentPlayer} draws a card.");
             _ui.Invalidate();
         }
 
@@ -228,8 +228,7 @@ namespace ClassicUno.Classes.Logic
                 /* Cannot play card */
                 _ui.SoundEffectRequest(SoundType.Error);
 
-                _gameText = "Selected card cannot be played. Choose another, or draw.";
-                _ui.UpdateStatus(_gameText);
+                _ui.UpdateStatus("Selected card cannot be played. Choose another, or draw.");
             }
         }
 
@@ -237,7 +236,9 @@ namespace ClassicUno.Classes.Logic
         {
             /* Change color */
             GameData.CurrentColor = color;
-            _ui.UpdateStatus(_gameText);
+
+            _ui.UpdateLogText($"{player} choses color {color}.");
+
             _ui.Invalidate();
 
             if (player is HumanPlayer)
@@ -254,8 +255,7 @@ namespace ClassicUno.Classes.Logic
             var c = Draw();
             player.DrawCard(c);
 
-            _gameText = $"{player} draws a card.";
-            _ui.UpdateStatus(_gameText);
+            _ui.UpdateLogText($"{player} draws a card.");
         }
         #endregion
 
@@ -282,8 +282,7 @@ namespace ClassicUno.Classes.Logic
 
             var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
 
-            _gameText = GetGameText(player, nextPlayer, card);
-            _ui.UpdateStatus(_gameText);
+            _ui.UpdateLogText(GetGameText(player, nextPlayer, card));
 
             switch (card.Type)
             {
@@ -335,8 +334,7 @@ namespace ClassicUno.Classes.Logic
             /* Raise audio request */
             _ui.VoiceRequest(VoiceType.Pass, player);
 
-            _gameText = $"{player} passes.";
-            _ui.UpdateStatus(_gameText);
+            _ui.UpdateLogText($"{player} passes.");
         }
         #endregion
 
@@ -359,19 +357,23 @@ namespace ClassicUno.Classes.Logic
                 _waitToStart = false;
                 GameData.CurrentColor = c.Color;
 
-                _gameText = "Round started!";
-                _ui.UpdateStatus(_gameText);
+                _ui.UpdateStatus("Round started!");
+                _ui.UpdateLogText($"Game starts with {player}.");
+
+                var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
 
                 switch (c.Type)
                 {
                     case CardType.Skip:
                         /* You are skipped */
+                        _ui.UpdateLogText($"{player} is skipped. Play continues with {nextPlayer}");
                         PlayerEndTurn(player);
                         return;
 
                     case CardType.DrawTwo:
                         /* You have to draw two cards - and are skipped */
                         BeginForceDraw(player, player, 2, false);
+                        _ui.UpdateLogText($"{player} draws two cards and is skipped. Play continues with {nextPlayer}");
                         return;
 
                     case CardType.Reverse:
@@ -406,7 +408,8 @@ namespace ClassicUno.Classes.Logic
         private void PlayerEndTurn(IPlayer player)
         {
             /* Play moves to next player - dependant on direction */
-            _ui.UpdateStatus(_gameText);
+            _ui.UpdateStatus(string.Empty);
+
             if (player is HumanPlayer)
             {
                 _ui.ShowButtons(false);
@@ -424,8 +427,7 @@ namespace ClassicUno.Classes.Logic
                 GameState = GameState.Stopped;
                 _ui.GameStateChanged();
 
-                _gameText = $"Game over! {player} won!";
-                _ui.UpdateStatus(_gameText);
+                _ui.UpdateLogText($"{player} wins!");
 
                 _ui.GameOver(player, CalculateRemainingScore());
                 return;
@@ -586,8 +588,7 @@ namespace ClassicUno.Classes.Logic
         {
             /* Give a slight delay before beginning dealing. This gives time for the WM_PAINT event to update the screen with the pile of pick-up cards,
              * player names, etc. */
-            _gameText = "Dealing new round!";
-            _ui.UpdateStatus(_gameText);
+            _ui.UpdateStatus("Dealing new round!");
             Thread.Sleep(2000);
             /* We loop 7 times (7 cards per hand) */
             for (var dealt = 0; dealt <= 6; dealt++)
@@ -786,6 +787,9 @@ namespace ClassicUno.Classes.Logic
                 GameData.DiscardPile.Add(topCard);
 
                 GameData.Deck.Shuffle();
+
+                _ui.SoundEffectRequest(SoundType.Shuffle);
+                _ui.UpdateLogText("Deck re-shuffled!");
             }
 
             _ui.SoundEffectRequest(SoundType.Draw);

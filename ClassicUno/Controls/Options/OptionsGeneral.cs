@@ -29,6 +29,7 @@ namespace ClassicUno.Controls.Options
             chkLoad.Enabled = chkSave.Checked;
 
             chkStatus.Checked = _data.ShowStatus;
+            chkLog.Checked = _data.ShowLogText;
 
             chkExit.CheckedChanged += CheckStateChanged;
             chkNew.CheckedChanged += CheckStateChanged;
@@ -37,6 +38,7 @@ namespace ClassicUno.Controls.Options
             chkLoad.CheckedChanged += CheckStateChanged;
 
             chkStatus.CheckedChanged += CheckStateChanged;
+            chkLog.CheckedChanged += CheckStateChanged;
         }
 
         private void CheckStateChanged(object sender, EventArgs e)
@@ -68,6 +70,10 @@ namespace ClassicUno.Controls.Options
 
                 case "STATUS":
                     _data.ShowStatus = o.Checked;
+                    break;
+
+                case "LOG":
+                    _data.ShowLogText = o.Checked;
                     break;
             }
         }

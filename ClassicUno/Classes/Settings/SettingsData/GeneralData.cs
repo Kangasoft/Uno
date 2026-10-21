@@ -62,6 +62,9 @@ namespace ClassicUno.Classes.Settings.SettingsData
         [XmlAttribute("status")]
         public bool ShowStatus { get; set; }
 
+        [XmlAttribute("logText")]
+        public bool ShowLogText { get; set; }
+
         [XmlElement("window")]
         public WindowData Window = new WindowData();
 

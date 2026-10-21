@@ -36,6 +36,7 @@
             this.chkSave = new System.Windows.Forms.CheckBox();
             this.gbGeneral = new System.Windows.Forms.GroupBox();
             this.chkStatus = new System.Windows.Forms.CheckBox();
+            this.chkLog = new System.Windows.Forms.CheckBox();
             this.gbConfirm.SuspendLayout();
             this.gbExit.SuspendLayout();
             this.gbGeneral.SuspendLayout();
@@ -110,10 +111,11 @@
             // 
             // gbGeneral
             // 
+            this.gbGeneral.Controls.Add(this.chkLog);
             this.gbGeneral.Controls.Add(this.chkStatus);
             this.gbGeneral.Location = new System.Drawing.Point(3, 163);
             this.gbGeneral.Name = "gbGeneral";
-            this.gbGeneral.Size = new System.Drawing.Size(300, 50);
+            this.gbGeneral.Size = new System.Drawing.Size(300, 74);
             this.gbGeneral.TabIndex = 2;
             this.gbGeneral.TabStop = false;
             this.gbGeneral.Text = "General:";
@@ -128,6 +130,17 @@
             this.chkStatus.Tag = "STATUS";
             this.chkStatus.Text = "Show status bar";
             this.chkStatus.UseVisualStyleBackColor = true;
+            // 
+            // chkLog
+            // 
+            this.chkLog.AutoSize = true;
+            this.chkLog.Location = new System.Drawing.Point(10, 47);
+            this.chkLog.Name = "chkLog";
+            this.chkLog.Size = new System.Drawing.Size(156, 19);
+            this.chkLog.TabIndex = 4;
+            this.chkLog.Tag = "LOG";
+            this.chkLog.Text = "Show game play log text";
+            this.chkLog.UseVisualStyleBackColor = true;
             // 
             // OptionsGeneral
             // 
@@ -160,5 +173,6 @@
         private System.Windows.Forms.CheckBox chkSave;
         private System.Windows.Forms.GroupBox gbGeneral;
         private System.Windows.Forms.CheckBox chkStatus;
+        private System.Windows.Forms.CheckBox chkLog;
     }
 }

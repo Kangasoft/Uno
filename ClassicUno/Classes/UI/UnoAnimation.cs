@@ -4,8 +4,8 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
-using ClassicUno.Properties;
 
 namespace ClassicUno.Classes.UI
 {
@@ -14,16 +14,28 @@ namespace ClassicUno.Classes.UI
         private readonly Control _owner;
         private readonly Image _image;
 
+        private readonly ImageAttributes _imageAttributes;
+
         private RectangleF _bounds;
         private bool _disposed;
 
-        public UnoAnimation(Control owner, RectangleF bounds)
+        public UnoAnimation(Control owner, RectangleF bounds, Image image)
         {
             _owner = owner;
             _bounds = bounds;
 
             /* Load the animated GIF once. */
-            _image = (Image)Resources.animatedUno.Clone();
+            _image = image;
+
+            /* Apply reduced opacity. 1.0 = fully opaque, 0.0 = fully transparent. */
+            _imageAttributes = new ImageAttributes();
+
+            var colorMatrix = new ColorMatrix
+            {
+                Matrix33 = 0.8f
+            };
+
+            _imageAttributes.SetColorMatrix(colorMatrix);
         }
 
         public RectangleF Bounds
@@ -86,8 +98,8 @@ namespace ClassicUno.Classes.UI
             /* Update this GIF's current animation frame. */
             ImageAnimator.UpdateFrames(_image);
 
-            /* Draw into the specified rectangle. The GIF's transparent pixels remain transparent. */
-            graphics.DrawImage(_image, _bounds);
+            /* Apply opacity attributes. */
+            graphics.DrawImage(_image, Rectangle.Round(_bounds), 0, 0, _image.Width, _image.Height, GraphicsUnit.Pixel, _imageAttributes);
         }
 
         private void OnFrameChanged(object sender, EventArgs e)
@@ -151,6 +163,7 @@ namespace ClassicUno.Classes.UI
 
             _disposed = true;
             _image.Dispose();
+            _imageAttributes.Dispose();
         }
     }
 }

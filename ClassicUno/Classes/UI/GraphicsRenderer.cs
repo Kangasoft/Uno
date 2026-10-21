@@ -16,7 +16,7 @@ using ClassicUno.Properties;
 
 namespace ClassicUno.Classes.UI
 {
-    public class GraphicsManager : FeltForm
+    public class GraphicsRenderer : FeltForm
     {
         #region CardKey
         /* KeyPair class for Dictionary object */
@@ -52,6 +52,8 @@ namespace ClassicUno.Classes.UI
         #region Fields
         public Game CurrentGame { get; set; }
 
+        public GameLogRenderer LogRenderer { get; set; }
+
         /* UNO! card images - this separates current game play card data from the actual bitmaps. This makes it easier
          * to create a smaller "game-save" file without including the images in the binary data file. */
         private readonly Dictionary<CardKey, Bitmap> _cardImages = new Dictionary<CardKey, Bitmap>();
@@ -83,8 +85,13 @@ namespace ClassicUno.Classes.UI
         #endregion
 
         #region Initialization
-        public GraphicsManager()
+        public GraphicsRenderer()
         {
+            LogRenderer = new GameLogRenderer(_textColor, 11f)
+            {
+                BottomOffset = 20
+            };
+
             BuildCardImages();
         }
         #endregion
@@ -103,6 +110,8 @@ namespace ClassicUno.Classes.UI
 
                     _unoAnimation = null;
                 }
+
+                LogRenderer.Dispose();
             }
 
             base.Dispose(disposing);
@@ -114,12 +123,19 @@ namespace ClassicUno.Classes.UI
         {
             ReScale();
 
+            if (LogRenderer != null)
+            {
+                LogRenderer.UpdateBounds(ClientRectangle);
+
+                Invalidate(LogRenderer.Bounds);
+            }
+
             if (!_unoAnimationsInitialized)
             {
                 /* Set UNO animation class */
                 for (var i = 0; i <= 3; i++)
                 {
-                    _unoAnimation[i] = new UnoAnimation(this, _unoIndicatorBounds[i]);
+                    _unoAnimation[i] = new UnoAnimation(this, _unoIndicatorBounds[i], (Image)Resources.animatedUno.Clone());
                 }
 
                 _unoAnimationsInitialized = true;
@@ -235,6 +251,8 @@ namespace ClassicUno.Classes.UI
             DrawGameCenter(e.Graphics);
             DrawPlayerCards(e.Graphics);
             DrawPlayerNames(e.Graphics, _playerNameBounds);
+
+            LogRenderer?.Draw(e.Graphics);
 
             for (int i = 0; i <= 3; i++)
             {
