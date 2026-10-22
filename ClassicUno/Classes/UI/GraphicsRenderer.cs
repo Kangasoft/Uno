@@ -81,18 +81,20 @@ namespace ClassicUno.Classes.UI
         private readonly Color _textColor = Color.FromArgb(255, 225, 140);
 
         /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
-        private Bitmap _cardBack;
+        private const int MaxBackImages = 7;
+
+        public int CardBackIndex;
+
+        public List<Image> CardBackImages = new List<Image>();
         #endregion
 
         #region Initialization
         public GraphicsRenderer()
         {
-            LogRenderer = new GameLogRenderer(_textColor, 11f)
-            {
-                BottomOffset = 20
-            };
+            LogRenderer = new GameLogRenderer(_textColor);
 
             BuildCardImages();
+            BuildCardBacks();
         }
         #endregion
 
@@ -322,7 +324,7 @@ namespace ClassicUno.Classes.UI
             var offset = 0;
             for (var i = 0; i < visualLayers; i++)
             {
-                DrawCard(g, _cardBack, new PointF(_pickupPilePosition.X + offset, _pickupPilePosition.Y + offset));
+                DrawCard(g, CardBackImages[CardBackIndex], new PointF(_pickupPilePosition.X + offset, _pickupPilePosition.Y + offset));
                 offset++;
             }
 
@@ -404,7 +406,7 @@ namespace ClassicUno.Classes.UI
 
                     card = CurrentGame.GameData.DiscardPile[cardIndex];
 
-                    DrawRotatedCard(g, _cardBack, x, y, card.DrawAngle);
+                    DrawRotatedCard(g, CardBackImages[CardBackIndex], x, y, card.DrawAngle);
                 }
             }
 
@@ -472,7 +474,7 @@ namespace ClassicUno.Classes.UI
                 var card = player.Cards[i];
                 var cardImage = GetCardImage(card);
                 Image image = player is HumanPlayer ? cardImage :
-                    CurrentGame.GameState != GameState.Stopped ? _cardBack : cardImage;
+                    CurrentGame.GameState != GameState.Stopped ? CardBackImages[CardBackIndex] : cardImage;
 
                 var selectedOffsetY = card == CurrentGame.SelectedCard ? 23f : 0f;
 
@@ -760,11 +762,6 @@ namespace ClassicUno.Classes.UI
                                     /* Wild draw four */
                                     AddCardImage(CardColor.None, CardType.DrawFour, 0, cardImg);
                                     break;
-
-                                case 2:
-                                    /* Card back */
-                                    _cardBack = cardImg;
-                                    break;
                             }
                             break;
 
@@ -776,6 +773,19 @@ namespace ClassicUno.Classes.UI
                     startX += 144; /* Card image width */
                 }
                 startY += 216; /* Card image height */
+            }
+        }
+
+        private void BuildCardBacks()
+        {
+            var image = Resources.cardBacks;
+            var startX = 0;
+            for (var i = 0; i < MaxBackImages; i++)
+            {
+                var rect = new Rectangle(startX, 0, 144, 216);
+                var cardImg = image.Clone(rect, image.PixelFormat);
+                CardBackImages.Add(cardImg);
+                startX += 144;
             }
         }
         #endregion

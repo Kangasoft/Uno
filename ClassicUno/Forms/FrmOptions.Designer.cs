@@ -44,7 +44,7 @@ namespace ClassicUno.Forms
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
             this.btnClose.TabIndex = 5;
-            this.btnClose.Text = "Close";
+            this.btnClose.Text = "Ok";
             this.btnClose.UseVisualStyleBackColor = true;
             // 
             // tabs
@@ -72,7 +72,7 @@ namespace ClassicUno.Forms
             this.tbSound.Location = new System.Drawing.Point(4, 24);
             this.tbSound.Name = "tbSound";
             this.tbSound.Padding = new System.Windows.Forms.Padding(3);
-            this.tbSound.Size = new System.Drawing.Size(358, 338);
+            this.tbSound.Size = new System.Drawing.Size(318, 292);
             this.tbSound.TabIndex = 1;
             this.tbSound.Text = "Sound";
             this.tbSound.UseVisualStyleBackColor = true;

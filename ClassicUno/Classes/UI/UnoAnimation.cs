@@ -11,6 +11,7 @@ namespace ClassicUno.Classes.UI
 {
     public class UnoAnimation : IDisposable
     {
+        #region Fields
         private readonly Control _owner;
         private readonly Image _image;
 
@@ -18,7 +19,9 @@ namespace ClassicUno.Classes.UI
 
         private RectangleF _bounds;
         private bool _disposed;
+        #endregion
 
+        #region Constructor
         public UnoAnimation(Control owner, RectangleF bounds, Image image)
         {
             _owner = owner;
@@ -37,7 +40,9 @@ namespace ClassicUno.Classes.UI
 
             _imageAttributes.SetColorMatrix(colorMatrix);
         }
+        #endregion
 
+        #region Properties
         public RectangleF Bounds
         {
             get => _bounds;
@@ -58,7 +63,9 @@ namespace ClassicUno.Classes.UI
         }
 
         public bool IsAnimating { get; private set; }
+        #endregion
 
+        #region Animation control
         public void Start()
         {
             if (_disposed || IsAnimating)
@@ -87,7 +94,9 @@ namespace ClassicUno.Classes.UI
             /* Clear the animation area. */
             Invalidate(Rectangle.Round(_bounds));
         }
+        #endregion
 
+        #region Draw method
         public void Draw(Graphics graphics)
         {
             if (_disposed || !IsAnimating || graphics == null)
@@ -101,7 +110,9 @@ namespace ClassicUno.Classes.UI
             /* Apply opacity attributes. */
             graphics.DrawImage(_image, Rectangle.Round(_bounds), 0, 0, _image.Width, _image.Height, GraphicsUnit.Pixel, _imageAttributes);
         }
+        #endregion
 
+        #region Private methods
         private void OnFrameChanged(object sender, EventArgs e)
         {
             if (_disposed || !IsAnimating)
@@ -146,7 +157,9 @@ namespace ClassicUno.Classes.UI
                 /* The control may be closing or destroying its handle. */
             }
         }
+        #endregion
 
+        #region IDisposable
         public void Dispose()
         {
             if (_disposed)
@@ -165,5 +178,6 @@ namespace ClassicUno.Classes.UI
             _image.Dispose();
             _imageAttributes.Dispose();
         }
+        #endregion
     }
 }

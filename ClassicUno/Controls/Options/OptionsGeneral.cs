@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿/* Classic Uno 2026
+ * Version: 1.0
+ * By: Jason James Newland
+ * ©2026 - Kangasoft Software */
+using System;
 using System.Windows.Forms;
 using ClassicUno.Classes.Settings.SettingsData;
 
@@ -30,6 +27,8 @@ namespace ClassicUno.Controls.Options
 
             chkStatus.Checked = _data.ShowStatus;
             chkLog.Checked = _data.ShowLogText;
+            chkDrop.Checked = _data.ShowDropShadow;
+            chkDrop.Enabled = chkLog.Checked;
 
             chkExit.CheckedChanged += CheckStateChanged;
             chkNew.CheckedChanged += CheckStateChanged;
@@ -39,6 +38,7 @@ namespace ClassicUno.Controls.Options
 
             chkStatus.CheckedChanged += CheckStateChanged;
             chkLog.CheckedChanged += CheckStateChanged;
+            chkDrop.CheckedChanged += CheckStateChanged;
         }
 
         private void CheckStateChanged(object sender, EventArgs e)
@@ -73,7 +73,12 @@ namespace ClassicUno.Controls.Options
                     break;
 
                 case "LOG":
+                    chkDrop.Enabled = o.Checked;
                     _data.ShowLogText = o.Checked;
+                    break;
+
+                case "DROP":
+                    _data.ShowDropShadow = o.Checked;
                     break;
             }
         }

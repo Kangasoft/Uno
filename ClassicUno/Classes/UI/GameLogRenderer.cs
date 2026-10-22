@@ -38,6 +38,10 @@ namespace ClassicUno.Classes.UI
         public Rectangle Bounds { get; private set; }
 
         public int BottomOffset { get; set; } = 0;
+
+        public bool ShowDropShadow { get; set; }
+
+        public bool Visible { get; set; }
         #endregion
 
         #region Constructor
@@ -75,6 +79,15 @@ namespace ClassicUno.Classes.UI
                     using (Brush shadowBrush = new SolidBrush(_shadowColor))
                     {
                         g.Clear(Color.Transparent);
+
+                        if (ShowDropShadow)
+                        {
+                            using (Brush backgroundBrush = new SolidBrush(Color.FromArgb(60, 0, 0, 0)))
+                            {
+                                /* Subtle translucent backdrop, which also makes the top feather visible. */
+                                g.FillRectangle(backgroundBrush, 0, 0, Width, Height);
+                            }
+                        }
 
                         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
 
@@ -235,10 +248,10 @@ namespace ClassicUno.Classes.UI
         }
         #endregion
 
-        #region Draw text
+        #region Draw bitmap
         public void Draw(Graphics g)
         {
-            if (_disposed || _bitmap == null)
+            if (_disposed || _bitmap == null || !Visible)
             {
                 return;
             }

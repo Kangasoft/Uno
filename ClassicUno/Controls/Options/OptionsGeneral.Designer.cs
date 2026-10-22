@@ -35,8 +35,9 @@
             this.chkLoad = new System.Windows.Forms.CheckBox();
             this.chkSave = new System.Windows.Forms.CheckBox();
             this.gbGeneral = new System.Windows.Forms.GroupBox();
-            this.chkStatus = new System.Windows.Forms.CheckBox();
             this.chkLog = new System.Windows.Forms.CheckBox();
+            this.chkStatus = new System.Windows.Forms.CheckBox();
+            this.chkDrop = new System.Windows.Forms.CheckBox();
             this.gbConfirm.SuspendLayout();
             this.gbExit.SuspendLayout();
             this.gbGeneral.SuspendLayout();
@@ -111,14 +112,26 @@
             // 
             // gbGeneral
             // 
+            this.gbGeneral.Controls.Add(this.chkDrop);
             this.gbGeneral.Controls.Add(this.chkLog);
             this.gbGeneral.Controls.Add(this.chkStatus);
             this.gbGeneral.Location = new System.Drawing.Point(3, 163);
             this.gbGeneral.Name = "gbGeneral";
-            this.gbGeneral.Size = new System.Drawing.Size(300, 74);
+            this.gbGeneral.Size = new System.Drawing.Size(300, 101);
             this.gbGeneral.TabIndex = 2;
             this.gbGeneral.TabStop = false;
             this.gbGeneral.Text = "General:";
+            // 
+            // chkLog
+            // 
+            this.chkLog.AutoSize = true;
+            this.chkLog.Location = new System.Drawing.Point(10, 47);
+            this.chkLog.Name = "chkLog";
+            this.chkLog.Size = new System.Drawing.Size(156, 19);
+            this.chkLog.TabIndex = 4;
+            this.chkLog.Tag = "LOG";
+            this.chkLog.Text = "Show game play log text";
+            this.chkLog.UseVisualStyleBackColor = true;
             // 
             // chkStatus
             // 
@@ -131,16 +144,17 @@
             this.chkStatus.Text = "Show status bar";
             this.chkStatus.UseVisualStyleBackColor = true;
             // 
-            // chkLog
+            // chkDrop
             // 
-            this.chkLog.AutoSize = true;
-            this.chkLog.Location = new System.Drawing.Point(10, 47);
-            this.chkLog.Name = "chkLog";
-            this.chkLog.Size = new System.Drawing.Size(156, 19);
-            this.chkLog.TabIndex = 4;
-            this.chkLog.Tag = "LOG";
-            this.chkLog.Text = "Show game play log text";
-            this.chkLog.UseVisualStyleBackColor = true;
+            this.chkDrop.AutoSize = true;
+            this.chkDrop.Enabled = false;
+            this.chkDrop.Location = new System.Drawing.Point(30, 72);
+            this.chkDrop.Name = "chkDrop";
+            this.chkDrop.Size = new System.Drawing.Size(129, 19);
+            this.chkDrop.TabIndex = 4;
+            this.chkDrop.Tag = "DROP";
+            this.chkDrop.Text = "Show drop-shadow";
+            this.chkDrop.UseVisualStyleBackColor = true;
             // 
             // OptionsGeneral
             // 
@@ -174,5 +188,6 @@
         private System.Windows.Forms.GroupBox gbGeneral;
         private System.Windows.Forms.CheckBox chkStatus;
         private System.Windows.Forms.CheckBox chkLog;
+        private System.Windows.Forms.CheckBox chkDrop;
     }
 }

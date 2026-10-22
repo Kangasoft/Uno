@@ -65,6 +65,12 @@ namespace ClassicUno.Classes.Settings.SettingsData
         [XmlAttribute("logText")]
         public bool ShowLogText { get; set; }
 
+        [XmlAttribute("shadow")]
+        public bool ShowDropShadow { get; set; }
+
+        [XmlAttribute("cardBack")]
+        public int CardBack { get; set; }
+
         [XmlElement("window")]
         public WindowData Window = new WindowData();
 

@@ -60,7 +60,9 @@ namespace ClassicUno.Forms
 
             statusBar.RenderMode = ToolStripRenderMode.Professional;
             statusBar.Renderer = renderer;
-            statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
+
+            var status = SettingsManager.Settings.General.ShowStatus;
+            statusBar.Visible = status;
 
             _tmrNew = new Timer {Interval = 10, Enabled = true};
             _tmrNew.Tick += ShowNewGameDialog;
@@ -72,6 +74,13 @@ namespace ClassicUno.Forms
 
             BuildMenuGame(mnuGame);
             BuildMenuOptions(mnuOptions);
+
+            LogRenderer.Visible = SettingsManager.Settings.General.ShowLogText;
+            LogRenderer.BottomOffset = status ? 20 : 0;
+            LogRenderer.UpdateBounds(ClientRectangle);
+            LogRenderer.ShowDropShadow = SettingsManager.Settings.General.ShowDropShadow;
+
+            CardBackIndex = SettingsManager.Settings.General.CardBack;
 
             mnuGame.DropDownOpening += OnMenuGameOpening;
             mnuOptions.DropDownOpening += OnMenuOptionsOpening;
@@ -236,8 +245,10 @@ namespace ClassicUno.Forms
                         SettingsManager.Settings.Sound.EnableMusic, null, OnMenuClick),
                     new ToolStripSeparator(),
                     MenuHelper.AddMenuItem("Show status bar", "STATUS", Keys.None, true, SettingsManager.Settings.General.ShowStatus, null, OnMenuClick),
-                    new ToolStripSeparator(), 
-                    MenuHelper.AddMenuItem("Options", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick),
+                    MenuHelper.AddMenuItem("Show game log text", "LOG", Keys.None, true, SettingsManager.Settings.General.ShowLogText, null, OnMenuClick),
+                    new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Card back...", "BACKS", Keys.None, true, OnMenuClick),
+                    MenuHelper.AddMenuItem("Options...", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick)
                 });
         }
 
@@ -346,6 +357,18 @@ namespace ClassicUno.Forms
                     var status = !SettingsManager.Settings.General.ShowStatus;
                     statusBar.Visible = status;
                     SettingsManager.Settings.General.ShowStatus = status;
+                    LogRenderer.BottomOffset = status ? 20 : 0;
+                    LogRenderer.UpdateBounds(ClientRectangle);
+                    Invalidate(LogRenderer.Bounds);
+                    break;
+
+                case "LOG":
+                    var log = !SettingsManager.Settings.General.ShowLogText;
+                    SettingsManager.Settings.General.ShowLogText = log;
+                    LogRenderer.Visible = log;
+                    LogRenderer.Update(_logText);
+                    LogRenderer.UpdateBounds(ClientRectangle);
+                    Invalidate(LogRenderer.Bounds);
                     break;
 
                 case "OPTIONS":
@@ -354,8 +377,27 @@ namespace ClassicUno.Forms
                         options.ShowDialog(this);
                         statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
 
+                        LogRenderer.ShowDropShadow = SettingsManager.Settings.General.ShowDropShadow;
                         LogRenderer.UpdateBounds(ClientRectangle);
                         LogRenderer.Update(SettingsManager.Settings.General.ShowLogText ? _logText : null);
+                    }
+                    break;
+
+                case "BACKS":
+                    using (var backs = new FrmCardBacks())
+                    {
+                        backs.CardImages = CardBackImages;
+                        backs.SelectedIndex = SettingsManager.Settings.General.CardBack;
+
+                        if (backs.ShowDialog(this) == DialogResult.OK)
+                        {
+                            if (backs.SelectedIndex > -1)
+                            {
+                                CardBackIndex = backs.SelectedIndex;
+                                SettingsManager.Settings.General.CardBack = CardBackIndex;
+                                Invalidate();
+                            }
+                        }
                     }
                     break;
 
@@ -628,7 +670,7 @@ namespace ClassicUno.Forms
             }
 
             _logText.Add(text);
-            if (LogRenderer == null || !SettingsManager.Settings.General.ShowLogText)
+            if (LogRenderer?.Visible != true)
             {
                 return;
             }

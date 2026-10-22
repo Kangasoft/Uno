@@ -37,6 +37,7 @@ namespace ClassicUno.Classes.Settings
             General.Confirm.OnNew = true;
             General.ShowStatus = true;
             General.ShowLogText = true;
+            General.ShowDropShadow = true;
 
             /* Sound options */
             Sound.EnableVoice = true;
