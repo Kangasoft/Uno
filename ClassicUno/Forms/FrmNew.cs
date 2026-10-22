@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Settings.SettingsData;
 using ClassicUno.Controls;
@@ -12,6 +13,24 @@ namespace ClassicUno.Forms
 {
     public partial class FrmNew : FormEx
     {
+        private readonly object[] _maleVoice = {
+            "Juan",
+            "Robert",
+            "Dan",
+            "Adam",
+            "Richard",
+            "Tom"
+        };
+
+        private readonly object[] _femaleVoice = {
+            "Debbie",
+            "Samantha",
+            "Jenny",
+            "Vicky",
+            "Michelle",
+            "Anna"
+        };
+
         public PlayerNameData NameData { get; set; }
 
         public int NumberOfPlayers { get; set; }
@@ -25,6 +44,10 @@ namespace ClassicUno.Forms
                 cmbGender.Items.Add(Utils.GetDescriptionFromEnumValue((PlayerGender) i));
             }
 
+            cmbGender.SelectedIndexChanged += GenderSelectedIndexChanged;
+
+            chkSelect.CheckedChanged += CheckStateChanged;
+
             btnStart.Click += ButtonClick;
         }
 
@@ -35,14 +58,46 @@ namespace ClassicUno.Forms
                 txtName.Text = NameData.Name;
                 txtName.SelectionStart = txtName.TextLength;
                 cmbGender.SelectedIndex = (int) NameData.Gender;
+                chkSelect.Checked = NameData.SelectVoice;
+                cmbVoice.SelectedIndex = NameData.VoiceIndex;
             }
             else
             {
-                NameData = new PlayerNameData();
+                NameData = new PlayerNameData
+                {
+                    SelectVoice = true
+                };
                 cmbGender.SelectedIndex = 0;
+
+                chkSelect.Checked = true;
+                cmbVoice.SelectedIndex = 0;
             }
             cmbPlayers.SelectedIndex = NumberOfPlayers > 0 ? NumberOfPlayers - 2 : 0;
             base.OnLoad(e);
+        }
+
+        private void CheckStateChanged(object sender, EventArgs e)
+        {
+            cmbVoice.Enabled = chkSelect.Checked;
+        }
+
+        private void GenderSelectedIndexChanged(object sender, EventArgs e)
+        {
+            cmbVoice.Items.Clear();
+            switch (cmbGender.SelectedIndex)
+            {
+                case 0:
+                    /* Male */
+                    cmbVoice.Items.AddRange(_maleVoice);
+                    break;
+
+                default:
+                    /* Female */
+                    cmbVoice.Items.AddRange(_femaleVoice);
+                    break;
+            }
+
+            cmbVoice.SelectedIndex = NameData.VoiceIndex;
         }
 
         private void ButtonClick(object sender, EventArgs e)
@@ -54,6 +109,9 @@ namespace ClassicUno.Forms
             }
             NameData.Name = txtName.Text;
             NameData.Gender = (PlayerGender) cmbGender.SelectedIndex;
+
+            NameData.SelectVoice = chkSelect.Checked;
+            NameData.VoiceIndex = cmbVoice.SelectedIndex;
 
             NumberOfPlayers = cmbPlayers.SelectedIndex + 2;
             DialogResult = DialogResult.OK;

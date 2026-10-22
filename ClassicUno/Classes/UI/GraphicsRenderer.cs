@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -74,6 +75,7 @@ namespace ClassicUno.Classes.UI
         private RectangleF[] _playerNameBounds = new RectangleF[4];
 
         private UnoAnimation[] _unoAnimation = new UnoAnimation[4];
+        private UnoAnimation _winner;
 
         private RectangleF[] _unoIndicatorBounds = new RectangleF[4];
         private bool _unoAnimationsInitialized;
@@ -81,7 +83,7 @@ namespace ClassicUno.Classes.UI
         private readonly Color _textColor = Color.FromArgb(255, 225, 140);
 
         /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
-        private const int MaxBackImages = 7;
+        private const int MaxBackImages = 8;
 
         public int CardBackIndex;
 
@@ -113,6 +115,12 @@ namespace ClassicUno.Classes.UI
                     _unoAnimation = null;
                 }
 
+                if (_winner != null)
+                {
+                    _winner?.Dispose();
+                    _winner = null;
+                }
+
                 LogRenderer.Dispose();
             }
 
@@ -137,7 +145,10 @@ namespace ClassicUno.Classes.UI
                 /* Set UNO animation class */
                 for (var i = 0; i <= 3; i++)
                 {
-                    _unoAnimation[i] = new UnoAnimation(this, _unoIndicatorBounds[i], (Image)Resources.animatedUno.Clone());
+                    _unoAnimation[i] = new UnoAnimation(this, _unoIndicatorBounds[i], (Image)Resources.animatedUno.Clone())
+                    {
+                        Opacity = 0.8f
+                    };
                 }
 
                 _unoAnimationsInitialized = true;
@@ -237,6 +248,14 @@ namespace ClassicUno.Classes.UI
             {
                 animation.Stop();
             }
+
+            if (_winner?.IsAnimating != true)
+            {
+                return;
+            }
+            _winner.Stop();
+            _winner.Dispose();
+            _winner = null;
         }
         #endregion
 
@@ -256,10 +275,13 @@ namespace ClassicUno.Classes.UI
 
             LogRenderer?.Draw(e.Graphics);
 
-            for (int i = 0; i <= 3; i++)
+            for (var i = 0; i <= 3; i++)
             {
                 _unoAnimation[i].Draw(e.Graphics);
             }
+
+            /* Draw winner GIF */
+            _winner?.Draw(e.Graphics);
 
             if (CurrentGame.GameState != GameState.Paused)
             {
@@ -450,6 +472,25 @@ namespace ClassicUno.Classes.UI
                 {
                     _unoAnimation[playerIndex].Stop();
                 }
+
+                if (CurrentGame.GameState == GameState.Dealing )
+                {
+                    return;
+                }
+
+                if (_winner != null)
+                {
+                    /* If we don't do this check, it will try to continously create the class on each invalidate - hanging the application */
+                    return;
+                }
+
+                /* Show who the winner is */
+                _winner = new UnoAnimation(this, _unoIndicatorBounds[playerIndex], (Image) Resources.winner.Clone())
+                {
+                    Opacity = 1f
+                };
+                _winner.Start();
+
                 return;
             }
 
@@ -523,6 +564,10 @@ namespace ClassicUno.Classes.UI
                 }
                 else
                 {
+                    if (_unoAnimation[playerIndex] == null)
+                    {
+                        continue;
+                    }
                     if (_unoAnimation[playerIndex].IsAnimating)
                     {
                         _unoAnimation[playerIndex].Stop();

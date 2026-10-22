@@ -17,6 +17,7 @@ namespace ClassicUno.Classes.UI
 
         private readonly ImageAttributes _imageAttributes;
 
+        private float _opacity = 1f;
         private RectangleF _bounds;
         private bool _disposed;
         #endregion
@@ -33,16 +34,33 @@ namespace ClassicUno.Classes.UI
             /* Apply reduced opacity. 1.0 = fully opaque, 0.0 = fully transparent. */
             _imageAttributes = new ImageAttributes();
 
-            var colorMatrix = new ColorMatrix
-            {
-                Matrix33 = 0.8f
-            };
-
-            _imageAttributes.SetColorMatrix(colorMatrix);
+            SetOpacity();
         }
         #endregion
 
         #region Properties
+        public float Opacity
+        {
+            get => _opacity;
+            set
+            {
+                var opacity = value;
+                if (opacity < 0f)
+                {
+                    opacity = 0f;
+                }
+
+                if (opacity > 1f)
+                {
+                    opacity = 1f;
+                }
+
+                _opacity = opacity;
+
+                SetOpacity();
+            }
+        }
+
         public RectangleF Bounds
         {
             get => _bounds;
@@ -113,6 +131,17 @@ namespace ClassicUno.Classes.UI
         #endregion
 
         #region Private methods
+
+        private void SetOpacity()
+        {
+            var colorMatrix = new ColorMatrix
+            {
+                Matrix33 = _opacity
+            };
+
+            _imageAttributes.SetColorMatrix(colorMatrix);
+        }
+
         private void OnFrameChanged(object sender, EventArgs e)
         {
             if (_disposed || !IsAnimating)

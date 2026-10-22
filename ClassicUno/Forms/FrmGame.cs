@@ -136,29 +136,31 @@ namespace ClassicUno.Forms
         {
             if (CurrentGame != null)
             {
-                if (CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused)
+                switch (CurrentGame?.GameState)
                 {
-                    if (SettingsManager.Settings.General.Recovery.Save)
-                    {
-                        /* Save the current game state to the recovery file */
-                        SaveGame(_recoveryFile);
-                    }
-
-                    if (SettingsManager.Settings.General.Confirm.OnExit)
-                    {
-                        if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
-                            MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    case GameState.Running:
+                    case GameState.Paused:
+                        if (SettingsManager.Settings.General.Recovery.Save)
                         {
-                            e.Cancel = true;
-                            return;
+                            /* Save the current game state to the recovery file */
+                            SaveGame(_recoveryFile);
                         }
-                    }
-                }
-                else
-                {
-                    /* If we're dealing a round, cancel close request */
-                    e.Cancel = true;
-                    return;
+
+                        if (SettingsManager.Settings.General.Confirm.OnExit)
+                        {
+                            if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                            {
+                                e.Cancel = true;
+                                return;
+                            }
+                        }
+                        break;
+
+                    case GameState.Dealing:
+                        /* If we're dealing a round, cancel close request */
+                        e.Cancel = true;
+                        return;
                 }
             }
             else
@@ -183,7 +185,6 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Menus
-
         private void BuildMenuGame(ToolStripDropDownItem m)
         {
             m.DropDownItems.Clear();
@@ -712,7 +713,7 @@ namespace ClassicUno.Forms
             }
 
             UpdateStatus($"Game over! { player} won!");
-
+            
             /* Record statistics */
             SettingsManager.Settings.Statistics.GamesPlayed++;
             if (player is HumanPlayer)

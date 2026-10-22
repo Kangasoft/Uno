@@ -26,6 +26,12 @@ namespace ClassicUno.Classes.Settings.SettingsData
 
         [XmlAttribute("gender")]
         public PlayerGender Gender { get; set; }
+
+        [XmlAttribute("selectVoice")]
+        public bool SelectVoice { get; set; }
+
+        [XmlAttribute("voiceIndex")]
+        public int VoiceIndex { get; set; }
     }
 
     [Serializable]

@@ -547,11 +547,14 @@ namespace ClassicUno.Classes.Logic
         private void CreatePlayers(GameOptionData data)
         {
             /* Add players: min 2 max 4. First add the human player */
-            GameData.Players.Add(new HumanPlayer
+            var human = new HumanPlayer
             {
-                NameData = data.NameData, VoiceIndex = AudioManager.GetRandomVoice(data.NameData.Gender), AudioPan = 50
-            });
-
+                NameData = data.NameData,
+                VoiceIndex = data.NameData.SelectVoice ? data.NameData.VoiceIndex : AudioManager.GetRandomVoice(data.NameData.Gender),
+                AudioPan = 50
+            };
+            GameData.Players.Add(human);
+            
             /* Now we add the remaining computer AI players */
             int[] panValues = { 45, 52, 65 };
             for (var players = 0; players <= data.NumberOfPlayers - 2; players++)

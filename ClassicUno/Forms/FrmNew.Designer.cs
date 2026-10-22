@@ -37,6 +37,8 @@
             this.btnStart = new System.Windows.Forms.Button();
             this.btnClose = new System.Windows.Forms.Button();
             this.pnlIcon = new System.Windows.Forms.Panel();
+            this.chkSelect = new System.Windows.Forms.CheckBox();
+            this.cmbVoice = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // lblName
@@ -46,7 +48,7 @@
             this.lblName.Location = new System.Drawing.Point(84, 15);
             this.lblName.Name = "lblName";
             this.lblName.Size = new System.Drawing.Size(67, 15);
-            this.lblName.TabIndex = 5;
+            this.lblName.TabIndex = 8;
             this.lblName.Text = "Your name:";
             // 
             // txtName
@@ -61,10 +63,10 @@
             // 
             this.lblPlayers.AutoSize = true;
             this.lblPlayers.BackColor = System.Drawing.Color.Transparent;
-            this.lblPlayers.Location = new System.Drawing.Point(84, 73);
+            this.lblPlayers.Location = new System.Drawing.Point(84, 113);
             this.lblPlayers.Name = "lblPlayers";
             this.lblPlayers.Size = new System.Drawing.Size(108, 15);
-            this.lblPlayers.TabIndex = 7;
+            this.lblPlayers.TabIndex = 10;
             this.lblPlayers.Text = "Number of players:";
             // 
             // cmbPlayers
@@ -75,10 +77,10 @@
             "2",
             "3",
             "4"});
-            this.cmbPlayers.Location = new System.Drawing.Point(198, 70);
+            this.cmbPlayers.Location = new System.Drawing.Point(198, 110);
             this.cmbPlayers.Name = "cmbPlayers";
             this.cmbPlayers.Size = new System.Drawing.Size(105, 23);
-            this.cmbPlayers.TabIndex = 2;
+            this.cmbPlayers.TabIndex = 4;
             // 
             // lblGender
             // 
@@ -87,7 +89,7 @@
             this.lblGender.Location = new System.Drawing.Point(84, 44);
             this.lblGender.Name = "lblGender";
             this.lblGender.Size = new System.Drawing.Size(48, 15);
-            this.lblGender.TabIndex = 6;
+            this.lblGender.TabIndex = 9;
             this.lblGender.Text = "Gender:";
             // 
             // cmbGender
@@ -101,10 +103,10 @@
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(147, 111);
+            this.btnStart.Location = new System.Drawing.Point(147, 151);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(75, 23);
-            this.btnStart.TabIndex = 3;
+            this.btnStart.TabIndex = 5;
             this.btnStart.Tag = "";
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
@@ -112,10 +114,10 @@
             // btnClose
             // 
             this.btnClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnClose.Location = new System.Drawing.Point(228, 111);
+            this.btnClose.Location = new System.Drawing.Point(228, 151);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
-            this.btnClose.TabIndex = 4;
+            this.btnClose.TabIndex = 6;
             this.btnClose.Tag = "";
             this.btnClose.Text = "Close";
             this.btnClose.UseVisualStyleBackColor = true;
@@ -128,14 +130,37 @@
             this.pnlIcon.Location = new System.Drawing.Point(12, 12);
             this.pnlIcon.Name = "pnlIcon";
             this.pnlIcon.Size = new System.Drawing.Size(64, 64);
-            this.pnlIcon.TabIndex = 8;
+            this.pnlIcon.TabIndex = 7;
+            // 
+            // chkSelect
+            // 
+            this.chkSelect.AutoSize = true;
+            this.chkSelect.BackColor = System.Drawing.Color.Transparent;
+            this.chkSelect.Location = new System.Drawing.Point(87, 74);
+            this.chkSelect.Name = "chkSelect";
+            this.chkSelect.Size = new System.Drawing.Size(91, 19);
+            this.chkSelect.TabIndex = 2;
+            this.chkSelect.Text = "Select voice:";
+            this.chkSelect.UseVisualStyleBackColor = false;
+            // 
+            // cmbVoice
+            // 
+            this.cmbVoice.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbVoice.Enabled = false;
+            this.cmbVoice.FormattingEnabled = true;
+            this.cmbVoice.Location = new System.Drawing.Point(198, 70);
+            this.cmbVoice.Name = "cmbVoice";
+            this.cmbVoice.Size = new System.Drawing.Size(105, 23);
+            this.cmbVoice.TabIndex = 3;
             // 
             // FrmNew
             // 
             this.AcceptButton = this.btnStart;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(315, 146);
+            this.ClientSize = new System.Drawing.Size(315, 186);
+            this.Controls.Add(this.cmbVoice);
+            this.Controls.Add(this.chkSelect);
             this.Controls.Add(this.pnlIcon);
             this.Controls.Add(this.btnClose);
             this.Controls.Add(this.btnStart);
@@ -170,5 +195,7 @@
         private System.Windows.Forms.Button btnClose;
         private System.Windows.Forms.TextBox txtName;
         private System.Windows.Forms.Panel pnlIcon;
+        private System.Windows.Forms.CheckBox chkSelect;
+        private System.Windows.Forms.ComboBox cmbVoice;
     }
 }

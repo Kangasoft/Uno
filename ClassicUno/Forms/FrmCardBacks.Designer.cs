@@ -36,7 +36,7 @@
             // btnClose
             // 
             this.btnClose.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnClose.Location = new System.Drawing.Point(279, 198);
+            this.btnClose.Location = new System.Drawing.Point(345, 225);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
             this.btnClose.TabIndex = 0;
@@ -53,7 +53,7 @@
             this.ctlCards.Index = -1;
             this.ctlCards.Location = new System.Drawing.Point(0, 0);
             this.ctlCards.Name = "ctlCards";
-            this.ctlCards.Size = new System.Drawing.Size(366, 193);
+            this.ctlCards.Size = new System.Drawing.Size(432, 220);
             this.ctlCards.TabIndex = 1;
             // 
             // FrmCardBacks
@@ -61,7 +61,7 @@
             this.AcceptButton = this.btnClose;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(366, 233);
+            this.ClientSize = new System.Drawing.Size(432, 260);
             this.Controls.Add(this.ctlCards);
             this.Controls.Add(this.btnClose);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
