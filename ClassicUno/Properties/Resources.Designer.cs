@@ -61,7 +61,7 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Version: v{0}.{1}
+        ///   Looks up a localized string similar to Version: v{0}.{1}.{2}
         ///
         ///Written by: Jason James Newland
         ///

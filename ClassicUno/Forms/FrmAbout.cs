@@ -1,5 +1,5 @@
 ﻿/* Classic Uno 2026
- * Version: 1.0
+ * Version: 1.0.1
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System.Drawing;
@@ -84,7 +84,7 @@ namespace ClassicUno.Forms
 
             /* Get version information */
             var version = assembly.GetName().Version;
-            lblInfo.Text = string.Format(Resources.aboutInfo, version.Major, version.Minor);
+            lblInfo.Text = string.Format(Resources.aboutInfo, version.Major, version.Minor, version.MinorRevision);
         }
     }
 }

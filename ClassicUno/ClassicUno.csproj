@@ -122,14 +122,8 @@
     <Compile Include="Forms\FrmCardBacks.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\FrmCardBacks.Designer.cs">
-      <DependentUpon>FrmCardBacks.cs</DependentUpon>
-    </Compile>
     <Compile Include="Forms\FrmGame.cs">
       <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Forms\FrmGame.Designer.cs">
-      <DependentUpon>FrmGame.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\FrmNew.cs">
       <SubType>Form</SubType>
@@ -153,12 +147,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\Options\OptionsGeneral.resx">
       <DependentUpon>OptionsGeneral.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FrmCardBacks.resx">
-      <DependentUpon>FrmCardBacks.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms\FrmGame.resx">
-      <DependentUpon>FrmGame.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmNew.resx">
       <DependentUpon>FrmNew.cs</DependentUpon>

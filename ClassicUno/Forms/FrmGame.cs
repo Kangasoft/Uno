@@ -1,5 +1,5 @@
 ﻿/* Classic Uno 2026
- * Version: 1.0
+ * Version: 1.0.1
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
@@ -15,13 +15,34 @@ using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Serialization;
 using ClassicUno.Classes.UI;
+using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Properties;
 
 namespace ClassicUno.Forms
 {
-    public sealed partial class FrmGame : GraphicsRenderer, IGame
+    public sealed class FrmGame : GraphicsRenderer, IGame
     {
         #region Fields
+        private readonly MenuStrip _mnuMain;
+        private readonly ToolStripMenuItem _mnuGame;
+        private readonly StatusStrip _statusBar;
+
+        private readonly ToolStripStatusLabel _slGame;
+        private readonly ToolStripStatusLabel _slTime;
+
+        private readonly ToolStripMenuItem _mnuOptions;
+
+        private readonly TableLayoutPanel _tblButtons;
+
+        private readonly CustomButton _btnDraw;
+        private readonly CustomButton _btnPass;
+        private readonly CustomButton _btnPlay;
+
+        private readonly CustomButton _btnRed;
+        private readonly CustomButton _btnBlue;
+        private readonly CustomButton _btnGreen;
+        private readonly CustomButton _btnYellow;
+
         private readonly Timer _tmrNew;
 
         private readonly Timer _time;
@@ -37,32 +58,208 @@ namespace ClassicUno.Forms
         #region Constructor
         public FrmGame()
         {
-            InitializeComponent();
-
             /* Get current assembly */
             var assembly = Assembly.GetExecutingAssembly();
 
             /* Get version information */
             var version = assembly.GetName().Version;
 
-            Text = $@"{Resources.appTitle} - v{version.Major}.{version.Minor}";
+            Text = $@"{Resources.appTitle} - v{version.Major}.{version.Minor}.{version.MinorRevision}";
             Icon = Icon.ExtractAssociatedIcon(assembly.Location);
+            ClientSize = new Size(914, 621);
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            MainMenuStrip = _mnuMain;
+            MinimumSize = new Size(930, 660);
 
-            foreach (var btn in tblButtons.Controls.Cast<Button>().Where(btn => btn != null))
+            /* Menubar */
+            _mnuMain = new MenuStrip
+            {
+                Location = new Point(0, 0),
+                Padding = new Padding(7, 2, 0, 2),
+                Size = new Size(914, 24),
+                TabIndex = 0
+            };
+
+            _mnuGame = new ToolStripMenuItem {Size = new Size(50, 20), Text = @"Game"};
+
+            _mnuOptions = new ToolStripMenuItem {Size = new Size(61, 20), Text = @"Options"};
+
+            var mnuHelp = new ToolStripMenuItem {Size = new Size(44, 20), Text = @"Help"};
+
+            _mnuMain.Items.AddRange(new ToolStripItem[] {_mnuGame, _mnuOptions, mnuHelp});
+
+            /* Statusbar */
+            _statusBar = new StatusStrip
+            {
+                Font = new Font("Segoe UI Semibold", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0),
+                Location = new Point(0, 599),
+                Padding = new Padding(1, 0, 16, 0),
+                Size = new Size(914, 22),
+                TabIndex = 1
+            };
+
+            _slGame = new ToolStripStatusLabel
+            {
+                Size = new Size(897, 17), Spring = true, Text = @"Ready!", TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            _slTime = new ToolStripStatusLabel
+            {
+                AutoSize = false,
+                Size = new Size(120, 17),
+                Text = @"Time: 0s",
+                TextAlign = ContentAlignment.MiddleLeft,
+                Visible = false
+            };
+
+            _statusBar.Items.AddRange(new ToolStripItem[] {_slGame, _slTime});
+            
+            /* Button table layout */
+            _tblButtons = new TableLayoutPanel
+            {
+                BackColor = Color.Transparent,
+                RowCount = 1,
+                ColumnCount = 8,
+                Location = new Point(247, 533),
+                Size = new Size(472, 63),
+                TabIndex = 4,
+                Visible = false
+            };
+
+            _tblButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 63F));
+
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
+            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
+
+            /* User buttons */
+            _btnPlay = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnPlay,
+                BackgroundImageLayout = ImageLayout.Center,
+                Enabled = false,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(143, 3),
+                Size = new Size(61, 55),
+                TabIndex = 5,
+                Tag = "PLAY",
+                UseVisualStyleBackColor = false
+            };
+
+            _btnDraw = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnDraw,
+                BackgroundImageLayout = ImageLayout.Center,
+                Enabled = false,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(3, 3),
+                Size = new Size(64, 55),
+                TabIndex = 2,
+                Tag = "DRAW",
+                UseVisualStyleBackColor = false
+            };
+
+            _btnPass = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnPass,
+                BackgroundImageLayout = ImageLayout.Center,
+                Enabled = false,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(73, 3),
+                Size = new Size(61, 55),
+                TabIndex = 3,
+                Tag = "PASS",
+                UseVisualStyleBackColor = false
+            };
+
+            _btnYellow = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnYellow,
+                BackgroundImageLayout = ImageLayout.Center,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(413, 3),
+                Size = new Size(54, 55),
+                TabIndex = 8,
+                Tag = "YELLOW",
+                UseVisualStyleBackColor = false,
+                Visible = false
+            };
+
+            _btnGreen = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnGreen,
+                BackgroundImageLayout = ImageLayout.Center,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(353, 3),
+                Size = new Size(54, 55),
+                TabIndex = 7,
+                Tag = "GREEN",
+                UseVisualStyleBackColor = false,
+                Visible = false
+            };
+
+            _btnBlue = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnBlue,
+                BackgroundImageLayout = ImageLayout.Center,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(293, 3),
+                Size = new Size(54, 55),
+                TabIndex = 6,
+                Tag = "BLUE",
+                UseVisualStyleBackColor = false,
+                Visible = false
+            };
+
+            _btnRed = new CustomButton
+            {
+                BackColor = Color.Transparent,
+                BackgroundImage = Resources.btnRed,
+                BackgroundImageLayout = ImageLayout.Center,
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(233, 3),
+                Size = new Size(54, 55),
+                TabIndex = 5,
+                Tag = "RED",
+                UseVisualStyleBackColor = false,
+                Visible = false
+            };
+
+           
+            _tblButtons.Controls.Add(_btnDraw, 0, 0);
+            _tblButtons.Controls.Add(_btnPass, 1, 0);
+            _tblButtons.Controls.Add(_btnPlay, 2, 0);
+            _tblButtons.Controls.Add(_btnRed, 4, 0);
+            _tblButtons.Controls.Add(_btnBlue, 5, 0);
+            _tblButtons.Controls.Add(_btnGreen, 6, 0);
+            _tblButtons.Controls.Add(_btnYellow, 7, 0);
+            
+            foreach (var btn in _tblButtons.Controls.Cast<Button>().Where(btn => btn != null))
             {
                 btn.Click += OnButtonClick;
             }
 
             var renderer = new UnoToolStripRenderer();
 
-            mnuMain.RenderMode = ToolStripRenderMode.Professional;
-            mnuMain.Renderer = renderer;
+            _mnuMain.RenderMode = ToolStripRenderMode.Professional;
+            _mnuMain.Renderer = renderer;
 
-            statusBar.RenderMode = ToolStripRenderMode.Professional;
-            statusBar.Renderer = renderer;
+            _statusBar.RenderMode = ToolStripRenderMode.Professional;
+            _statusBar.Renderer = renderer;
 
             var status = SettingsManager.Settings.General.ShowStatus;
-            statusBar.Visible = status;
+            _statusBar.Visible = status;
 
             _tmrNew = new Timer {Interval = 10, Enabled = true};
             _tmrNew.Tick += ShowNewGameDialog;
@@ -72,8 +269,8 @@ namespace ClassicUno.Forms
 
             _sync = new UiSynchronize(this);
 
-            BuildMenuGame(mnuGame);
-            BuildMenuOptions(mnuOptions);
+            BuildMenuGame(_mnuGame);
+            BuildMenuOptions(_mnuOptions);
 
             LogRenderer.Visible = SettingsManager.Settings.General.ShowLogText;
             LogRenderer.BottomOffset = status ? 20 : 0;
@@ -82,14 +279,17 @@ namespace ClassicUno.Forms
 
             CardBackIndex = SettingsManager.Settings.General.CardBack;
 
-            mnuGame.DropDownOpening += OnMenuGameOpening;
-            mnuOptions.DropDownOpening += OnMenuOptionsOpening;
+            _mnuGame.DropDownOpening += OnMenuGameOpening;
+            _mnuOptions.DropDownOpening += OnMenuOptionsOpening;
 
             /* Help menu */
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
             {
                 MenuHelper.AddMenuItem("About", "ABOUT", Keys.None, true, OnMenuClick)
             });
+
+            /* Add controls */
+            Controls.AddRange(new Control[] {_mnuMain, _statusBar, _tblButtons});
         }
         #endregion
 
@@ -123,11 +323,15 @@ namespace ClassicUno.Forms
 
         protected override void OnResize(EventArgs e)
         {
+            if (!Visible)
+            {
+                return;
+            }
             /* Move button table layout */
-            var x = ClientRectangle.Width / 2 - (tblButtons.Width - (!btnRed.Visible ? 260 : 0)) / 2;
+            var x = ClientRectangle.Width / 2 - (_tblButtons.Width - (!_btnRed.Visible ? 260 : 0)) / 2;
 
-            tblButtons.Bounds = new Rectangle(x, ClientRectangle.Height - statusBar.Height - tblButtons.Height,
-                tblButtons.Width, tblButtons.Height);
+            _tblButtons.Bounds = new Rectangle(x, ClientRectangle.Height - _statusBar.Height - _tblButtons.Height,
+                _tblButtons.Width, _tblButtons.Height);
 
             base.OnResize(e);
         }
@@ -228,7 +432,7 @@ namespace ClassicUno.Forms
 
         private void OnMenuGameOpening(object sender, EventArgs e)
         {
-            BuildMenuGame(mnuGame);
+            BuildMenuGame(_mnuGame);
         }
         
         private void BuildMenuOptions(ToolStripDropDownItem m)
@@ -255,7 +459,7 @@ namespace ClassicUno.Forms
 
         private void OnMenuOptionsOpening(object sender, EventArgs e)
         {
-            BuildMenuOptions(mnuOptions);
+            BuildMenuOptions(_mnuOptions);
         }
 
         private void OnMenuClick(object sender, EventArgs e)
@@ -356,7 +560,7 @@ namespace ClassicUno.Forms
 
                 case "STATUS":
                     var status = !SettingsManager.Settings.General.ShowStatus;
-                    statusBar.Visible = status;
+                    _statusBar.Visible = status;
                     SettingsManager.Settings.General.ShowStatus = status;
                     LogRenderer.BottomOffset = status ? 20 : 0;
                     LogRenderer.UpdateBounds(ClientRectangle);
@@ -376,7 +580,7 @@ namespace ClassicUno.Forms
                     using (var options = new FrmOptions())
                     {
                         options.ShowDialog(this);
-                        statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
+                        _statusBar.Visible = SettingsManager.Settings.General.ShowStatus;
 
                         LogRenderer.ShowDropShadow = SettingsManager.Settings.General.ShowDropShadow;
                         LogRenderer.UpdateBounds(ClientRectangle);
@@ -430,7 +634,7 @@ namespace ClassicUno.Forms
                             AudioManager.ResumeMusic();
                             break;
                     }
-                    BuildMenuGame(mnuGame);
+                    BuildMenuGame(_mnuGame);
                     Invalidate();
                 }
             }
@@ -520,7 +724,7 @@ namespace ClassicUno.Forms
                 CurrentGame.SelectedCard = c;
                 Invalidate();
             }
-            btnPlay.Enabled = CurrentGame?.SelectedCard != null;
+            _btnPlay.Enabled = CurrentGame?.SelectedCard != null;
 
             base.OnMouseDown(e);
         }
@@ -580,7 +784,7 @@ namespace ClassicUno.Forms
 
             /* Update the game time */
             CurrentGame.CurrentTime++;
-            slTime.Text = $@"Time: {Utils.FormatTime(CurrentGame.CurrentTime)}";
+            _slTime.Text = $@"Time: {Utils.FormatTime(CurrentGame.CurrentTime)}";
         }
         #endregion
 
@@ -609,12 +813,12 @@ namespace ClassicUno.Forms
             }
 
             /* Reset default button states */
-            btnDraw.Enabled = false;
-            btnPass.Enabled = false;
+            _btnDraw.Enabled = false;
+            _btnPass.Enabled = false;
             ShowButtons(false);
             ShowColorButtons(false);
 
-            slTime.Text = @"Time: 0s";
+            _slTime.Text = @"Time: 0s";
 
             var data = SettingsManager.Settings.Game;
             var form = new FrmNew
@@ -624,8 +828,8 @@ namespace ClassicUno.Forms
             };
             if (form.ShowDialog(this) != DialogResult.OK)
             {
-                slGame.Text = @"No game running. Select the Game menu and New Game.";
-                slTime.Visible = false;
+                _slGame.Text = @"No game running. Select the Game menu and New Game.";
+                _slTime.Visible = false;
                 return;
             }
             data.NameData = form.NameData;
@@ -637,7 +841,7 @@ namespace ClassicUno.Forms
             AudioManager.PlayEffect(SoundType.Shuffle);
 
             _time.Enabled = true;
-            slTime.Visible = true;
+            _slTime.Visible = true;
 
             _logText.Clear();
             LogRenderer.Update(null);
@@ -659,7 +863,7 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => UpdateStatus(text));
                 return;
             }
-            slGame.Text = text;
+            _slGame.Text = text;
         }
 
         public void UpdateLogText(string text)
@@ -700,7 +904,7 @@ namespace ClassicUno.Forms
                     _time.Enabled = false;
                     break;
             }
-            BuildMenuGame(mnuGame);
+            BuildMenuGame(_mnuGame);
             Invalidate();
         }
 
@@ -761,8 +965,8 @@ namespace ClassicUno.Forms
             CurrentGame.Dispose();
             CurrentGame = null;
 
-            slGame.Text = @"No game running. Select the Game menu and New Game.";
-            slTime.Visible = false;
+            _slGame.Text = @"No game running. Select the Game menu and New Game.";
+            _slTime.Visible = false;
 
             ResetAnimation();
 
@@ -800,7 +1004,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            tblButtons.Visible = visible;
+            _tblButtons.Visible = visible;
         }
 
         public void EnableDraw(bool enabled)
@@ -810,7 +1014,7 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => EnableDraw(enabled));
                 return;
             }
-            btnDraw.Enabled = enabled;
+            _btnDraw.Enabled = enabled;
         }
 
         public void EnablePass(bool enabled)
@@ -821,7 +1025,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            btnPass.Enabled = enabled;
+            _btnPass.Enabled = enabled;
         }
 
         public void EnablePlay(bool enabled)
@@ -832,7 +1036,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            btnPlay.Enabled = enabled;
+            _btnPlay.Enabled = enabled;
         }
 
         public void ShowColorButtons(bool visible)
@@ -843,10 +1047,10 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            btnRed.Visible = visible;
-            btnBlue.Visible = visible;
-            btnGreen.Visible = visible;
-            btnYellow.Visible = visible;
+            _btnRed.Visible = visible;
+            _btnBlue.Visible = visible;
+            _btnGreen.Visible = visible;
+            _btnYellow.Visible = visible;
 
             OnResize(new EventArgs());
         }
@@ -866,7 +1070,7 @@ namespace ClassicUno.Forms
                     if (CurrentGame != null)
                     {
                         _time.Enabled = true;
-                        slTime.Visible = true;
+                        _slTime.Visible = true;
 
                         _logText.Clear();
                         LogRenderer.Update(null);
