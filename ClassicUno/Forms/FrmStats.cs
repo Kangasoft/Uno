@@ -12,6 +12,11 @@ namespace ClassicUno.Forms
 {
     public sealed class FrmStats : FormEx
     {
+        /*
+         * Q: How does a tree get on the internet?
+         * A: It "logs" on!
+         */
+        #region Fields
         private StatisticsData _stats;
 
         private readonly GameStatistics _ctlStats;
@@ -26,7 +31,9 @@ namespace ClassicUno.Forms
                 _ctlStats.Statistics = _stats;
             }
         }
+        #endregion
 
+        #region Constructor
         public FrmStats()
         {
             ClientSize = new Size(568, 347);
@@ -81,7 +88,9 @@ namespace ClassicUno.Forms
                 _ctlStats, btnReset, _btnClose
             });
         }
+        #endregion
 
+        #region Reset stats
         private void ResetClick(object sender, EventArgs e)
         {
             if (MessageBox.Show(this,
@@ -95,5 +104,6 @@ namespace ClassicUno.Forms
             _stats = new StatisticsData();
             _ctlStats.Statistics = _stats;
         }
+        #endregion
     }
 }

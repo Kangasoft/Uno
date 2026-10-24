@@ -16,12 +16,17 @@ using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Serialization;
 using ClassicUno.Classes.UI;
 using ClassicUno.Classes.UI.Controls;
+using ClassicUno.Controls;
 using ClassicUno.Properties;
 
 namespace ClassicUno.Forms
 {
     public sealed class FrmGame : GraphicsRenderer, IGame
     {
+        /*
+         * Q: Why did the computer get cold?
+         * A: It left all its Windows open.
+         */
         #region Fields
         private readonly MenuStrip _mnuMain;
         private readonly ToolStripMenuItem _mnuGame;
@@ -352,8 +357,8 @@ namespace ClassicUno.Forms
 
                         if (SettingsManager.Settings.General.Confirm.OnExit)
                         {
-                            if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
-                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                            if (CustomMessageBox.Show(this, Resources.resignGame, Resources.appTitle,
+                                CustomMessageBoxButtons.YesNo, CustomMessageBoxIcon.Question) == DialogResult.No)
                             {
                                 e.Cancel = true;
                                 return;
@@ -474,8 +479,8 @@ namespace ClassicUno.Forms
                 case "LOAD":
                     if ((CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused))
                     {
-                        if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle, MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Question) == DialogResult.No)
+                        if (CustomMessageBox.Show(this, Resources.resignGame, Resources.appTitle, CustomMessageBoxButtons.YesNo,
+                            CustomMessageBoxIcon.Question) == DialogResult.No)
                         {
                             return;
                         }
@@ -504,9 +509,9 @@ namespace ClassicUno.Forms
                     {
                         if (CurrentGame.GameState == GameState.Running || CurrentGame.GameState == GameState.Paused)
                         {
-                            if (MessageBox.Show(this,
-                                @"Are you sure you want to restart this game? All progress will be lost.",
-                                Resources.appTitle, MessageBoxButtons.YesNo) == DialogResult.Yes)
+                            if (CustomMessageBox.Show(this,
+                                "Are you sure you want to restart this game?\r\n\r\nAll progress will be lost.",
+                                Resources.appTitle, CustomMessageBoxButtons.YesNo, CustomMessageBoxIcon.Question) == DialogResult.Yes)
                             {
                                 if (CurrentGame.GameState == GameState.Paused)
                                 {
@@ -795,8 +800,8 @@ namespace ClassicUno.Forms
             {
                 if (CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused)
                 {
-                    if (MessageBox.Show(this, Resources.resignGame, Resources.appTitle,
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                    if (CustomMessageBox.Show(this, Resources.resignGame, Resources.appTitle,
+                        CustomMessageBoxButtons.YesNo, CustomMessageBoxIcon.Question) == DialogResult.No)
                     {
                         return;
                     }
@@ -952,11 +957,11 @@ namespace ClassicUno.Forms
             SettingsManager.Settings.Statistics.TotalGameTime += time;
 
             var msg = player is HumanPlayer
-                ? $"You have won and earned {score} points!"
-                : $"{player} has won!";
+                ? $"You have won and earned {score} points!\r\n\r\n"
+                : $"{player} has won!\r\n\r\n";
 
-            if (MessageBox.Show(this, $@"{msg} Play again?", Resources.appTitle, MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question) == DialogResult.Yes)
+            if (CustomMessageBox.Show(this, $@"{msg}Play again?", Resources.appTitle, CustomMessageBoxButtons.YesNo,
+                CustomMessageBoxIcon.Question) == DialogResult.Yes)
             {
                 NewGame();
                 return;
@@ -1057,7 +1062,6 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Load/save
-
         private bool LoadGame(string path)
         {
             var state = new GameStateData();

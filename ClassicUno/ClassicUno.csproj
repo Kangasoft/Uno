@@ -95,6 +95,9 @@
     <Compile Include="Classes\Logic\Player\IPlayer.cs" />
     <Compile Include="Classes\Serialization\XmlFormatting.cs" />
     <Compile Include="Classes\Serialization\XmlSerialize.cs" />
+    <Compile Include="Controls\CustomMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Controls\FormEx.cs">
       <SubType>Form</SubType>
     </Compile>
