@@ -3,7 +3,6 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Media;
@@ -16,7 +15,8 @@ namespace ClassicUno.Controls
     {
         None = 0,
         Exclamation = 1,
-        Question = 2
+        Question = 2,
+        Information = 3
     }
 
     public enum CustomMessageBoxButtons
@@ -138,6 +138,10 @@ namespace ClassicUno.Controls
                 case CustomMessageBoxIcon.Question:
                     SystemSounds.Question.Play();
                     break;
+
+                case CustomMessageBoxIcon.Information:
+                    SystemSounds.Beep.Play();
+                    break;
             }
         }
         #endregion
@@ -185,8 +189,26 @@ namespace ClassicUno.Controls
             /* Draw the icon, if set */
             if (_icon != CustomMessageBoxIcon.None)
             {
-                var systemIcon = _icon == CustomMessageBoxIcon.Exclamation ? SystemIcons.Warning : SystemIcons.Question;
-                e.Graphics.DrawIcon(systemIcon, _iconBounds);
+                Icon systemIcon = null;
+                switch (_icon)
+                {
+                    case CustomMessageBoxIcon.Exclamation:
+                        systemIcon = SystemIcons.Warning;
+                        break;
+
+                    case CustomMessageBoxIcon.Question:
+                        systemIcon = SystemIcons.Question;
+                        break;
+
+                    case CustomMessageBoxIcon.Information:
+                        systemIcon = SystemIcons.Information;
+                        break;
+                }
+
+                if (systemIcon != null)
+                {
+                    e.Graphics.DrawIcon(systemIcon, _iconBounds);
+                }
             }
 
             /* Draw the message */

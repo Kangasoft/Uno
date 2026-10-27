@@ -4,7 +4,6 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -19,6 +18,11 @@ namespace ClassicUno.Classes.UI
 {
     public class GraphicsRenderer : FeltForm
     {
+        /*
+         * A programmer walks into a bar and orders 1.000 beers.
+         * The bartender says, "Is that one beer or a thousand?"
+         * The programmer replies, "Yes." 😄
+         */
         #region CardKey
         /* KeyPair class for Dictionary object */
         private class CardKey

@@ -11,8 +11,9 @@ using ClassicUno.Classes.DirectSound.Core;
 
 namespace ClassicUno.Classes.DirectSound
 {
-    public class Sound
+    public class Sound : IDisposable
     {
+        #region Fields
         private Timer _play;
         private IBasicAudio _audio;
         private IGraphBuilder _graph;
@@ -21,12 +22,17 @@ namespace ClassicUno.Classes.DirectSound
         private IMediaPosition _position;
         private int _volume;
 
+        private readonly object _sync = new object();
+        private int _playbackVersion;
+
+        private int _ending;
+        private bool _disposed;
+
         public event Action<Sound> OnMediaEnded;
         public event Action<Sound, double> OnMediaPositionChanged;
+        #endregion
 
-        public string Clip { get; set; }
-
-        /* Constructor/destuctor */
+        #region Constructors
         public Sound()
         {
             _volume = 100;
@@ -39,46 +45,46 @@ namespace ClassicUno.Classes.DirectSound
             _volume = 100;
             _pan = 50;
         }
+        #endregion
 
-        ~Sound()
-        {
-            Close();
-        }
+        #region Properties
+        public string Clip { get; set; }
 
-        /* Public properties */
         public int Volume
         {
-            get => _volume;
+            get
+            {
+                lock (_sync)
+                {
+                    return _volume;
+                }
+            }
             set
             {
-                _volume = value;
-                if (_volume < 0)
+                lock (_sync)
                 {
-                    _volume = 0;
+                    _volume = Math.Max(0, Math.Min(100, value));
+                    _audio?.SetVolume((_volume - 100) * 50);
                 }
-                if (_volume > 100)
-                {
-                    _volume = 100;
-                }
-                _audio?.SetVolume((_volume - 100)*50);
             }
         }
 
         public int Pan
         {
-            get => _pan;
+            get
+            {
+                lock (_sync)
+                {
+                    return _pan;
+                }
+            }
             set
             {
-                _pan = value;
-                if (_pan < 0)
+                lock (_sync)
                 {
-                    _pan = 0;
+                    _pan = Math.Max(0, Math.Min(100, value));
+                    _audio?.SetBalance((_pan - 50) * 200);
                 }
-                if (_pan > 100)
-                {
-                    _pan = 100;
-                }
-                _audio?.SetBalance((_pan - 50)*200);
             }
         }
 
@@ -86,15 +92,32 @@ namespace ClassicUno.Classes.DirectSound
         {
             get
             {
-                _position.GetCurrentPosition(out var pos);
-                return pos;
+                lock (_sync)
+                {
+                    if (_disposed || _position == null)
+                    {
+                        throw new InvalidOperationException("Cannot get the position when no media is open.");
+                    }
+
+                    _position.GetCurrentPosition(out var pos);
+                    return pos;
+                }
             }
             set
             {
-                _position.GetDuration(out var duration);
-                if (value <= duration)
+                lock (_sync)
                 {
-                    _position.SetCurrentPosition(value);
+                    if (_disposed || _position == null)
+                    {
+                        throw new InvalidOperationException("Cannot set the position when no media is open.");
+                    }
+
+                    _position.GetDuration(out var duration);
+
+                    if (value >= 0 && value <= duration)
+                    {
+                        _position.SetCurrentPosition(value);
+                    }
                 }
             }
         }
@@ -103,12 +126,21 @@ namespace ClassicUno.Classes.DirectSound
         {
             get
             {
-                _position.GetDuration(out var duration);
-                return duration;
+                lock (_sync)
+                {
+                    if (_disposed || _position == null)
+                    {
+                        throw new InvalidOperationException("Cannot get the duration when no media is open.");
+                    }
+
+                    _position.GetDuration(out var duration);
+                    return duration;
+                }
             }
         }
+        #endregion
 
-        /* Public methods */
+        #region Public methods
         public void PlayAsync(bool noEvents = false)
         {
             /* This does NOT check for cross-threading, so if events are raised, it's up to the code at the other
@@ -119,147 +151,300 @@ namespace ClassicUno.Classes.DirectSound
 
         public void Play(bool noEvents = false)
         {
-            Close();
-            if (!Open() || _media == null || _media.Run() < 0)
+            lock (_sync)
             {
-                return;
-            }
-            try
-            {
-                _audio.SetVolume((_volume - 100) * 50);
-                _audio.SetBalance((_pan - 50) * 200);
-                /* This parameter is used if the sound being played is only a few 100ms; it prevents the timer from ever being created,
-                 * or firing the events. This causes exceptions and sometimes even the sound not to be heard at all. This is because of
-                 * the Stop() function being called within the timer if the position == length, and at 200ms time interval, still causes
-                 * problems... if the file is longer than a second, no problem! */
-                if (!noEvents)
+                if (_disposed)
                 {
-                    _play = new Timer(TimerTick, null, 0, 200);
+                    return;
                 }
-            }
-            catch (Exception)
-            {
-                /* Silently ignore - this will sometimes happen when playing short files (1sec or so) in quick succession */
-                Debug.Assert(true);
+
+                CloseLocked();
+
+                if (!OpenLocked())
+                {
+                    return;
+                }
+
+                try
+                {
+                    if (_media == null || _media.Run() < 0)
+                    {
+                        CloseLocked();
+                        return;
+                    }
+
+                    _ending = 0;
+
+                    _audio?.SetVolume((_volume - 100) * 50);
+                    _audio?.SetBalance((_pan - 50) * 200);
+
+                    if (!noEvents)
+                    {
+                        _play = new Timer(TimerTick, null, 0, 200);
+                    }
+                }
+                catch (Exception)
+                {
+                    StopLocked();
+                    CloseLocked();
+                    Debug.Assert(true);
+                }
             }
         }
 
         public void Stop()
         {
-            _media?.Stop();
-            if (_play == null)
+            lock (_sync)
             {
-                return;
+                StopLocked();
             }
-            _play.Dispose();
-            _play = null;
         }
 
         public void Pause()
         {
-            _media?.Pause();
-           if (_play == null)
-           {
-               return;
-           }
-           _play.Dispose();
-           _play = null;
+            lock (_sync)
+            {
+                if (_disposed || _media == null)
+                {
+                    return;
+                }
+
+                try
+                {
+                    _media.Pause();
+
+                    _play?.Dispose();
+                    _play = null;
+
+                    /* Invalidate any position reading already in progress. */
+                    _playbackVersion++;
+                }
+                catch (Exception)
+                {
+                    Debug.Assert(true);
+                }
+            }
         }
 
         public void Resume()
         {
-            if (_media?.Run() < 0)
+            lock (_sync)
             {
-                return;
-            }
-            _play = new Timer(TimerTick, null, 0, 200);
-        }
+                if (_disposed || _media == null)
+                {
+                    return;
+                }
 
-        /* Private helper methods */    
-        private bool Open()
-        {
-            bool flag;
-            if (string.IsNullOrEmpty(Clip) || !File.Exists(Clip))
-            {
-                return false;
-            }
-            object o = null;
-            try
-            {
-                var typeFromClsid = Type.GetTypeFromCLSID(ClsId.FilterGraph);
-                if (typeFromClsid == null)
-                {
-                    return false;
-                }
-                o = Activator.CreateInstance(typeFromClsid);
-                _graph = (IGraphBuilder) o;
-                o = null;
-                if (_graph.RenderFile(Clip, null) < 0)
-                {
-                    return false;
-                }
-                _media = _graph;
-                _position = (IMediaPosition) _graph;
-                _audio = _graph as IBasicAudio;                   
-                flag = true;
-            }
-            catch (Exception)
-            {
-                flag = false;
-            }
-            finally
-            {
-                if (o != null)
-                {
-                    Marshal.ReleaseComObject(o);
-                }
-            }
-            return flag;
-        }
-
-        private void Close()
-        {
-            _position = null;
-            _media = null;
-            _audio = null;
-            if (_graph != null)
-            {
                 try
                 {
-                    Marshal.ReleaseComObject(_graph);
+                    /* Avoid creating multiple timers. */
+                    if (_play != null || _media.Run() < 0)
+                    {
+                        return;
+                    }
+                    _play = new Timer(TimerTick, null, 0, 200);
                 }
                 catch (Exception)
                 {
-                    /* Silently ignore - this will sometimes happen when playing short files (1sec or so) in quick succession */
                     Debug.Assert(true);
                 }
-                _graph = null;
             }
-            GC.Collect();
         }
 
+        public void Dispose()
+        {
+            lock (_sync)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+                CloseLocked();
+            }
+        }
+        #endregion
+
+        #region Helper methods
+        /* Thread-safe graph manipulation for DirectShow */
+        private bool OpenLocked()
+        {
+            if (_disposed || string.IsNullOrEmpty(Clip) || !File.Exists(Clip))
+            {
+                return false;
+            }
+
+            object graphObject = null;
+
+            try
+            {
+                var graphType = Type.GetTypeFromCLSID(ClsId.FilterGraph);
+
+                if (graphType == null)
+                {
+                    return false;
+                }
+
+                graphObject = Activator.CreateInstance(graphType);
+
+                _graph = (IGraphBuilder)graphObject;
+                graphObject = null;
+
+                if (_graph.RenderFile(Clip, null) < 0)
+                {
+                    CloseLocked();
+                    return false;
+                }
+
+                _media = _graph;
+                _position = (IMediaPosition)_graph;
+                _audio = (IBasicAudio)_graph;
+
+                return true;
+            }
+            catch (Exception)
+            {
+                CloseLocked();
+                Debug.Assert(true);
+                return false;
+            }
+            finally
+            {
+                if (graphObject != null &&
+                    Marshal.IsComObject(graphObject))
+                {
+                    Marshal.ReleaseComObject(graphObject);
+                }
+            }
+        }
+
+        private void StopLocked()
+        {
+            _playbackVersion++;
+
+            var timer = _play;
+            _play = null;
+            timer?.Dispose();
+
+            try
+            {
+                _media?.Stop();
+            }
+            catch (Exception)
+            {
+                Debug.Assert(true);
+            }
+        }
+
+        private void CloseLocked()
+        {
+            _playbackVersion++;
+
+            var timer = _play;
+            _play = null;
+            timer?.Dispose();
+
+            try
+            {
+                _media?.Stop();
+            }
+            catch (Exception)
+            {
+                Debug.Assert(true);
+            }
+
+            _position = null;
+            _media = null;
+            _audio = null;
+
+            if (_graph == null)
+            {
+                return;
+            }
+
+            try
+            {
+                Marshal.ReleaseComObject(_graph);
+            }
+            catch (Exception)
+            {
+                Debug.Assert(true);
+            }
+
+            _graph = null;
+        }
+        #endregion
+
+        #region Timer
         /* Timer callback for getting the current position of the streaming audio */
         private void TimerTick(object sender)
         {
             double pos;
             double duration;
-            try
+            int version;
+
+            lock (_sync)
             {
-                _position.GetCurrentPosition(out pos);
-                _position.GetDuration(out duration);
+                if (_disposed || _position == null || _graph == null)
+                {
+                    return;
+                }
+
+                version = _playbackVersion;
+
+                try
+                {
+                    _position.GetCurrentPosition(out pos);
+                    _position.GetDuration(out duration);
+                }
+                catch (Exception)
+                {
+                    return;
+                }
             }
-            catch (Exception)
-            {
-                /* Silently ignore - this will sometimes happen when playing short files (1sec or so) in quick succession */
-                return;
-            }
+
+            /* Never raise external events while holding _sync. */
             OnMediaPositionChanged?.Invoke(this, pos);
+
             if (pos < duration)
             {
                 return;
             }
-            Stop();
+
+            lock (_sync)
+            {
+                /* Playback may have stopped or been replaced during the event. */
+                if (_disposed || version != _playbackVersion || _position == null || _graph == null)
+                {
+                    return;
+                }
+
+                /* Ensure only one callback handles the end of this track. */
+                if (Interlocked.Exchange(ref _ending, 1) != 0)
+                {
+                    return;
+                }
+
+                _playbackVersion++;
+
+                var timer = _play;
+                _play = null;
+                timer?.Dispose();
+
+                try
+                {
+                    _media?.Stop();
+                }
+                catch (Exception)
+                {
+                    Debug.Assert(true);
+                }
+            }
+
+            /* The music manager can dispose this Sound and start the next track. */
             OnMediaEnded?.Invoke(this);
         }
+        #endregion
     }
 }

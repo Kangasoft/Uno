@@ -12,6 +12,7 @@ using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Helpers.Management
 {
+    #region Enums
     public enum VoiceType
     {
         Pass = 0,
@@ -26,7 +27,9 @@ namespace ClassicUno.Classes.Helpers.Management
         Draw = 3,
         Error = 4
     }
+    #endregion
 
+    #region Audio data classes
     internal class AudioData
     {
         public SoundType Type { get; set; }
@@ -34,7 +37,7 @@ namespace ClassicUno.Classes.Helpers.Management
         public Sound Player { get; set; }
     }
 
-    public class VoiceData
+    internal class VoiceData
     {
         public int VoiceIndex { get; set; }
 
@@ -44,9 +47,11 @@ namespace ClassicUno.Classes.Helpers.Management
 
         public Sound Voice { get; set; }
     }
+    #endregion
 
     public static class AudioManager
     {
+        #region Fields
         /* Easier way to manage and play external sounds */
         private static readonly Random RandomVoice = new Random();
 
@@ -57,15 +62,16 @@ namespace ClassicUno.Classes.Helpers.Management
         public static Sound TestVoice { get; set; }
 
         public static Sound TestFx { get; set; }
-
-
+        
         private static int _voiceVolume;
         private static int _effectsVolume;
         private static int _musicVolume;
 
         private static Sound _music;
         private static int _musicIndex;
+        #endregion
 
+        #region Initialization
         public static void Initialize()
         {
             var voiceSearch = new FolderSearch();
@@ -108,8 +114,37 @@ namespace ClassicUno.Classes.Helpers.Management
 
             var music = new DirectoryInfo(Utils.MainDir(@"data\music\", false));
             musicSearch.BeginSearch(music, "*.mp3", "*", false);
-        }
 
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+        }
+        #endregion
+
+        #region Finalization
+        private static void OnProcessExit(object sender, EventArgs e)
+        {
+            /* Clean up audio objects */
+            if (_music != null)
+            {
+                _music.OnMediaEnded -= OnMusicEnd;
+                _music.Dispose();
+            }
+
+            foreach (var effect in Sounds)
+            {
+                effect.Player.Dispose();
+            }
+
+            foreach (var voice in Voices)
+            {
+                voice.Voice.Dispose();
+            }
+
+            TestVoice?.Dispose();
+            TestFx?.Dispose();
+        }
+        #endregion
+
+        #region Public methods
         public static void SetVoiceVolume(int volume)
         {
             _voiceVolume = volume;
@@ -143,7 +178,7 @@ namespace ClassicUno.Classes.Helpers.Management
         public static void SetMusicVolume(int volume)
         {
             _musicVolume = volume;
-            if (Sounds.Count == 0 || _music == null)
+            if (_music == null)
             {
                 return;
             }
@@ -216,6 +251,23 @@ namespace ClassicUno.Classes.Helpers.Management
             _music?.Stop();
         }
 
+        public static int GetRandomVoice(PlayerGender gender)
+        {
+            if (Voices.Count == 0)
+            {
+                return -1;
+            }
+            /* Find random voice index */
+            var match = Voices.Where(o => o.Gender == gender).ToList();
+            if (match.Count == 0)
+            {
+                return -1;
+            }
+            return match[RandomVoice.Next(match.Count)].VoiceIndex;
+        }
+        #endregion
+
+        #region Callbacks
         private static void VoiceSearchFileFound(string file)
         {
             /* Parse file name */
@@ -267,25 +319,11 @@ namespace ClassicUno.Classes.Helpers.Management
             Voices.Add(vd);
         }
 
-        public static int GetRandomVoice(PlayerGender gender)
-        {
-            if (Voices.Count == 0)
-            {
-                return -1;
-            }
-            /* Find random voice index */
-            var match = Voices.Where(o => o.Gender == gender).ToList();
-            if (match.Count == 0)
-            {
-                return -1;
-            }
-            return match[RandomVoice.Next(match.Count)].VoiceIndex;
-        }
-
         /* Music playback callback */
         private static void OnMusicEnd(Sound sound)
         {
-            _music.OnMediaEnded -= OnMusicEnd;
+            sound.OnMediaEnded -= OnMusicEnd;
+            sound.Dispose();
             /* Get next track */
             _musicIndex++;
             if (_musicIndex > Music.Count - 1)
@@ -309,7 +347,9 @@ namespace ClassicUno.Classes.Helpers.Management
             /* Begin music playback */
             PlayMusic();
         }
+        #endregion
 
+        #region Helper method
         /* Private load method */
         private static AudioData LoadSound(string file, SoundType type)
         {
@@ -320,5 +360,6 @@ namespace ClassicUno.Classes.Helpers.Management
             }
             return data;
         }
+        #endregion
     }
 }

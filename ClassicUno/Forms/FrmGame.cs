@@ -497,6 +497,8 @@ namespace ClassicUno.Forms
                         SaveGame(_saveFile))
                     {
                         UpdateStatus("Game successfully saved.");
+                        CustomMessageBox.Show(this, "Current game successfully saved.", Resources.appTitle, CustomMessageBoxButtons.Ok,
+                            CustomMessageBoxIcon.Information);
                     }
                     else
                     {
