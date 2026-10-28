@@ -69,7 +69,8 @@ namespace ClassicUno.Classes.Helpers.Management
                     Cards = p.Cards.Select(c => (Card) c.Clone()).ToList(),
                     IsSkipped = p.IsSkipped,
                     HasPassed = p.HasPassed,
-                    HasDrawn = p.HasDrawn
+                    HasDrawn = p.HasDrawn,
+                    HasRequestedDraw = p.HasRequestedDraw
                 }).ToList(),
 
                 CurrentColor = data.CurrentColor,
@@ -134,6 +135,7 @@ namespace ClassicUno.Classes.Helpers.Management
             player.IsSkipped = state.IsSkipped;
             player.HasPassed = state.HasPassed;
             player.HasDrawn = state.HasDrawn;
+            player.HasRequestedDraw = state.HasRequestedDraw;
 
             return player;
         }

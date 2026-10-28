@@ -163,14 +163,6 @@
   <data name="yellowOrb" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\yellowOrb.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="aboutInfo" xml:space="preserve">
-    <value>Version: v{0}.{1}.{2}
-
-Written by: Jason James Newland
-
-Copyright ©2026 - Kangasoft Software
-All rights reserved.</value>
-  </data>
   <data name="appTitle" xml:space="preserve">
     <value>Classic UNO! 2026</value>
   </data>
@@ -191,5 +183,16 @@ All rights reserved.</value>
   </data>
   <data name="winner" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Images\winner.gif;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="aboutInfo" xml:space="preserve">
+    <value>Version: v{0}.{1}.{2}
+
+Written by: Jason James Newland
+
+Copyright ©2026 - Kangasoft Software
+All rights reserved.</value>
+  </data>
+  <data name="saveIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Images\saveIcon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

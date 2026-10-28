@@ -21,8 +21,6 @@ namespace ClassicUno.Classes.Logic.Player
 
         private readonly Random _rnd = new Random();
 
-        private bool _hasRequestedDraw;
-
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
@@ -37,7 +35,8 @@ namespace ClassicUno.Classes.Logic.Player
 
         public bool HasDrawn { get; set; }
 
-
+        public bool HasRequestedDraw { get; set; }
+        
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw;
         public event Action<IPlayer, CardColor> PlayerChoosesColor;
@@ -106,7 +105,7 @@ namespace ClassicUno.Classes.Logic.Player
         {
             IsSkipped = false; /* Make sure this variable is RESET */
             HasDrawn = false;
-            _hasRequestedDraw = false;
+            HasRequestedDraw = false;
             PlayerEndTurn?.Invoke(this);
         }
         #endregion
@@ -124,7 +123,7 @@ namespace ClassicUno.Classes.Logic.Player
                 {
                     /* Need to draw */
                     HasDrawn = true;
-                    _hasRequestedDraw = true;
+                    HasRequestedDraw = true;
                     PlayerDraw?.Invoke(this);
                     return;
                 }
@@ -146,9 +145,9 @@ namespace ClassicUno.Classes.Logic.Player
 
         private void BackgroundWorkerEndWork(object sender, RunWorkerCompletedEventArgs e)
         {
-            if (_hasRequestedDraw)
+            if (HasRequestedDraw)
             {
-                _hasRequestedDraw = false;
+                HasRequestedDraw = false;
                 return;
             }
 

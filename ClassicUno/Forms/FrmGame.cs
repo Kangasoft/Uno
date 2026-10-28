@@ -55,7 +55,6 @@ namespace ClassicUno.Forms
         private readonly UiSynchronize _sync;
 
         private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
-        private readonly string _saveFile = Utils.MainDir(string.Format(Resources.userPath, "saved.dat"), true);
 
         private readonly List<string> _logText = new List<string>();
         #endregion
@@ -485,25 +484,49 @@ namespace ClassicUno.Forms
                             return;
                         }
                     }
-                    /* Restore saved game */
-                    UpdateStatus(LoadGame(_saveFile)
-                        ? string.Format(Resources.gameLoad, "Game loaded successfully")
-                        : "No games loaded.");
+
+                    using (var d = new FrmSaveLoadGame(false))
+                    {
+                        d.ShowDialog(this);
+                        if (d.DialogResult == DialogResult.OK)
+                        {
+                            /* Restore saved game */
+                            UpdateStatus(LoadGame(d.SelectedSave.FileName)
+                                ? string.Format(Resources.gameLoad, "Game loaded successfully")
+                                : "No games loaded.");
+                        }
+                    }
 
                     break;
 
                 case "SAVE":
-                    if ((CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused) &&
-                        SaveGame(_saveFile))
+                    if ((CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused))
                     {
-                        UpdateStatus("Game successfully saved.");
-                        CustomMessageBox.Show(this, "Current game successfully saved.", Resources.appTitle, CustomMessageBoxButtons.Ok,
-                            CustomMessageBoxIcon.Information);
+                        using (var d = new FrmSaveLoadGame(true))
+                        {
+                            d.ShowDialog(this);
+                            if (d.DialogResult == DialogResult.OK)
+                            {
+                                /* Save current game */
+                                if (SaveGame(d.SelectedSave.FileName))
+                                {
+                                    UpdateStatus("Game successfully saved.");
+                                    CustomMessageBox.Show(this, "Current game successfully saved.", Resources.appTitle,
+                                        CustomMessageBoxButtons.Ok,
+                                        CustomMessageBoxIcon.Information);
+                                }
+                            }
+                            else
+                            {
+                                UpdateStatus("Nothing saved.");
+                            }
+                        }
                     }
                     else
                     {
                         UpdateStatus("Nothing saved.");
                     }
+
                     break;
 
                 case "RESTART":

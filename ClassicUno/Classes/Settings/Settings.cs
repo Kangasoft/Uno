@@ -3,8 +3,10 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Xml.Serialization;
+using ClassicUno.Classes.Serialization;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Settings
@@ -23,6 +25,9 @@ namespace ClassicUno.Classes.Settings
 
         [XmlElement("statistics")]
         public StatisticsData Statistics = new StatisticsData();
+
+        [XmlElement("savedGames")]
+        public BindingList<SavedGameData> SavedGames = new BindingList<SavedGameData>();
 
         /* Constructor */
         public Settings()

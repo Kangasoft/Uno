@@ -26,7 +26,8 @@ namespace ClassicUno.Classes.Logic.Player
 
         public bool HasDrawn { get; set; }
 
-
+        public bool HasRequestedDraw { get; set; }
+        
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw; /* Not used on human players */
         public event Action<IPlayer, CardColor> PlayerChoosesColor; /* Not used on human players */
