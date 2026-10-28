@@ -4,4 +4,6 @@ This was mainly a challenge to write it in WinForms 2.0, with a lot of custom pa
 
 It is written in C# .NET 4.8.1 using Visual Studio 2017 Community Edition.
 
-Note: Remember to copy the contents of the \bin\Debug\data folder to the \bin\Release folder.
+Note 1: Remember to copy the contents of the \bin\Debug\data folder to the \bin\Release folder.
+
+Note 2: Some of this was written with the assistance of ChatGPT.
