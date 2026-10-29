@@ -34,6 +34,9 @@ namespace ClassicUno.Forms
 
         public int NumberOfPlayers { get; set; }
 
+        public bool TournamentMode { get; set; }
+
+
         public FrmNew()
         {
             InitializeComponent();
@@ -46,6 +49,7 @@ namespace ClassicUno.Forms
             cmbGender.SelectedIndexChanged += GenderSelectedIndexChanged;
 
             chkSelect.CheckedChanged += CheckStateChanged;
+            chkTournament.CheckStateChanged += CheckStateChanged;
 
             btnStart.Click += ButtonClick;
         }
@@ -72,12 +76,36 @@ namespace ClassicUno.Forms
                 cmbVoice.SelectedIndex = 0;
             }
             cmbPlayers.SelectedIndex = NumberOfPlayers > 0 ? NumberOfPlayers - 2 : 0;
+
+            var state = TournamentMode;
+            chkTournament.Checked = state;
+            //lblPlayers.Enabled = !state;
+            //cmbPlayers.Enabled = !state;
+
             base.OnLoad(e);
         }
 
         private void CheckStateChanged(object sender, EventArgs e)
         {
-            cmbVoice.Enabled = chkSelect.Checked;
+            var check = (CheckBox) sender;
+            if (check == null)
+            {
+                return;
+            }
+
+            switch (check.Tag.ToString())
+            {
+                case "VOICE":
+                    cmbVoice.Enabled = check.Checked;
+                    break;
+
+                case "TOURNAMENT":
+                    var state = check.Checked;
+                    lblPlayers.Enabled = !state;
+                    cmbPlayers.Enabled = !state;
+                    TournamentMode = state;
+                    break;
+            }
         }
 
         private void GenderSelectedIndexChanged(object sender, EventArgs e)

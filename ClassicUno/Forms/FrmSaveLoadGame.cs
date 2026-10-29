@@ -45,7 +45,11 @@ namespace ClassicUno.Forms
         #region Properties
         public SavedGameData SelectedSave { get; private set; }
 
-        private string SaveName => _txtName.Text.Trim(); /* Trim whitespace around the "friendly" name */
+        public string SaveName
+        {
+            get => _txtName.Text.Trim() /* Trim whitespace around the "friendly" name */;
+            set => _txtName.Text = value;
+        } 
         #endregion
 
         #region Constructor
@@ -70,7 +74,11 @@ namespace ClassicUno.Forms
             ShowInTaskbar = false;
             Font = new Font("Segoe UI", 9F);
 
-            _saveImages.Images.Add("save", Properties.Resources.saveIcon);
+            _saveImages.Images.AddRange(new Image[]
+            {
+                Resources.saveIcon,
+                Resources.tournamentIcon
+            });
 
             _lstSaves = new ListView
             {
@@ -82,9 +90,17 @@ namespace ClassicUno.Forms
                 HideSelection = false,
                 MultiSelect = false,
                 LargeImageList = _saveImages,
+                ShowGroups = true,
                 TabIndex = 1,
-                TabStop = true
+                TabStop = true,
+                ShowItemToolTips = true
             };
+
+            _lstSaves.Groups.AddRange(new[]
+            {
+                new ListViewGroup("Normal Games"), 
+                new ListViewGroup("Tournaments") 
+            });
 
             _lstSaves.SelectedIndexChanged += OnSelectedIndexChanged;
             _lstSaves.DoubleClick += OnDoubleClick;
@@ -217,6 +233,25 @@ namespace ClassicUno.Forms
             {
                 SelectedSave = GetSelectedSave();
 
+                /* Check for another save with the same friendly name. */
+                var existing = _saves.FirstOrDefault(s =>
+                    string.Equals(s.Name, SaveName, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    if (CustomMessageBox.Show(
+                        this, $"A game named \"{SaveName}\" already exists.\r\n\r\nDo you want to overwrite it?",
+                        Resources.appTitle,
+                        CustomMessageBoxButtons.YesNo,
+                        CustomMessageBoxIcon.Question) != DialogResult.Yes)
+                    {
+                        return;
+                    }
+
+                    /* Reuse the existing entry and its filename. */
+                    SelectedSave = existing;
+                }
+
                 if (SelectedSave != null)
                 {
                     /* Overwrite the selected save's friendly name. */
@@ -241,6 +276,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
+            /* Loading mode */
             if (_lstSaves.SelectedItems.Count == 0)
             {
                 return;
@@ -291,10 +327,14 @@ namespace ClassicUno.Forms
             {
                 _lstSaves.Items.Clear();
 
-                foreach (var item in _saves.Select(save => new ListViewItem(save.ToString(), "save")
+                foreach (var item in from save in _saves let index = save.Tournament ? 1 : 0 select new ListViewItem(
+                    $"{ShortenName(save.Name)}",
+                    index)
                 {
-                    Tag = save
-                }))
+                    Tag = save,
+                    Group = _lstSaves.Groups[index],
+                    ToolTipText = $"{save.Name}\r\nSaved: {save.DateSaved:dd/MM/yyyy HH:mm}"
+                })
                 {
                     _lstSaves.Items.Add(item);
                 }
@@ -310,6 +350,16 @@ namespace ClassicUno.Forms
             }
         }
 
+        private static string ShortenName(string name, int maxLength = 32)
+        {
+            if (string.IsNullOrEmpty(name) || name.Length <= maxLength)
+            {
+                return name;
+            }
+
+            return $"{name.Substring(0, maxLength - 3)}...";
+        }
+
         private SavedGameData GetSelectedSave()
         {
             if (_lstSaves.SelectedItems.Count == 0)
@@ -322,7 +372,7 @@ namespace ClassicUno.Forms
 
         private static string CreateFileName(string friendlyName)
         {
-            var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+            var invalidChars = Path.GetInvalidFileNameChars();
 
             var fileName = new string(
                 friendlyName

@@ -27,12 +27,20 @@ namespace ClassicUno.Classes.Helpers.Management
         public PlayDirection CurrentDirection { get; set; }
 
         public int CurrentTime { get; set; }
+
+        public bool TournamentActive { get; set; }
+
+        public int TournamentRound { get; set; }
+
+        public int TournamentScore { get; set; }
     }
 
     [Serializable]
     public class PlayerState
     {
         public string PlayerType { get; set; }
+
+        public ComputerDifficulty Difficulty { get; set; }
 
         public PlayerNameData NameData { get; set; }
 
@@ -62,6 +70,9 @@ namespace ClassicUno.Classes.Helpers.Management
 
                 Players = data.Players.Select(p => new PlayerState
                 {
+                    Difficulty = p is ComputerPlayer computer
+                        ? computer.Difficulty
+                        : ComputerDifficulty.Easy,
                     PlayerType = p.GetType().Name,
                     NameData = p.NameData,
                     VoiceIndex = p.VoiceIndex,
@@ -136,6 +147,11 @@ namespace ClassicUno.Classes.Helpers.Management
             player.HasPassed = state.HasPassed;
             player.HasDrawn = state.HasDrawn;
             player.HasRequestedDraw = state.HasRequestedDraw;
+
+            if (player is ComputerPlayer computer)
+            {
+                computer.Difficulty = state.Difficulty;
+            }
 
             return player;
         }

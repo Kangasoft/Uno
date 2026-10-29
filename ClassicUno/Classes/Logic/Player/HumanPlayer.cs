@@ -12,6 +12,8 @@ namespace ClassicUno.Classes.Logic.Player
     public class HumanPlayer : IPlayer
     {
         #region Fields
+        public ComputerDifficulty Difficulty { get; set; } /* Not used on human players */
+
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
@@ -97,6 +99,7 @@ namespace ClassicUno.Classes.Logic.Player
         {
             return new HumanPlayer
             {
+                Difficulty = Difficulty,
                 NameData = NameData,
                 VoiceIndex = VoiceIndex,
                 AudioPan = AudioPan,

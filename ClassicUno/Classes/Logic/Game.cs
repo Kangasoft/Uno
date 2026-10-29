@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -55,12 +56,18 @@ namespace ClassicUno.Classes.Logic
 
         public object Clone()
         {
+            var players = Players.Select(p => p.Clone()).ToList();
+            var currentPlayerIndex = Players.IndexOf(CurrentPlayer);
+
             return new GameData
             {
-                Players = Players.Select(p => p.Clone()).ToList(),
+                Players = players,
                 Deck = Deck.Select(c => (Card)c.Clone()).ToList(),
                 DiscardPile = DiscardPile.Select(c => (Card)c.Clone()).ToList(),
                 CurrentColor = CurrentColor,
+                CurrentPlayer = currentPlayerIndex >= 0
+                    ? players[currentPlayerIndex]
+                    : null,
                 CurrentDirection = CurrentDirection
             };
         }
@@ -71,6 +78,8 @@ namespace ClassicUno.Classes.Logic
     {
         #region Fields
         private readonly IGame _ui;
+
+        private bool _undoStateSavedThisTurn;
 
         private BackgroundWorker _worker;
 
@@ -88,6 +97,8 @@ namespace ClassicUno.Classes.Logic
         private GameData _restart;
 
         public GameData GameData;
+
+        public UndoManager Undo = new UndoManager();
 
         public bool Restartable => _restart != null;
 
@@ -151,7 +162,6 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region Public methods
-
         public void Start()
         {
             var card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
@@ -163,6 +173,44 @@ namespace ClassicUno.Classes.Logic
 
             GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
             GameState = GameState.Running;
+        }
+
+        public void UndoLastMove()
+        {
+            if (!(GameData.CurrentPlayer is HumanPlayer))
+            {
+                return;
+            }
+
+            if (!Undo.CanUndo)
+            {
+                return;
+            }
+
+            var restoredState = Undo.Undo();
+
+            if (restoredState == null)
+            {
+                return;
+            }
+
+            RemovePlayerCallbacks();
+            GameData = restoredState;
+            AddPlayerCallbacks();
+
+            _undoStateSavedThisTurn = false;
+
+            HighlightedCard = null;
+            SelectedCard = null;
+
+            _ui.ShowColorButtons(false);
+            _ui.ShowButtons(true);
+            _ui.EnableDraw(!GameData.CurrentPlayer.HasDrawn);
+            _ui.EnablePass(GameData.CurrentPlayer.HasDrawn);
+            _ui.EnablePlay(false);
+            _ui.Invalidate();
+
+            _ui.UpdateUndo();
         }
 
         public void Restart()
@@ -190,6 +238,8 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
 
+            SaveUndoState();
+
             var c = Draw();
             GameData.CurrentPlayer.DrawCard(c);
             _ui.EnableDraw(false);
@@ -197,6 +247,8 @@ namespace ClassicUno.Classes.Logic
 
             _ui.UpdateLogText($"{GameData.CurrentPlayer} draws a card.");
             _ui.Invalidate();
+
+            _ui.UpdateUndo();
         }
 
         public void HumanPass()
@@ -220,6 +272,10 @@ namespace ClassicUno.Classes.Logic
             /* Now, we evaluate the selected card can even be played */
             if (Validation.IsCardPlayable(GameData.DiscardPile[GameData.DiscardPile.Count - 1], SelectedCard, GameData.CurrentColor, GameData.CurrentPlayer.Cards))
             {
+                if (!GameData.CurrentPlayer.HasDrawn)
+                {
+                    SaveUndoState();
+                }
                 /* Play the card */
                 GameData.CurrentPlayer.PlayCard(SelectedCard);
             }
@@ -345,6 +401,9 @@ namespace ClassicUno.Classes.Logic
             /* Loop back mainly for the human player so the UI can be update by showing the "DRAW" and "PASS" buttons */
             _ui.ShowColorButtons(false);
             _ui.Invalidate();
+
+            _ui.UpdateUndo();
+
             if (!(player is HumanPlayer))
             {
                 return;
@@ -412,11 +471,16 @@ namespace ClassicUno.Classes.Logic
 
             if (player is HumanPlayer)
             {
+                _undoStateSavedThisTurn = false;
+
+                _ui.UpdateUndo();
+
                 _ui.ShowButtons(false);
                 _ui.EnableDraw(false);
                 _ui.EnablePass(false);
                 _ui.EnablePlay(false);
                 _ui.ShowColorButtons(false);
+
                 HighlightedCard = null;
                 SelectedCard = null;
             }
@@ -739,6 +803,17 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region Private helpers
+        private void SaveUndoState()
+        {
+            if (_undoStateSavedThisTurn)
+            {
+                return;
+            }
+
+            Undo.SaveState(GameData);
+            _undoStateSavedThisTurn = true;
+        }
+
         private void AddPlayerCallbacks()
         {
             /* Add callbacks */
@@ -803,7 +878,7 @@ namespace ClassicUno.Classes.Logic
             return card;
         }
 
-        private string GetGameText(IPlayer player, IPlayer nextPlayer, Card card)
+        private static string GetGameText(IPlayer player, IPlayer nextPlayer, Card card)
         {
             var sb = new StringBuilder();
             sb.Append($"{player} played a ");

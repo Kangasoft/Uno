@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,7 @@ using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Serialization;
+using ClassicUno.Classes.Settings.SettingsData;
 using ClassicUno.Classes.UI;
 using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Controls;
@@ -57,6 +59,8 @@ namespace ClassicUno.Forms
         private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
 
         private readonly List<string> _logText = new List<string>();
+
+        private readonly TournamentManager _tournament = new TournamentManager();
         #endregion
 
         #region Constructor
@@ -398,11 +402,13 @@ namespace ClassicUno.Forms
             m.DropDownItems.Clear();
 
             var restart = false;
+            var undo = false;
             if (CurrentGame != null)
             {
                 /* Is the current game able to be restarted? */
                 restart = CurrentGame.Restartable && CurrentGame.GameState == GameState.Running ||
                           CurrentGame.GameState == GameState.Paused;
+                undo = CurrentGame.Undo.CanUndo && CurrentGame.GameState == GameState.Running && CurrentGame.GameData.CurrentPlayer is HumanPlayer;
             }
 
             m.DropDownItems.AddRange(
@@ -414,7 +420,8 @@ namespace ClassicUno.Forms
                     MenuHelper.AddMenuItem("Save game", "SAVE", Keys.Control | Keys.S,
                         CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused,
                         OnMenuClick),
-                    new ToolStripSeparator(), 
+                    new ToolStripSeparator(),
+                    MenuHelper.AddMenuItem("Undo last move", "UNDO", Keys.Control | Keys.Z, undo, OnMenuClick),
                     MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.Control | Keys.R, restart, OnMenuClick),
                 });
 
@@ -502,12 +509,13 @@ namespace ClassicUno.Forms
                 case "SAVE":
                     if ((CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused))
                     {
-                        using (var d = new FrmSaveLoadGame(true))
+                        using (var d = new FrmSaveLoadGame(true) {SaveName = _tournament.IsActive ? "My tournament" : "My UNO game"})
                         {
                             d.ShowDialog(this);
                             if (d.DialogResult == DialogResult.OK)
                             {
                                 /* Save current game */
+                                d.SelectedSave.Tournament = _tournament.IsActive;
                                 if (SaveGame(d.SelectedSave.FileName))
                                 {
                                     UpdateStatus("Game successfully saved.");
@@ -515,6 +523,7 @@ namespace ClassicUno.Forms
                                         CustomMessageBoxButtons.Ok,
                                         CustomMessageBoxIcon.Information);
                                 }
+                                SettingsManager.Save();
                             }
                             else
                             {
@@ -527,6 +536,11 @@ namespace ClassicUno.Forms
                         UpdateStatus("Nothing saved.");
                     }
 
+                    break;
+
+                case "UNDO":
+                    Debug.Print("undo");
+                    CurrentGame?.UndoLastMove();
                     break;
 
                 case "RESTART":
@@ -842,19 +856,24 @@ namespace ClassicUno.Forms
                 Invalidate();
             }
 
+            /* Reset tournament */
+            if (_tournament.IsActive)
+            {
+                _tournament.End();
+            }
+
             /* Reset default button states */
             _btnDraw.Enabled = false;
             _btnPass.Enabled = false;
             ShowButtons(false);
             ShowColorButtons(false);
 
-            _slTime.Text = @"Time: 0s";
-
             var data = SettingsManager.Settings.Game;
             var form = new FrmNew
             {
                 NameData = data.NameData,
-                NumberOfPlayers = data.NumberOfPlayers
+                NumberOfPlayers = data.NumberOfPlayers,
+                TournamentMode = data.TournamentMode
             };
             if (form.ShowDialog(this) != DialogResult.OK)
             {
@@ -864,13 +883,45 @@ namespace ClassicUno.Forms
             }
             data.NameData = form.NameData;
             data.NumberOfPlayers = form.NumberOfPlayers;
+            data.TournamentMode = form.TournamentMode;
 
+            if (form.TournamentMode)
+            {
+                /* Create a tournament penis game ignoring number of players. The structure of tournaments is 3
+                 * successive games (which the human player has to win each of) starting with 2 players round 1,
+                 * 3 in round 2 and finally 4 in round 3. */
+                _tournament.Start();
+                StartTournamentRound();
+                return;
+            }
+
+            /* Start normal game based on data.NumberOfPlayers penis. */
+            StartGame(data);
+        }
+
+        private void StartTournamentRound()
+        {
+            var settings = SettingsManager.Settings.Game;
+
+            var data = new GameOptionData
+            {
+                NameData = settings.NameData,
+                NumberOfPlayers = _tournament.GetPlayerCount(),
+                TournamentMode = true
+            };
+
+            StartGame(data);
+        }
+
+        private void StartGame(GameOptionData data)
+        {
             ResetAnimation();
 
             CurrentGame = new Game(this, data);
             AudioManager.PlayEffect(SoundType.Shuffle);
 
             _time.Enabled = true;
+            _slTime.Text = @"Time: 0s";
             _slTime.Visible = true;
 
             _logText.Clear();
@@ -981,6 +1032,13 @@ namespace ClassicUno.Forms
 
             SettingsManager.Settings.Statistics.TotalGameTime += time;
 
+            /* Handle tournament games separately */
+            if (_tournament.IsActive)
+            {
+                HandleTournamentGameOver(player, score);
+                return;
+            }
+
             var msg = player is HumanPlayer
                 ? $"You have won and earned {score} points!\r\n\r\n"
                 : $"{player} has won!\r\n\r\n";
@@ -999,6 +1057,99 @@ namespace ClassicUno.Forms
             _slTime.Visible = false;
 
             ResetAnimation();
+
+            Invalidate();
+        }
+
+        public void UpdateUndo()
+        {
+            if (InvokeRequired)
+            {
+                _sync.Execute(UpdateUndo);
+                return;
+            }
+
+            var undo = false;
+            if (CurrentGame != null)
+            {
+                undo = CurrentGame.GameData.CurrentPlayer is HumanPlayer && CurrentGame.Undo.CanUndo;
+            }
+            _mnuGame.DropDownItems[5].Enabled = undo;
+        }
+
+        private void HandleTournamentGameOver(IPlayer player, int score)
+        {
+            var humanWon = player is HumanPlayer;
+            var completedRound = _tournament.CurrentRound;
+            var tournamentWon = _tournament.RecordResult(humanWon, score);
+
+            if (tournamentWon)
+            {
+                CustomMessageBox.Show(this,
+                    $"Congratulations! You have won all {completedRound} rounds and completed the tournament!\r\n\r\nYou have won a total of {_tournament.TotalScore} points, including a {_tournament.Bonus} point bonus!",
+                    Resources.appTitle,
+                    CustomMessageBoxButtons.Ok,
+                    CustomMessageBoxIcon.Information);
+
+                /* Record the bonus points */
+                SettingsManager.Settings.Statistics.HighScore += _tournament.Bonus;
+
+                _tournament.End();
+                EndCurrentGame();
+                return;
+            }
+
+            if (!humanWon)
+            {
+                CustomMessageBox.Show(this,
+                    $"Tournament over! {player} won round {completedRound}.\r\n\r\n" +
+                    "You must win every round to complete the tournament.",
+                    Resources.appTitle,
+                    CustomMessageBoxButtons.Ok,
+                    CustomMessageBoxIcon.Exclamation);
+
+                _tournament.End();
+                EndCurrentGame();
+                return;
+            }
+
+            /* The human won this round, and another round remains. */
+            CustomMessageBox.Show(this,
+                $"You won round {completedRound} of {_tournament.TotalRounds} gaining {score} points!\r\n\r\n" +
+                "Prepare for the next round.",
+                Resources.appTitle,
+                CustomMessageBoxButtons.Ok,
+                CustomMessageBoxIcon.Information);
+
+            EndCurrentGame();
+            StartTournamentRound();
+        }
+
+        private void EndCurrentGame()
+        {
+            if (CurrentGame != null)
+            {
+                CurrentGame.Dispose();
+                CurrentGame = null;
+            }
+
+            _time.Enabled = false;
+
+            _slGame.Text = @"No game running. Select the Game menu and New Game.";
+            _slTime.Visible = false;
+
+            _btnDraw.Enabled = false;
+            _btnPass.Enabled = false;
+
+            ShowButtons(false);
+            ShowColorButtons(false);
+
+            ResetAnimation();
+
+            _logText.Clear();
+            LogRenderer.Update(_logText);
+
+            UpdateUndo();
 
             Invalidate();
         }
@@ -1091,27 +1242,33 @@ namespace ClassicUno.Forms
         {
             var state = new GameStateData();
 
-            if (BinarySerialize<GameStateData>.Load(path, ref state))
+            if (!BinarySerialize<GameStateData>.Load(path, ref state))
             {
-                if (state != null)
-                {
-                    CurrentGame = new Game(this, state);
-                    if (CurrentGame != null)
-                    {
-                        _time.Enabled = true;
-                        _slTime.Visible = true;
-
-                        _logText.Clear();
-                        LogRenderer.Update(null);
-
-                        CurrentGame.CurrentTime = state.CurrentTime;
-                        CurrentGame.Start();
-                        return true;
-                    }
-                }
+                return false;
             }
 
-            return false;
+            if (state == null)
+            {
+                return false;
+            }
+
+            CurrentGame = new Game(this, state);
+            if (CurrentGame == null)
+            {
+                return false;
+            }
+            _tournament.RestoreState(state.TournamentActive, state.TournamentRound, state.TournamentScore);
+
+            _time.Enabled = true;
+            _slTime.Visible = true;
+
+            _logText.Clear();
+            LogRenderer.Update(null);
+
+            CurrentGame.CurrentTime = state.CurrentTime;
+            CurrentGame.Start();
+            return true;
+
         }
 
         private bool SaveGame(string path)
@@ -1121,13 +1278,17 @@ namespace ClassicUno.Forms
                 return false;
             }
             var state = GameStateManager.CreateGameState(CurrentGame.GameData, CurrentGame.CurrentTime);
-            if (state != null)
+            if (state == null)
             {
-                BinarySerialize<GameStateData>.Save(path, state);
-                return true;
+                return false;
             }
 
-            return false;
+            state.TournamentActive = _tournament.IsActive;
+            state.TournamentRound = _tournament.CurrentRound;
+            state.TournamentScore = _tournament.TotalScore;
+
+            BinarySerialize<GameStateData>.Save(path, state);
+            return true;
         }
         #endregion
     }

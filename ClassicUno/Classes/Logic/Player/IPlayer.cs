@@ -4,14 +4,29 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
 {
+    public enum ComputerDifficulty
+    {
+        [Description("Easy")]
+        Easy = 0,
+
+        [Description("Medium")]
+        Normal = 1,
+
+        [Description("Hard")]
+        Hard = 2
+    }
+
     public interface IPlayer
     {
         /* This is the basic "contract" for each player - note: that this is a work in progress
          * and will change over time. */
+        ComputerDifficulty Difficulty { get; set; }
+
         PlayerNameData NameData { get; set; }
 
         int VoiceIndex { get; set; }

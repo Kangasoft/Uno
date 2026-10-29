@@ -32,6 +32,8 @@ namespace ClassicUno.Classes.UI
 
         void GameOver(IPlayer player, int score);
 
+        void UpdateUndo();
+
         void Invalidate();
     }
 }

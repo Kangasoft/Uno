@@ -18,9 +18,7 @@ namespace ClassicUno.Classes.Settings.SettingsData
         [XmlAttribute("date")]
         public DateTime DateSaved { get; set; }
 
-        public override string ToString()
-        {
-            return $"{Name}\r\n({DateSaved:dd/MM/yyyy HH:mm})";
-        }
+        [XmlAttribute("tournament")]
+        public bool Tournament { get; set; }
     }
 }

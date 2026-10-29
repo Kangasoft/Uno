@@ -50,6 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\Helpers\Management\GameStateManager.cs" />
+    <Compile Include="Classes\Helpers\Management\TournamentManager.cs" />
+    <Compile Include="Classes\Helpers\Management\UndoManager.cs" />
     <Compile Include="Classes\Settings\SettingsData\SavedGameData.cs" />
     <Compile Include="Classes\UI\Controls\CardStripControl.cs">
       <SubType>UserControl</SubType>

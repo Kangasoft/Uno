@@ -39,6 +39,7 @@
             this.pnlIcon = new System.Windows.Forms.Panel();
             this.chkSelect = new System.Windows.Forms.CheckBox();
             this.cmbVoice = new System.Windows.Forms.ComboBox();
+            this.chkTournament = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // lblName
@@ -63,7 +64,7 @@
             // 
             this.lblPlayers.AutoSize = true;
             this.lblPlayers.BackColor = System.Drawing.Color.Transparent;
-            this.lblPlayers.Location = new System.Drawing.Point(84, 113);
+            this.lblPlayers.Location = new System.Drawing.Point(84, 138);
             this.lblPlayers.Name = "lblPlayers";
             this.lblPlayers.Size = new System.Drawing.Size(108, 15);
             this.lblPlayers.TabIndex = 10;
@@ -77,7 +78,7 @@
             "2",
             "3",
             "4"});
-            this.cmbPlayers.Location = new System.Drawing.Point(198, 110);
+            this.cmbPlayers.Location = new System.Drawing.Point(198, 135);
             this.cmbPlayers.Name = "cmbPlayers";
             this.cmbPlayers.Size = new System.Drawing.Size(105, 23);
             this.cmbPlayers.TabIndex = 4;
@@ -103,7 +104,7 @@
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(147, 151);
+            this.btnStart.Location = new System.Drawing.Point(147, 178);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(75, 23);
             this.btnStart.TabIndex = 5;
@@ -114,7 +115,7 @@
             // btnClose
             // 
             this.btnClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnClose.Location = new System.Drawing.Point(228, 151);
+            this.btnClose.Location = new System.Drawing.Point(228, 178);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
             this.btnClose.TabIndex = 6;
@@ -140,6 +141,7 @@
             this.chkSelect.Name = "chkSelect";
             this.chkSelect.Size = new System.Drawing.Size(91, 19);
             this.chkSelect.TabIndex = 2;
+            this.chkSelect.Tag = "VOICE";
             this.chkSelect.Text = "Select voice:";
             this.chkSelect.UseVisualStyleBackColor = false;
             // 
@@ -153,12 +155,25 @@
             this.cmbVoice.Size = new System.Drawing.Size(105, 23);
             this.cmbVoice.TabIndex = 3;
             // 
+            // chkTournament
+            // 
+            this.chkTournament.AutoSize = true;
+            this.chkTournament.BackColor = System.Drawing.Color.Transparent;
+            this.chkTournament.Location = new System.Drawing.Point(87, 109);
+            this.chkTournament.Name = "chkTournament";
+            this.chkTournament.Size = new System.Drawing.Size(124, 19);
+            this.chkTournament.TabIndex = 11;
+            this.chkTournament.Tag = "TOURNAMENT";
+            this.chkTournament.Text = "Tournament mode";
+            this.chkTournament.UseVisualStyleBackColor = false;
+            // 
             // FrmNew
             // 
             this.AcceptButton = this.btnStart;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(315, 186);
+            this.ClientSize = new System.Drawing.Size(315, 213);
+            this.Controls.Add(this.chkTournament);
             this.Controls.Add(this.cmbVoice);
             this.Controls.Add(this.chkSelect);
             this.Controls.Add(this.pnlIcon);
@@ -197,5 +212,6 @@
         private System.Windows.Forms.Panel pnlIcon;
         private System.Windows.Forms.CheckBox chkSelect;
         private System.Windows.Forms.ComboBox cmbVoice;
+        private System.Windows.Forms.CheckBox chkTournament;
     }
 }
