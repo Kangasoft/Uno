@@ -16,9 +16,7 @@ namespace ClassicUno.Classes.Logic.Player
         #region Fields
         private Card _discardCard;
         private CardColor _currentColor;
-
         private BackgroundWorker _worker;
-
         private readonly Random _rnd = new Random();
 
         public ComputerDifficulty Difficulty { get; set; } = ComputerDifficulty.Easy;
@@ -196,13 +194,12 @@ namespace ClassicUno.Classes.Logic.Player
         private Card SelectEasyCard(List<Card> playableCards)
         {
             /* Easy AI: occasionally misses a chance to play its final draw card. */
-            if (Cards.Count == 1 && _rnd.Next(100) < 30)
+            if (Cards.Count == 1 && _rnd.Next(100) < 15)
             {
                 var lastCard = Cards[0];
 
                 if ((lastCard.Type == CardType.DrawTwo ||
                      lastCard.Type == CardType.DrawFour) &&
-                    lastCard.Color == _currentColor &&
                     playableCards.Contains(lastCard))
                 {
                     return null;
@@ -210,7 +207,7 @@ namespace ClassicUno.Classes.Logic.Player
             }
 
             /* Easy AI: occasionally makes a bad decision and draws unnecessarily. */
-            if (_rnd.Next(100) < 22)
+            if (_rnd.Next(100) < 15)
             {
                 return null;
             }
@@ -236,14 +233,13 @@ namespace ClassicUno.Classes.Logic.Player
                 choices = ordinaryCards;
             }
 
-            /* Pick randomly rather than calculating the perfect move. */
             return choices[_rnd.Next(choices.Count)];
         }
 
         private Card SelectNormalCard(IEnumerable<Card> playableCards, IReadOnlyCollection<Card> hand)
         {
             /* More balanced - still allow a slight mistake by drawing for no reason. */
-            if (_rnd.Next(100) < 17)
+            if (_rnd.Next(100) < 20)
             {
                 return null;
             }

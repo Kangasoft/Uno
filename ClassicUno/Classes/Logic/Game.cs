@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -628,6 +627,7 @@ namespace ClassicUno.Classes.Logic
                 {
                     NameData = name,
                     VoiceIndex = AudioManager.GetRandomVoice(name.Gender),
+                    Difficulty = data.Difficulty,
                     AudioPan = panValues[players] /* Give the player's voice a slight pan left or right depending on position */
                 };
                 GameData.Players.Add(player);

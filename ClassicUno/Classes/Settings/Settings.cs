@@ -6,7 +6,7 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Xml.Serialization;
-using ClassicUno.Classes.Serialization;
+using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Settings
@@ -34,6 +34,7 @@ namespace ClassicUno.Classes.Settings
         {
             /* Set default settings */
             Game.NumberOfPlayers = 2;
+            Game.Difficulty = ComputerDifficulty.Easy;
 
             /* Window defaults */
             General.Window.Size = new Size(720, 470);

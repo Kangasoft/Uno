@@ -5,6 +5,7 @@
 using System;
 using System.ComponentModel;
 using System.Xml.Serialization;
+using ClassicUno.Classes.Logic.Player;
 
 namespace ClassicUno.Classes.Settings.SettingsData
 {
@@ -42,6 +43,9 @@ namespace ClassicUno.Classes.Settings.SettingsData
 
         [XmlAttribute("players")]
         public int NumberOfPlayers { get; set; }
+
+        [XmlAttribute("difficulty")]
+        public ComputerDifficulty Difficulty { get; set; }
 
         [XmlAttribute("tournament")]
         public bool TournamentMode { get; set; }

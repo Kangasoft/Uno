@@ -5,6 +5,7 @@
 using System;
 using System.Windows.Forms;
 using ClassicUno.Classes.Helpers;
+using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Settings.SettingsData;
 using ClassicUno.Controls;
 
@@ -34,6 +35,8 @@ namespace ClassicUno.Forms
 
         public int NumberOfPlayers { get; set; }
 
+        public ComputerDifficulty Difficulty { get; set; }
+
         public bool TournamentMode { get; set; }
 
 
@@ -41,9 +44,16 @@ namespace ClassicUno.Forms
         {
             InitializeComponent();
 
+            /* Gender */
             for (var i = 0; i <= 1; i++)
             {
                 cmbGender.Items.Add(Utils.GetDescriptionFromEnumValue((PlayerGender) i));
+            }
+
+            /* Difficulty level */
+            for (var d = 0; d <= 2; d++)
+            {
+                cmbDifficulty.Items.Add(Utils.GetDescriptionFromEnumValue((ComputerDifficulty) d));
             }
 
             cmbGender.SelectedIndexChanged += GenderSelectedIndexChanged;
@@ -75,6 +85,9 @@ namespace ClassicUno.Forms
                 chkSelect.Checked = true;
                 cmbVoice.SelectedIndex = 0;
             }
+
+            cmbDifficulty.SelectedIndex = (int)Difficulty;
+
             cmbPlayers.SelectedIndex = NumberOfPlayers > 0 ? NumberOfPlayers - 2 : 0;
 
             var state = TournamentMode;
@@ -139,6 +152,8 @@ namespace ClassicUno.Forms
 
             NameData.SelectVoice = chkSelect.Checked;
             NameData.VoiceIndex = cmbVoice.SelectedIndex;
+
+            Difficulty = (ComputerDifficulty)cmbDifficulty.SelectedIndex;
 
             NumberOfPlayers = cmbPlayers.SelectedIndex + 2;
             DialogResult = DialogResult.OK;

@@ -873,6 +873,7 @@ namespace ClassicUno.Forms
             {
                 NameData = data.NameData,
                 NumberOfPlayers = data.NumberOfPlayers,
+                Difficulty = data.Difficulty,
                 TournamentMode = data.TournamentMode
             };
             if (form.ShowDialog(this) != DialogResult.OK)
@@ -883,6 +884,7 @@ namespace ClassicUno.Forms
             }
             data.NameData = form.NameData;
             data.NumberOfPlayers = form.NumberOfPlayers;
+            data.Difficulty = form.Difficulty;
             data.TournamentMode = form.TournamentMode;
 
             if (form.TournamentMode)
