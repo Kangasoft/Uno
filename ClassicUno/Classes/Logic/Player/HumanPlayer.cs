@@ -17,6 +17,8 @@ namespace ClassicUno.Classes.Logic.Player
          * A: Because light attracts bugs!
          */
         #region Fields
+        private Card _drawnCard;
+
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
@@ -30,6 +32,8 @@ namespace ClassicUno.Classes.Logic.Player
         public bool HasPassed { get; set; }
 
         public bool HasDrawn { get; set; }
+
+        public Card DrawnCard => _drawnCard;
 
 
         public event Action<IPlayer> PlayerBeginTurn;
@@ -51,19 +55,12 @@ namespace ClassicUno.Classes.Logic.Player
         #region IPlayer
         public void BeginTurn(Card card, CardColor currentColor)
         {
-            /* Discard card isn't used */
-            if (IsSkipped)
-            {
-                IsSkipped = false;
-                EndTurn();
-                return;
-            }
-
+            /* Discard card isn't used here */
             HasPassed = false;
             PlayerBeginTurn?.Invoke(this);
         }
 
-        public async void PlayCard(Card card)
+        public void PlayCard(Card card)
         {
             Cards.Remove(card);
             PlayerPlaysCard?.Invoke(this, card);
@@ -83,6 +80,11 @@ namespace ClassicUno.Classes.Logic.Player
         public void CardDrawn(Card card)
         {
             Cards.Add(card);
+
+            if (HasDrawn)
+            {
+                _drawnCard = card;
+            }
         }
 
         public async void Pass()
@@ -97,6 +99,8 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void EndTurn()
         {
+            _drawnCard = null;
+
             /* Make sure these variables are RESET. */
             IsSkipped = false;
             HasDrawn = false;

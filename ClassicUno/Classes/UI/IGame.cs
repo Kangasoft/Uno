@@ -16,6 +16,10 @@ namespace ClassicUno.Classes.UI
 
         Task AnimateCardToDiscardAsync(IPlayer player, Card card, int duration = 300);
 
+        Task AnimateStartingDiscardAsync(Card card, int duration = 300);
+
+        Task AnimateDeckStackAsync(int duration = 900);
+
         void SoundEffectRequest(SoundType type);
 
         void VoiceRequest(VoiceType type, IPlayer player);

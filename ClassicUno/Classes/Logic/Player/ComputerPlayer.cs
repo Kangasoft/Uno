@@ -16,6 +16,7 @@ namespace ClassicUno.Classes.Logic.Player
         #region Fields
         private Card _discardCard;
         private CardColor _currentColor;
+        private Card _drawnCard;
 
         public ComputerDifficulty Difficulty { get; set; } = ComputerDifficulty.Easy;
 
@@ -55,13 +56,6 @@ namespace ClassicUno.Classes.Logic.Player
         {
             HasPassed = false;
 
-            if (IsSkipped)
-            {
-                IsSkipped = false;
-                EndTurn();
-                return;
-            }
-
             _discardCard = card;
             _currentColor = currentColor;
 
@@ -100,6 +94,8 @@ namespace ClassicUno.Classes.Logic.Player
                 return;
             }
 
+            _drawnCard = card;
+
             /* Loop back to original background process */
             ComputerBeginTurn();
         }
@@ -124,7 +120,24 @@ namespace ClassicUno.Classes.Logic.Player
         {
             /* Analyze upper card on discard pile (_discardCard) */
             await Task.Delay(RandomEx.Shared.Next(400, 800));
-            var card = SelectComputerCard();
+
+            Card card;
+
+            if (HasDrawn)
+            {
+                /* Only check the card just drawn - this is an offical UNO rule - only the drawn card (if playable) can be played.
+                 * A card cannot be drawn and then another one in the hand that's playable be played. */
+                card = Validation.IsCardPlayable(
+                    _discardCard, _drawnCard, _currentColor, Cards)
+                    ? _drawnCard
+                    : null;
+            }
+            else
+            {
+                /* Check the existing hand */
+                card = SelectComputerCard();
+            }
+
             if (card == null)
             {
                 await Task.Delay(RandomEx.Shared.Next(400, 800));
@@ -135,6 +148,7 @@ namespace ClassicUno.Classes.Logic.Player
                     return;
                 }
                 /* Have to pass */
+                _drawnCard = null;
                 Pass();
                 await Task.Delay(300);
                 EndTurn();
@@ -142,11 +156,8 @@ namespace ClassicUno.Classes.Logic.Player
             }
 
             Cards.Remove(card);
+            _drawnCard = null;
             PlayCard(card);
-
-            await Task.Delay(RandomEx.Shared.Next(400, 800));
-
-            EndTurn();
         }
 
         private Card SelectComputerCard()

@@ -927,7 +927,6 @@ namespace ClassicUno.Forms
             ResetAnimation();
 
             CurrentGame = new Game(this, data);
-            AudioManager.PlayEffect(SoundType.Shuffle);
 
             _time.Enabled = true;
             _slTime.Text = @"Time: 0s";
@@ -952,6 +951,13 @@ namespace ClassicUno.Forms
             {
                 _sync.Execute(() => UpdateStatus(text));
                 return;
+            }
+
+            if (string.IsNullOrEmpty(text) && _tournament.IsActive)
+            {
+                /* Normally this text field is blank during a normal UNO game. However, if a tournament
+                 * is running we can use the "blank spots" to display the tournament round information. */
+                text = $"Tournament: Round {_tournament.CurrentRound} of {_tournament.TotalRounds}";
             }
 
             _slGame.Text = text;
@@ -1166,10 +1172,20 @@ namespace ClassicUno.Forms
 
         private void PlayCard()
         {
-            if (!Validation.IsCardPlayable(
-                CurrentGame.GameData.DiscardPile[CurrentGame.GameData.DiscardPile.Count - 1],
-                CurrentGame.SelectedCard, CurrentGame.GameData.CurrentColor,
-                CurrentGame.GameData.CurrentPlayer.Cards))
+            var game = CurrentGame.GameData;
+            var discardCard = game.DiscardPile[game.DiscardPile.Count - 1];
+            var player = game.CurrentPlayer;
+
+            if (player is HumanPlayer human && human.HasDrawn && !ReferenceEquals(CurrentGame.SelectedCard, human.DrawnCard))
+            {
+                /* This is an offical UNO rule - you can only play the card you drew (if playable). You cannot draw a card
+                 * and play another one in your hand that is playable. */
+                SoundEffectRequest(SoundType.Error);
+                UpdateStatus("You can only play the card you just drew.");
+                return;
+            }
+
+            if (!Validation.IsCardPlayable(discardCard, CurrentGame.SelectedCard, game.CurrentColor, player.Cards))
             {
                 SoundEffectRequest(SoundType.Error);
                 UpdateStatus("Selected card cannot be played. Choose another, or draw.");
@@ -1177,7 +1193,7 @@ namespace ClassicUno.Forms
             }
 
             CurrentGame.SaveUndoState();
-            CurrentGame.GameData.CurrentPlayer.PlayCard(CurrentGame.SelectedCard);
+            player.PlayCard(CurrentGame.SelectedCard);
         }
         #endregion
 

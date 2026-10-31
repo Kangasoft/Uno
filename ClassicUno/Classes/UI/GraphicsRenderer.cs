@@ -16,16 +16,16 @@ using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Shared;
 using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Properties;
-using Timer = System.Windows.Forms.Timer;
+using Timer = System.Windows.Forms.Timer; /* Only declared like this as System.Threading is declared above, giving a different meaning to "Timer" */
 
 namespace ClassicUno.Classes.UI
 {
     public class GraphicsRenderer : FeltForm
     {
         /*
-         * A programmer walks into a bar and orders 1.000 beers.
+         * A programmer walks into a bar and orders 1.000 beers 🍺.
          * The bartender says, "Is that one beer or a thousand?"
-         * The programmer replies, "Yes." 😄
+         * The programmer replies, "Yes." 😄 🍺
          */
         #region CardKey
         /* KeyPair class for Dictionary object */
@@ -58,6 +58,17 @@ namespace ClassicUno.Classes.UI
         }
         #endregion
 
+        #region Pick-up pile animation
+        /* Array class for pick-up pile shuffle animation thingamajig */
+        private sealed class DeckCardAnimation
+        {
+            public PointF Start;
+            public PointF End;
+            public float StartAngle;
+            public float EndAngle;
+        }
+        #endregion
+
         #region Fields
         public Game CurrentGame { get; set; }
 
@@ -82,6 +93,7 @@ namespace ClassicUno.Classes.UI
         private RectangleF[] _playerHandBounds = new RectangleF[4];
         private RectangleF[] _playerNameBounds = new RectangleF[4];
 
+        /* UNO! and winner GIF animators */
         private UnoAnimation[] _unoAnimation = new UnoAnimation[4];
         private UnoAnimation _winner;
 
@@ -89,9 +101,6 @@ namespace ClassicUno.Classes.UI
         private bool _unoAnimationsInitialized;
 
         private readonly Color _textColor = Color.FromArgb(255, 225, 140);
-
-        /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
-        private const int MaxBackImages = 8;
 
         /* Card animation */
         private readonly Timer _cardAnimationTimer = new Timer();
@@ -109,11 +118,25 @@ namespace ClassicUno.Classes.UI
         private float _animationEndAngle;
         private float _animatedCardAngle;
 
-        private int _animationDuration;
         private bool _cardAnimationActive;
+        private int _animationDuration;
 
+        /* Pick-up pile animation */
+        private readonly List<DeckCardAnimation> _deckAnimationCards = new List<DeckCardAnimation>();
+
+        private readonly Timer _deckAnimationTimer = new Timer();
+        private readonly Stopwatch _deckAnimationWatch = new Stopwatch();
+        private readonly SemaphoreSlim _deckAnimationLock = new SemaphoreSlim(1, 1);
+
+        private TaskCompletionSource<bool> _deckAnimationCompletion;
+        
+        private bool _deckAnimationActive;
+        private int _deckAnimationDuration;
+        private int _deckAnimationStagger;
+
+        /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
+        private const int MaxBackImages = 9; /* Used in the card back selector dialog */
         public int CardBackIndex;
-
         public List<Image> CardBackImages = new List<Image>();
         #endregion
 
@@ -127,6 +150,9 @@ namespace ClassicUno.Classes.UI
 
             _cardAnimationTimer.Interval = 16;
             _cardAnimationTimer.Tick += CardAnimationTimer;
+
+            _deckAnimationTimer.Interval = 16;
+            _deckAnimationTimer.Tick += DeckAnimationTimer;
         }
         #endregion
 
@@ -153,6 +179,7 @@ namespace ClassicUno.Classes.UI
 
                 LogRenderer.Dispose();
 
+                /* Card animation clean up */
                 _cardAnimationTimer.Stop();
                 _cardAnimationTimer.Tick -= CardAnimationTimer;
                 _cardAnimationTimer.Dispose();
@@ -161,6 +188,16 @@ namespace ClassicUno.Classes.UI
 
                 _cardAnimationCompletion?.TrySetResult(true);
                 _cardAnimationCompletion = null;
+
+                /* Pick-up pile animation clean up */
+                _deckAnimationTimer.Stop();
+                _cardAnimationTimer.Tick -= DeckAnimationTimer;
+                _deckAnimationTimer.Dispose();
+
+                _deckAnimationWatch.Stop();
+
+                _deckAnimationCompletion?.TrySetResult(true);
+                _deckAnimationCompletion = null;
             }
 
             base.Dispose(disposing);
@@ -331,8 +368,78 @@ namespace ClassicUno.Classes.UI
             await AnimateCardAsync(GetCardImage(card), start, end, startAngle, card.DrawAngle, duration);
         }
 
+        public async Task AnimateStartingDiscardAsync(Card card, int duration = 500)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            var start = new PointF(
+                ClientRectangle.Left + _pickupPilePosition.X + _cardWidth / 2f,
+                ClientRectangle.Top + _pickupPilePosition.Y + _cardHeight / 2f);
+
+            var end = new PointF(
+                ClientRectangle.Left + _discardPilePosition.X + _cardWidth / 2f,
+                ClientRectangle.Top + _discardPilePosition.Y + _cardHeight / 2f);
+
+            await AnimateCardAsync(GetCardImage(card), start, end, 0f, card.DrawAngle, duration);
+        }
+
+        public async Task AnimateDeckStackAsync(int duration = 900)
+        {
+            await _deckAnimationLock.WaitAsync();
+
+            try
+            {
+                _deckAnimationCards.Clear();
+
+                var centerX = _pickupPilePosition.X + _cardWidth / 2f;
+                var centerY = _pickupPilePosition.Y + _cardHeight / 2f;
+
+                const int cardCount = 10;
+
+                _deckAnimationDuration = Math.Max(1, duration);
+                _deckAnimationStagger = 45;
+
+                for (var i = 0; i < cardCount; i++)
+                {
+                    var finalOffset = cardCount - i - 1;
+
+                    _deckAnimationCards.Add(new DeckCardAnimation
+                    {
+                        Start = new PointF(
+                            centerX + RandomEx.Shared.Next(-35, 36),
+                            centerY + RandomEx.Shared.Next(-35, 36)),
+
+                        End = new PointF(
+                            centerX + finalOffset,
+                            centerY + finalOffset),
+
+                        StartAngle = RandomEx.Shared.Next(-15, 16),
+                        EndAngle = 0f
+                    });
+                }
+
+                _deckAnimationCompletion = new TaskCompletionSource<bool>();
+                _deckAnimationActive = true;
+
+                _deckAnimationWatch.Restart();
+                _deckAnimationTimer.Start();
+
+                Invalidate();
+
+                await _deckAnimationCompletion.Task;
+            }
+            finally
+            {
+                _deckAnimationLock.Release();
+            }
+        }
+
         public void ResetAnimation()
         {
+            /* UNO GIF reset */
             foreach (var animation in _unoAnimation.Where(animation => animation.IsAnimating))
             {
                 animation.Stop();
@@ -402,11 +509,12 @@ namespace ClassicUno.Classes.UI
         {
             /* This draws the central area of the game of the pick-up and discard piles, the current color orb as well as
              * the play direction indicator. */
-            Image directionImage = CurrentGame.GameData.CurrentDirection == PlayDirection.Clockwise ? Resources.clockwise : Resources.anticlockwise;
+            var game = CurrentGame.GameData;
+            Image directionImage = game.CurrentDirection == PlayDirection.Clockwise ? Resources.clockwise : Resources.anticlockwise;
 
             g.DrawImage(directionImage, _directionBounds);
 
-            g.DrawText(Misc.GetDescriptionFromEnumValue(CurrentGame.GameData.CurrentDirection), _textColor, _directionTextBounds, StringAlignment.Center);
+            g.DrawText(Misc.GetDescriptionFromEnumValue(game.CurrentDirection), _textColor, _directionTextBounds, StringAlignment.Center);
 
             DrawOrbColor(g);
             DrawPickupPile(g);
@@ -417,8 +525,15 @@ namespace ClassicUno.Classes.UI
         #region Pick-up pile
         private void DrawPickupPile(Graphics g)
         {
+            if (_deckAnimationActive)
+            {
+                DrawDeckStackAnimation(g);
+                return;
+            }
+
             /* Draw the pick-up pile - Get the center of the clientRectangle */
-            var totalCards = CurrentGame.GameData.Deck.Count;
+            var game = CurrentGame.GameData;
+            var totalCards = game.Deck.Count;
 
             if (totalCards == 0)
             {
@@ -428,8 +543,8 @@ namespace ClassicUno.Classes.UI
             /* Map total list count (up to 108) to a visual layer count between 1 and 6. We can't use the "deck" list directly, as
              * it's being modified in a background thread during dealing. */
             const int maxPossibleCards = 108;
-            var ratio = (double)Math.Min(totalCards, maxPossibleCards) / maxPossibleCards;
-            var visualLayers = (int)Math.Ceiling(ratio * 6);
+            var ratio = (double) Math.Min(totalCards, maxPossibleCards) / maxPossibleCards;
+            var visualLayers = (int) Math.Ceiling(ratio * 6);
 
             /* Ensures it's always between 1 and 6 */
             visualLayers = Math.Max(1, Math.Min(6, visualLayers));
@@ -438,12 +553,13 @@ namespace ClassicUno.Classes.UI
             var offset = 0;
             for (var i = 0; i < visualLayers; i++)
             {
-                DrawCard(g, CardBackImages[CardBackIndex], new PointF(_pickupPilePosition.X + offset, _pickupPilePosition.Y + offset));
+                DrawCard(g, CardBackImages[CardBackIndex],
+                    new PointF(_pickupPilePosition.X + offset, _pickupPilePosition.Y + offset));
                 offset++;
             }
 
             /* Draw card count text under deck - not sure I like or want to keep this code... */
-            g.DrawText($"{CurrentGame.GameData.Deck.Count} (108)", _textColor,
+            g.DrawText($"{game.Deck.Count} (108)", _textColor,
                 new RectangleF(_pickupPilePosition.X - 50f, _pickupPilePosition.Y + _cardHeight + 6f, 200f, 28f),
                 StringAlignment.Center);
         }
@@ -538,14 +654,15 @@ namespace ClassicUno.Classes.UI
         {
             /* Clockwise: bottom, left, top, right. */
             var angle = 0;
-            var count = CurrentGame.GameData.Players.Count;
+            var game = CurrentGame.GameData;
+            var count = game.Players.Count;
             for (var playerIndex = 0; playerIndex < count; playerIndex++)
             {
-                DrawPlayerHand(CurrentGame.GameData.Players[playerIndex], g, angle, count == 2 && playerIndex == 1 ? 2 : playerIndex);
+                DrawPlayerHand(game.Players[playerIndex], g, angle, count == 2 && playerIndex == 1 ? 2 : playerIndex);
 
                 /* If player count is greater than 2, we add 90 degrees; otherwise we just display the players
                  * top and bottom of the client rectangle. */
-                angle += CurrentGame.GameData.Players.Count > 2 ? 90 : 180;
+                angle += game.Players.Count > 2 ? 90 : 180;
             }
         }
 
@@ -602,76 +719,12 @@ namespace ClassicUno.Classes.UI
             var totalWidth = _cardWidth + (count - 1) * spacing;
             var totalHeight = _cardHeight + (count - 1) * spacing;
 
-            //for (var i = 0; i < count; i++)
-            //{
-            //    var card = player.Cards[i];
-            //    var cardImage = GetCardImage(card);
-            //    var image = player is HumanPlayer ? cardImage :
-            //        CurrentGame.GameState != GameState.Stopped ? CardBackImages[CardBackIndex] : cardImage;
-
-            //    var selectedOffsetY = card == CurrentGame.SelectedCard ? 23f : 0f;
-
-            //    if (image == null)
-            //    {
-            //        continue;
-            //    }
-
-            //    float x;
-            //    float y;
-
-            //    if (!sideways)
-            //    {
-            //        x = handBounds.Left + (handBounds.Width - totalWidth) / 2f + i * spacing;
-            //        y = handBounds.Top - selectedOffsetY;
-
-            //        DrawCard(g, image, new PointF(x - ClientRectangle.Left, y - ClientRectangle.Top));
-
-            //        if (player is HumanPlayer &&
-            //            CurrentGame.HighlightedCard != null &&
-            //            CurrentGame.HighlightedCard != CurrentGame.SelectedCard &&
-            //            CurrentGame.HighlightedCard == card)
-            //        {
-            //            DrawHoverCardHighlight(g, CurrentGame.HighlightedCard);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        x = handBounds.Left + handBounds.Width / 2f;
-            //        y = handBounds.Top + (handBounds.Height - totalHeight) / 2f + i * spacing + _cardHeight / 2f -
-            //            _cardWidth / 2f;
-
-            //        DrawRotatedCard(g, image, x, y, angle);
-            //    }
-
-            //    if (player is HumanPlayer)
-            //    {
-            //        /* Set the region of this card for mouse hit test */
-            //        card.Region = new RectangleF(x, y, i < count - 1 ? spacing : _cardWidth, _cardHeight);
-            //    }
-
-            //    /* UNO! animation */
-            //    if (count == 1 && CurrentGame.GameState != GameState.Dealing)
-            //    {
-            //        _unoAnimation[playerIndex].Start();
-            //    }
-            //    else
-            //    {
-            //        if (_unoAnimation[playerIndex] == null)
-            //        {
-            //            continue;
-            //        }
-            //        if (_unoAnimation[playerIndex].IsAnimating)
-            //        {
-            //            _unoAnimation[playerIndex].Stop();
-            //        }
-            //    }
-            //}
             for (var i = 0; i < count; i++)
             {
                 var card = player.Cards[i];
                 var cardImage = GetCardImage(card);
 
-                Image image = player is HumanPlayer ? cardImage :
+                var image = player is HumanPlayer ? cardImage :
                     CurrentGame.GameState != GameState.Stopped ? CardBackImages[CardBackIndex] : cardImage;
 
                 var selectedOffsetY = card == CurrentGame.SelectedCard ? 23f : 0f;
@@ -802,14 +855,15 @@ namespace ClassicUno.Classes.UI
                 return;
             }
 
-            var playerCount = Math.Min(CurrentGame.GameData.Players.Count, 4);
+            var game = CurrentGame.GameData;
+            var playerCount = Math.Min(game.Players.Count, 4);
 
             for (var i = 0; i < playerCount; i++)
             {
                 var pos = playerCount == 2 && i == 1 ? 2 : i;
                 g.DrawText(
-                    CurrentGame.GameData.Players[i].ToString(),
-                    CurrentGame.GameData.CurrentPlayer == CurrentGame.GameData.Players[i] ? Color.DeepSkyBlue : _textColor,
+                    game.Players[i].ToString(),
+                    game.CurrentPlayer == game.Players[i] ? Color.DeepSkyBlue : _textColor,
                     nameBounds[pos],
                     playerCount > 2
                         ? i == 1 ? StringAlignment.Near
@@ -855,6 +909,35 @@ namespace ClassicUno.Classes.UI
                 _cardAnimationLock.Release();
             }
         }
+
+        private void DrawDeckStackAnimation(Graphics g)
+        {
+            if (!_deckAnimationActive)
+            {
+                return;
+            }
+
+            var elapsed = _deckAnimationWatch.ElapsedMilliseconds;
+
+            for (var i = 0; i < _deckAnimationCards.Count; i++)
+            {
+                var card = _deckAnimationCards[i];
+
+                var progress = Math.Max(0f, Math.Min(1f,
+                    (float)(elapsed - i * _deckAnimationStagger) / _deckAnimationDuration));
+
+                /* Smooth start and finish. */
+                var eased = progress * progress * (3f - 2f * progress);
+
+                var x = card.Start.X + (card.End.X - card.Start.X) * eased;
+                var y = card.Start.Y + (card.End.Y - card.Start.Y) * eased;
+
+                var angle = card.StartAngle +
+                            (card.EndAngle - card.StartAngle) * eased;
+
+                DrawRotatedCard(g, CardBackImages[CardBackIndex], x, y, angle);
+            }
+        }
         #endregion
 
         #region Card drawing methods
@@ -892,7 +975,7 @@ namespace ClassicUno.Classes.UI
         #endregion
         #endregion
 
-        #region Card animation timer callback
+        #region Card animation timer callbacks
         private void CardAnimationTimer(object sender, EventArgs e)
         {
             var elapsed = _cardAnimationWatch.ElapsedMilliseconds;
@@ -924,6 +1007,32 @@ namespace ClassicUno.Classes.UI
 
             var completion = _cardAnimationCompletion;
             _cardAnimationCompletion = null;
+
+            completion?.TrySetResult(true);
+        }
+
+        private void DeckAnimationTimer(object sender, EventArgs e)
+        {
+            var elapsed = _deckAnimationWatch.ElapsedMilliseconds;
+
+            var totalDuration = _deckAnimationDuration +
+                                (_deckAnimationCards.Count - 1) * _deckAnimationStagger;
+
+            Invalidate();
+
+            if (elapsed < totalDuration)
+            {
+                return;
+            }
+
+            _deckAnimationTimer.Stop();
+            _deckAnimationWatch.Stop();
+
+            _deckAnimationActive = false;
+            _deckAnimationCards.Clear();
+
+            var completion = _deckAnimationCompletion;
+            _deckAnimationCompletion = null;
 
             completion?.TrySetResult(true);
         }

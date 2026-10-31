@@ -100,7 +100,6 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region Constructors
-
         public Game(IGame ui, GameStateData state)
         {
             /* Restore a previous game state */
@@ -209,32 +208,6 @@ namespace ClassicUno.Classes.Logic
             Start();
         }
 
-        public void HumanPass()
-        {
-            if (!(GameData.CurrentPlayer is HumanPlayer))
-            {
-                /* Not your turn */
-                return;
-            }
-            GameData.CurrentPlayer.Pass();
-            GameData.CurrentPlayer.EndTurn();
-        }
-
-        private void PlayerChoosesColor(IPlayer player, CardColor color)
-        {
-            /* Change color */
-            GameData.CurrentColor = color;
-
-            _ui.UpdateLogText($"{player} choses color {color}.");
-
-            _ui.Invalidate();
-
-            if (player is HumanPlayer)
-            {
-                player.EndTurn();
-            }
-        }
-
         public void SaveUndoState()
         {
             if (_undoStateSavedThisTurn)
@@ -248,122 +221,6 @@ namespace ClassicUno.Classes.Logic
         #endregion
 
         #region IPlayer callbacks
-        #region Draws
-        private async void PlayerDraw(IPlayer player)
-        {
-            var c = Draw();
-
-            await _ui.AnimateCardToHandAsync(player, c, player is HumanPlayer);
-
-            player.CardDrawn(c);
-
-            if (player is HumanPlayer)
-            {
-                _ui.EnableDraw(false);
-                _ui.EnablePass(true);
-            }
-
-            _ui.UpdateLogText($"{player} draws a card.");
-            _ui.Invalidate();
-            _ui.UpdateUndo();
-        }
-        #endregion
-
-        #region Plays card
-        private async void PlayerPlaysCard(IPlayer player, Card card)
-        {
-            /* Here is the logic for most of the game play. Player chooses a card in their hand, it goes to the discard pile and card is evaluated here
-             * to determine coarse of action. */
-
-            /* Set the angle for drawing on the discard pile. */
-            card.DrawAngle = (float)(RandomEx.Shared.NextDouble() * 10.0 - 5.0);
-
-            /* Animate the played card from the player's hand to the discard pile. */
-            await _ui.AnimateCardToDiscardAsync(player, card);
-
-            /* Now add the card to the discard pile. */
-            GameData.CurrentColor = card.Color;
-            GameData.DiscardPile.Add(card);
-
-            _ui.SoundEffectRequest(SoundType.Drop);
-            _ui.Invalidate();
-
-            /* Does player have UNO!? */
-            if (player.Cards.Count == 1)
-            {
-                /* Raise audio request */
-                _ui.VoiceRequest(VoiceType.Uno, player);
-            }
-
-            var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
-
-            _ui.UpdateLogText(GetGameText(player, nextPlayer, card));
-            
-            switch (card.Type)
-            {
-                case CardType.Wild:
-                    if (player is HumanPlayer)
-                    {
-                        /* Human played the card */
-                        _ui.EnableDraw(false);
-                        _ui.EnablePass(false);
-                        _ui.EnablePlay(false);
-                        _ui.ShowColorButtons(true);
-                        return;
-                    }
-
-                    /* Computer player chooses a colour */
-                    player.ChooseColor(CardColor.None);
-                    break;
-
-                case CardType.Skip:
-                    /* Next player in line is skipped */
-                    nextPlayer.IsSkipped = true;
-                    break;
-
-                case CardType.Reverse:
-                    /* Change direction */
-                    GameData.CurrentDirection = GameData.CurrentDirection == PlayDirection.Clockwise
-                        ? PlayDirection.AntiClockwise
-                        : PlayDirection.Clockwise;
-                    break;
-
-                case CardType.DrawTwo:
-                    nextPlayer.IsSkipped = true;
-                    await BeginForceDraw(player, nextPlayer, 2, false);
-                    return;
-
-                case CardType.DrawFour:
-                    nextPlayer.IsSkipped = true;
-                    await BeginForceDraw(player, nextPlayer, 4, player is HumanPlayer);
-
-                    if (player is HumanPlayer)
-                    {
-                        return;
-                    }
-                    
-                    /* Computer player chooses a colour */
-                    player.ChooseColor(CardColor.None);
-                    return;
-            }
-
-            if (player is HumanPlayer)
-            {
-                player.EndTurn();
-            }
-        }
-        #endregion
-
-        #region Passes
-        private void PlayerPasses(IPlayer player)
-        {
-            /* Raise audio request */
-            _ui.VoiceRequest(VoiceType.Pass, player);
-
-            _ui.UpdateLogText($"{player} passes.");
-        }
-        #endregion
-
         #region Begin turn
         private async void PlayerBeginTurn(IPlayer player)
         {
@@ -432,6 +289,159 @@ namespace ClassicUno.Classes.Logic
         }
         #endregion
 
+        #region Draws
+        private async void PlayerDraw(IPlayer player)
+        {
+            var c = await Draw();
+
+            if (c == null)
+            {
+                _ui.UpdateLogText("No cards available to draw.");
+                _ui.UpdateStatus("The draw pile is empty.");
+                _ui.Invalidate();
+                return;
+            }
+
+            await _ui.AnimateCardToHandAsync(player, c, player is HumanPlayer);
+
+            player.CardDrawn(c);
+
+            if (player is HumanPlayer)
+            {
+                _ui.EnableDraw(false);
+                _ui.EnablePass(true);
+            }
+
+            _ui.UpdateLogText($"{player} draws a card.");
+            _ui.Invalidate();
+            _ui.UpdateUndo();
+        }
+        #endregion
+
+        #region Plays card
+        private async void PlayerPlaysCard(IPlayer player, Card card)
+        {
+            /* Here is the logic for most of the game play. Player chooses a card in their hand, it goes to the discard pile and card is evaluated here
+             * to determine course of action. */
+
+            /* Set the angle for drawing on the discard pile. */
+            card.DrawAngle = (float)(RandomEx.Shared.NextDouble() * 10.0 - 5.0);
+
+            /* Animate the played card from the player's hand to the discard pile. */
+            await _ui.AnimateCardToDiscardAsync(player, card);
+
+            /* Now add the card to the discard pile. */
+            GameData.CurrentColor = card.Color;
+            GameData.DiscardPile.Add(card);
+
+            _ui.SoundEffectRequest(SoundType.Drop);
+            _ui.Invalidate();
+
+            /* Does player have UNO!? */
+            if (player.Cards.Count == 1)
+            {
+                /* Raise audio request */
+                _ui.VoiceRequest(VoiceType.Uno, player);
+            }
+
+            var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
+
+            _ui.UpdateLogText(GetGameText(player, nextPlayer, card));
+            
+            switch (card.Type)
+            {
+                case CardType.Wild:
+                    if (player is HumanPlayer)
+                    {
+                        /* Human played the card */
+                        _ui.EnableDraw(false);
+                        _ui.EnablePass(false);
+                        _ui.EnablePlay(false);
+                        _ui.ShowColorButtons(true);
+                        return;
+                    }
+
+                    /* Computer player chooses a colour */
+                    player.ChooseColor(CardColor.None);
+                    break;
+
+                case CardType.Skip:
+                    /* Next player in line is skipped */
+                    nextPlayer.IsSkipped = true;
+                    break;
+
+                case CardType.Reverse:
+                    /* Change direction */
+                    GameData.CurrentDirection = GameData.CurrentDirection == PlayDirection.Clockwise
+                        ? PlayDirection.AntiClockwise
+                        : PlayDirection.Clockwise;
+                    break;
+
+                case CardType.DrawTwo:
+                    nextPlayer.IsSkipped = true;
+                    await BeginForceDraw(player, nextPlayer, 2, false);
+
+                    if (player is HumanPlayer)
+                    {
+                        return;
+                    }
+                    break;
+
+                case CardType.DrawFour:
+                    nextPlayer.IsSkipped = true;
+                    await BeginForceDraw(player, nextPlayer, 4, player is HumanPlayer);
+
+                    if (player is HumanPlayer)
+                    {
+                        return;
+                    }
+                    
+                    /* Computer player chooses a colour */
+                    player.ChooseColor(CardColor.None);
+                    break;
+            }
+
+            switch (player)
+            {
+                case ComputerPlayer _:
+                    await Task.Delay(RandomEx.Shared.Next(400, 800));
+                    player.EndTurn();
+                    break;
+
+                case HumanPlayer _:
+                    player.EndTurn();
+                    break;
+            }
+        }
+        #endregion
+
+        #region Choose color
+        private void PlayerChoosesColor(IPlayer player, CardColor color)
+        {
+            /* Change color */
+            GameData.CurrentColor = color;
+
+            _ui.UpdateLogText($"{player} choses color {color}.");
+
+            _ui.Invalidate();
+
+            if (player is HumanPlayer)
+            {
+                player.EndTurn();
+            }
+        }
+        #endregion
+
+        #region Passes
+        private void PlayerPasses(IPlayer player)
+        {
+            /* Raise audio request */
+            _ui.VoiceRequest(VoiceType.Pass, player);
+
+            _ui.UpdateLogText($"{player} passes.");
+        }
+        #endregion
+
         #region End turn
         private void PlayerEndTurn(IPlayer player)
         {
@@ -476,7 +486,16 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
 
-            GameData.CurrentPlayer = GetNextPlayer(player, GameData.CurrentDirection);
+            var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
+
+            if (nextPlayer.IsSkipped)
+            {
+                /* Skip this player's turn and move to the following player. */
+                nextPlayer.IsSkipped = false;
+                nextPlayer = GetNextPlayer(nextPlayer, GameData.CurrentDirection);
+            }
+
+            GameData.CurrentPlayer = nextPlayer;
             GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
 
             _ui.Invalidate();
@@ -613,14 +632,16 @@ namespace ClassicUno.Classes.Logic
         private async void BeginDeal()
         {
             GameState = GameState.Dealing;
+            _ui.UpdateStatus("Dealing new round!");
             _ui.GameStateChanged();
+            _ui.SoundEffectRequest(SoundType.Shuffle);
+
+            /* Visual shuffle animation. */
+            await _ui.AnimateDeckStackAsync();
+
+            await Task.Delay(300);
 
             Card card;
-
-            _ui.UpdateStatus("Dealing new round!");
-
-            /* Allow the initial screen to paint before dealing starts. */
-            await Task.Delay(2000);
 
             /* Deal seven cards to each player, one at a time. */
             for (var dealt = 0; dealt < 7; dealt++)
@@ -673,12 +694,20 @@ namespace ClassicUno.Classes.Logic
             }
 
             startingCard.DrawAngle = (float)(RandomEx.Shared.NextDouble() * 10.0 - 5.0);
+
+            _ui.SoundEffectRequest(SoundType.Draw);
+
+            /* Animate the starting discard card from the pickup pile. */
+            await _ui.AnimateStartingDiscardAsync(startingCard);
+
+            /* Animation finished - add the card to the discard pile. */
             GameData.DiscardPile.Add(startingCard);
+
+            _ui.SoundEffectRequest(SoundType.Drop);
 
             await Task.Delay(300);
 
             /* Dealing has finished - begin the game. */
-            _ui.SoundEffectRequest(SoundType.Drop);
 
             card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
 
@@ -698,13 +727,19 @@ namespace ClassicUno.Classes.Logic
             GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
         }
         #endregion
-        
+
         #region Force card drawing
         private async Task BeginForceDraw(IPlayer player, IPlayer nextPlayer, int cards, bool chooseColor)
         {
             for (var count = 0; count < cards; count++)
             {
-                var card = Draw();
+                var card = await Draw();
+
+                if (card == null)
+                {
+                    _ui.UpdateLogText("No more cards available in the draw pile.");
+                    break;
+                }
 
                 await _ui.AnimateCardToHandAsync(nextPlayer, card, nextPlayer is HumanPlayer);
 
@@ -712,22 +747,21 @@ namespace ClassicUno.Classes.Logic
                 _ui.Invalidate();
             }
 
-            nextPlayer.HasDrawn = false; /* IMPORTANT! */
+            nextPlayer.HasDrawn = false;
 
-            if (!(nextPlayer is HumanPlayer))
+            if (chooseColor)
             {
-                if (chooseColor)
-                {
-                    _ui.EnableDraw(false);
-                    _ui.EnablePass(false);
-                    _ui.EnablePlay(false);
-                    _ui.ShowColorButtons(true);
-                    return;
-                }
+                /* The player who played Wild Draw Four must choose a colour. */
+                _ui.EnableDraw(false);
+                _ui.EnablePass(false);
+                _ui.EnablePlay(false);
+                _ui.ShowColorButtons(true);
+                return;
             }
 
             if (player is HumanPlayer)
             {
+                /* Human played Draw Two; their turn ends after the penalty draw. */
                 player.EndTurn();
             }
         }
@@ -768,11 +802,11 @@ namespace ClassicUno.Classes.Logic
             return GameData.Players[(index + (direction == PlayDirection.Clockwise ? 1 : -1) + GameData.Players.Count) % GameData.Players.Count];
         }
 
-        private Card Draw()
+        private async Task<Card> Draw()
         {
             /* This method ensures during game play that once the deck get's down to one card, it is refreshed from the
              * discard pile and shuffled */
-            if (GameData.Deck.Count == 1)
+            if (GameData.Deck.Count <= 1)
             {
                 /* Keep the top card */
                 var count = GameData.DiscardPile.Count - 1;
@@ -787,7 +821,15 @@ namespace ClassicUno.Classes.Logic
                 GameData.Deck.Shuffle();
 
                 _ui.SoundEffectRequest(SoundType.Shuffle);
+
+                await _ui.AnimateDeckStackAsync();
+
                 _ui.UpdateLogText("Deck re-shuffled!");
+            }
+
+            if (GameData.Deck.Count == 0)
+            {
+                return null;
             }
 
             _ui.SoundEffectRequest(SoundType.Draw);
