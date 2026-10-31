@@ -4,8 +4,8 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.Shared.Management;
 
 namespace ClassicUno.Controls.Options
 {

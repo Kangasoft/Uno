@@ -31,13 +31,12 @@ namespace ClassicUno.Classes.Logic
     [Serializable]
     public enum CardType
     {
-        None = 0,
-        Numeric = 1,
-        Skip = 2,
-        Reverse = 3,
-        DrawTwo = 4,
-        DrawFour = 5,
-        Wild = 6
+        Numeric = 0,
+        Skip = 1,
+        Reverse = 2,
+        DrawTwo = 3,
+        DrawFour = 4,
+        Wild = 5
     }
 
     [Serializable]

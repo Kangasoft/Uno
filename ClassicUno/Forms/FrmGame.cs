@@ -4,18 +4,18 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Reflection;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers;
-using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Serialization;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.Shared;
+using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Classes.UI;
 using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Controls;
@@ -56,7 +56,7 @@ namespace ClassicUno.Forms
 
         private readonly UiSynchronize _sync;
 
-        private readonly string _recoveryFile = Utils.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
+        private readonly string _recoveryFile = Misc.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
 
         private readonly List<string> _logText = new List<string>();
 
@@ -293,7 +293,7 @@ namespace ClassicUno.Forms
             /* Help menu */
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
             {
-                MenuHelper.AddMenuItem("About", "ABOUT", Keys.None, true, OnMenuClick)
+                Menus.AddMenuItem("About", "ABOUT", Keys.None, true, OnMenuClick)
             });
 
             /* Add controls */
@@ -309,7 +309,7 @@ namespace ClassicUno.Forms
             if (loc == Point.Empty)
             {
                 /* Scale form to less than the screen width/height */
-                var screen = Utils.GetCurrentMonitor(this);
+                var screen = Misc.GetCurrentMonitor(this);
                 var x = screen.Bounds.Width - 100;
                 var y = screen.Bounds.Height - 100;
                 Size = new Size(x, y);
@@ -371,6 +371,7 @@ namespace ClassicUno.Forms
 
                     case GameState.Dealing:
                         /* If we're dealing a round, cancel close request */
+                        SystemSounds.Beep.Play();
                         e.Cancel = true;
                         return;
                 }
@@ -401,31 +402,36 @@ namespace ClassicUno.Forms
         {
             m.DropDownItems.Clear();
 
+            var saved = SettingsManager.Settings.Saved.Games.Count;
             var restart = false;
+            var load = saved > 0;
             var undo = false;
             if (CurrentGame != null)
             {
                 /* Is the current game able to be restarted? */
                 restart = CurrentGame.Restartable && CurrentGame.GameState == GameState.Running ||
                           CurrentGame.GameState == GameState.Paused;
+
+                load = CurrentGame.GameState != GameState.Dealing && saved > 0;
+
                 undo = CurrentGame.Undo.CanUndo && CurrentGame.GameState == GameState.Running && CurrentGame.GameData.CurrentPlayer is HumanPlayer;
             }
 
             m.DropDownItems.AddRange(
                 new ToolStripItem[]
                 {
-                    MenuHelper.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, OnMenuClick),
+                    Menus.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, OnMenuClick),
                     new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Load game", "LOAD", Keys.Control | Keys.O, true, OnMenuClick),
-                    MenuHelper.AddMenuItem("Save game", "SAVE", Keys.Control | Keys.S,
+                    Menus.AddMenuItem("Load game", "LOAD", Keys.Control | Keys.O, load, OnMenuClick),
+                    Menus.AddMenuItem("Save game", "SAVE", Keys.Control | Keys.S,
                         CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused,
                         OnMenuClick),
                     new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Undo last move", "UNDO", Keys.Control | Keys.Z, undo, OnMenuClick),
-                    MenuHelper.AddMenuItem("Restart game", "RESTART", Keys.Control | Keys.R, restart, OnMenuClick),
+                    Menus.AddMenuItem("Undo last move", "UNDO", Keys.Control | Keys.Z, undo, OnMenuClick),
+                    Menus.AddMenuItem("Restart game", "RESTART", Keys.Control | Keys.R, restart, OnMenuClick),
                 });
 
-            var pause = MenuHelper.AddMenuItem(CurrentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
+            var pause = Menus.AddMenuItem(CurrentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
                 "PAUSE", Keys.None,
                 CurrentGame != null && CurrentGame?.GameState != GameState.Dealing,
                 OnMenuClick);
@@ -435,9 +441,9 @@ namespace ClassicUno.Forms
             {
                 pause,
                 new ToolStripSeparator(),
-                MenuHelper.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
+                Menus.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
                 new ToolStripSeparator(),
-                MenuHelper.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, OnMenuClick)
+                Menus.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, OnMenuClick)
             });
         }
 
@@ -453,18 +459,18 @@ namespace ClassicUno.Forms
             m.DropDownItems.AddRange(
                 new ToolStripItem[]
                 {
-                    MenuHelper.AddMenuItem("Enable voice", "VOICE", Keys.Alt | Keys.V, true,
+                    Menus.AddMenuItem("Enable voice", "VOICE", Keys.Alt | Keys.V, true,
                         SettingsManager.Settings.Sound.EnableVoice, null, OnMenuClick),
-                    MenuHelper.AddMenuItem("Enable card sound effects", "SFX", Keys.Alt | Keys.E, true,
+                    Menus.AddMenuItem("Enable card sound effects", "SFX", Keys.Alt | Keys.E, true,
                         SettingsManager.Settings.Sound.EnableEffects, null, OnMenuClick),
-                    MenuHelper.AddMenuItem("Enable music", "MUSIC", Keys.Alt | Keys.M, true,
+                    Menus.AddMenuItem("Enable music", "MUSIC", Keys.Alt | Keys.M, true,
                         SettingsManager.Settings.Sound.EnableMusic, null, OnMenuClick),
                     new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Show status bar", "STATUS", Keys.None, true, SettingsManager.Settings.General.ShowStatus, null, OnMenuClick),
-                    MenuHelper.AddMenuItem("Show game log text", "LOG", Keys.None, true, SettingsManager.Settings.General.ShowLogText, null, OnMenuClick),
+                    Menus.AddMenuItem("Show status bar", "STATUS", Keys.None, true, SettingsManager.Settings.General.ShowStatus, null, OnMenuClick),
+                    Menus.AddMenuItem("Show game log text", "LOG", Keys.None, true, SettingsManager.Settings.General.ShowLogText, null, OnMenuClick),
                     new ToolStripSeparator(),
-                    MenuHelper.AddMenuItem("Card back...", "BACKS", Keys.None, true, OnMenuClick),
-                    MenuHelper.AddMenuItem("Options...", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick)
+                    Menus.AddMenuItem("Card back...", "BACKS", Keys.None, true, OnMenuClick),
+                    Menus.AddMenuItem("Options...", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick)
                 });
         }
 
@@ -524,6 +530,7 @@ namespace ClassicUno.Forms
                                         CustomMessageBoxIcon.Information);
                                 }
                                 SettingsManager.Save();
+                                _mnuGame.DropDownItems[2].Enabled = SettingsManager.Settings.Saved.Games.Count > 0;
                             }
                             else
                             {
@@ -539,7 +546,6 @@ namespace ClassicUno.Forms
                     break;
 
                 case "UNDO":
-                    Debug.Print("undo");
                     CurrentGame?.UndoLastMove();
                     break;
 
@@ -704,31 +710,32 @@ namespace ClassicUno.Forms
             switch (btn.Tag)
             {
                 case "DRAW":
-                    CurrentGame.HumanDrawCard();
+                    CurrentGame.SaveUndoState();
+                    CurrentGame.GameData.CurrentPlayer.DrawCard();
                     break;
 
                 case "PASS":
-                    CurrentGame.HumanPass();
+                    CurrentGame.GameData.CurrentPlayer.Pass();
                     break;
 
                 case "PLAY":
-                    CurrentGame.HumanPlaysCard();
+                    PlayCard();
                     break;
 
                 case "RED":
-                    CurrentGame.PlayerChoosesColor(CurrentGame.GameData.CurrentPlayer, CardColor.Red);
+                    CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Red);
                     break;
 
                 case "BLUE":
-                    CurrentGame.PlayerChoosesColor(CurrentGame.GameData.CurrentPlayer, CardColor.Blue);
+                    CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Blue);
                     break;
 
                 case "GREEN":
-                    CurrentGame.PlayerChoosesColor(CurrentGame.GameData.CurrentPlayer, CardColor.Green);
+                    CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Green);
                     break;
 
                 case "YELLOW":
-                    CurrentGame.PlayerChoosesColor(CurrentGame.GameData.CurrentPlayer, CardColor.Yellow);
+                    CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Yellow);
                     break;
             }
         }
@@ -790,7 +797,7 @@ namespace ClassicUno.Forms
 
             if (CurrentGame?.SelectedCard != null && e.Button == MouseButtons.Left)
             {
-                CurrentGame.HumanPlaysCard();
+                PlayCard();
             }
 
             base.OnMouseDoubleClick(e);
@@ -828,7 +835,7 @@ namespace ClassicUno.Forms
 
             /* Update the game time */
             CurrentGame.CurrentTime++;
-            _slTime.Text = $@"Time: {Utils.FormatTime(CurrentGame.CurrentTime)}";
+            _slTime.Text = $@"Time: {Misc.FormatTime(CurrentGame.CurrentTime)}";
         }
         #endregion
 
@@ -946,6 +953,7 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => UpdateStatus(text));
                 return;
             }
+
             _slGame.Text = text;
         }
 
@@ -1154,6 +1162,22 @@ namespace ClassicUno.Forms
             UpdateUndo();
 
             Invalidate();
+        }
+
+        private void PlayCard()
+        {
+            if (!Validation.IsCardPlayable(
+                CurrentGame.GameData.DiscardPile[CurrentGame.GameData.DiscardPile.Count - 1],
+                CurrentGame.SelectedCard, CurrentGame.GameData.CurrentColor,
+                CurrentGame.GameData.CurrentPlayer.Cards))
+            {
+                SoundEffectRequest(SoundType.Error);
+                UpdateStatus("Selected card cannot be played. Choose another, or draw.");
+                return;
+            }
+
+            CurrentGame.SaveUndoState();
+            CurrentGame.GameData.CurrentPlayer.PlayCard(CurrentGame.SelectedCard);
         }
         #endregion
 

@@ -4,7 +4,7 @@
  * ©2026 - Kangasoft Software */
 using ClassicUno.Classes.Logic;
 
-namespace ClassicUno.Classes.Helpers.Management
+namespace ClassicUno.Classes.Shared.Management
 {
     public class UndoManager
     {

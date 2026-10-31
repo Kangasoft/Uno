@@ -4,9 +4,9 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.Shared;
 using ClassicUno.Controls;
 
 namespace ClassicUno.Forms
@@ -47,13 +47,13 @@ namespace ClassicUno.Forms
             /* Gender */
             for (var i = 0; i <= 1; i++)
             {
-                cmbGender.Items.Add(Utils.GetDescriptionFromEnumValue((PlayerGender) i));
+                cmbGender.Items.Add(Misc.GetDescriptionFromEnumValue((PlayerGender) i));
             }
 
             /* Difficulty level */
             for (var d = 0; d <= 2; d++)
             {
-                cmbDifficulty.Items.Add(Utils.GetDescriptionFromEnumValue((ComputerDifficulty) d));
+                cmbDifficulty.Items.Add(Misc.GetDescriptionFromEnumValue((ComputerDifficulty) d));
             }
 
             cmbGender.SelectedIndexChanged += GenderSelectedIndexChanged;

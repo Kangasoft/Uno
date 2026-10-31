@@ -2,18 +2,15 @@
  * Version: 1.0.1
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
-using System;
 using System.Collections.Generic;
 using ClassicUno.Classes.Settings.SettingsData;
 
-namespace ClassicUno.Classes.Helpers
+namespace ClassicUno.Classes.Shared
 {
     public static class ComputerNames
     {
         /* Simple class for generating random Computer player names and genders */
-        private static readonly Random Rng = new Random();
-
-        private static char RandomLetter() => (char)('A' + Rng.Next(26));
+        private static char RandomLetter() => (char)('A' + RandomEx.Shared.Next(26));
         
         private static readonly List<string> MaleNames = new List<string>()
         {
@@ -76,7 +73,7 @@ namespace ClassicUno.Classes.Helpers
             PlayerGender gender;
             List<string> names;
             /* Choose a random gender */
-            switch (Rng.Next(0, 2))
+            switch (RandomEx.Shared.Next(0, 2))
             {
                 case 0:
                     gender = PlayerGender.Male;
@@ -89,7 +86,7 @@ namespace ClassicUno.Classes.Helpers
                     break;
             }
             /* Pick a random name based on gender */
-            var name = $"{names[Rng.Next(0, names.Count - 1)]} {RandomLetter()}.";
+            var name = $"{names[RandomEx.Shared.Next(0, names.Count - 1)]} {RandomLetter()}.";
             var data = new PlayerNameData
             {
                 Name = name,

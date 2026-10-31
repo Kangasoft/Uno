@@ -2,11 +2,10 @@
  * Version: 1.0.1
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
-
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers.Management;
+using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Controls;
 using ClassicUno.Controls.Options;
 

@@ -10,7 +10,7 @@ using ClassicUno.Classes.DirectSound;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Settings.SettingsData;
 
-namespace ClassicUno.Classes.Helpers.Management
+namespace ClassicUno.Classes.Shared.Management
 {
     #region Enums
     public enum VoiceType
@@ -53,8 +53,6 @@ namespace ClassicUno.Classes.Helpers.Management
     {
         #region Fields
         /* Easier way to manage and play external sounds */
-        private static readonly Random RandomVoice = new Random();
-
         private static readonly List<VoiceData> Voices = new List<VoiceData>();
         private static readonly List<AudioData> Sounds = new List<AudioData>();
         private static readonly List<string> Music = new List<string>();
@@ -80,24 +78,24 @@ namespace ClassicUno.Classes.Helpers.Management
             Sounds.AddRange(
                 new[]
                 {
-                    LoadSound(Utils.MainDir(@"\data\sound\card-shuffle.wav"), SoundType.Shuffle),
-                    LoadSound(Utils.MainDir(@"\data\sound\card-deal.wav"), SoundType.Deal),
-                    LoadSound(Utils.MainDir(@"\data\sound\card-drop.wav"), SoundType.Drop),
-                    LoadSound(Utils.MainDir(@"\data\sound\card-draw.wav"), SoundType.Draw),
-                    LoadSound(Utils.MainDir(@"\data\sound\card-error.wav"), SoundType.Error)
+                    LoadSound(Misc.MainDir(@"\data\sound\card-shuffle.wav"), SoundType.Shuffle),
+                    LoadSound(Misc.MainDir(@"\data\sound\card-deal.wav"), SoundType.Deal),
+                    LoadSound(Misc.MainDir(@"\data\sound\card-drop.wav"), SoundType.Drop),
+                    LoadSound(Misc.MainDir(@"\data\sound\card-draw.wav"), SoundType.Draw),
+                    LoadSound(Misc.MainDir(@"\data\sound\card-error.wav"), SoundType.Error)
                 });
 
             /* Set test voice */
             TestVoice = new Sound
             {
-                Clip = Utils.MainDir(@"data\voice\test-voice.wav", false),
+                Clip = Misc.MainDir(@"data\voice\test-voice.wav", false),
                 Pan = 50
             };
 
             /* Set test FX */
             TestFx = new Sound
             {
-                Clip = Utils.MainDir(@"data\sound\test-fx.wav", false),
+                Clip = Misc.MainDir(@"data\sound\test-fx.wav", false),
                 Pan = 50
             };
 
@@ -105,14 +103,14 @@ namespace ClassicUno.Classes.Helpers.Management
             SetEffectsVolume(SettingsManager.Settings.Sound.EffectsVolume);
             SetMusicVolume(SettingsManager.Settings.Sound.MusicVolume);
 
-            var voice = new DirectoryInfo(Utils.MainDir(@"data\voice\", false));
+            var voice = new DirectoryInfo(Misc.MainDir(@"data\voice\", false));
             voiceSearch.BeginSearch(voice, "*.wav", "*", false);
 
             var musicSearch = new FolderSearch();
             musicSearch.OnFileSearchCompleted += MusicSearchCompleted;
             musicSearch.OnFileFound += MusicSearchFileFound;
 
-            var music = new DirectoryInfo(Utils.MainDir(@"data\music\", false));
+            var music = new DirectoryInfo(Misc.MainDir(@"data\music\", false));
             musicSearch.BeginSearch(music, "*.mp3", "*", false);
 
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
@@ -263,7 +261,7 @@ namespace ClassicUno.Classes.Helpers.Management
             {
                 return -1;
             }
-            return match[RandomVoice.Next(match.Count)].VoiceIndex;
+            return match[RandomEx.Shared.Next(match.Count)].VoiceIndex;
         }
         #endregion
 

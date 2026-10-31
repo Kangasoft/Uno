@@ -4,10 +4,10 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.Shared;
 
 namespace ClassicUno.Classes.Logic.Player
 {
@@ -16,8 +16,6 @@ namespace ClassicUno.Classes.Logic.Player
         #region Fields
         private Card _discardCard;
         private CardColor _currentColor;
-        private BackgroundWorker _worker;
-        private readonly Random _rnd = new Random();
 
         public ComputerDifficulty Difficulty { get; set; } = ComputerDifficulty.Easy;
 
@@ -35,12 +33,11 @@ namespace ClassicUno.Classes.Logic.Player
 
         public bool HasDrawn { get; set; }
 
-        public bool HasRequestedDraw { get; set; }
         
         public event Action<IPlayer> PlayerBeginTurn;
         public event Action<IPlayer> PlayerDraw;
-        public event Action<IPlayer, CardColor> PlayerChoosesColor;
         public event Action<IPlayer, Card> PlayerPlaysCard;
+        public event Action<IPlayer, CardColor> PlayerChoosesColor;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
         #endregion
@@ -57,45 +54,54 @@ namespace ClassicUno.Classes.Logic.Player
         public void BeginTurn(Card card, CardColor currentColor)
         {
             HasPassed = false;
+
             if (IsSkipped)
             {
                 IsSkipped = false;
                 EndTurn();
                 return;
             }
-            //Pass(); //test code
-            //EndTurn();
-            //return;
 
             _discardCard = card;
             _currentColor = currentColor;
 
-            _worker = new BackgroundWorker {WorkerSupportsCancellation = true};
-            _worker.DoWork += BackgroundWorkerCallback;
-            _worker.RunWorkerCompleted += BackgroundWorkerEndWork;
-            _worker.RunWorkerAsync();
-
             /* This isn't really used for computer players - except to force a UI repaint */
             PlayerBeginTurn?.Invoke(this);
+
+            ComputerBeginTurn();
         }
 
         public void PlayCard(Card card)
         {
-            /* This isn't necessary in computer players as PlayerPlaysCard event is raised in the background worker */
+            PlayerPlaysCard?.Invoke(this, card);
         }
 
-        public void DrawCard(Card card)
+        public void ChooseColor(CardColor color)
+        {
+            if (color != CardColor.None)
+            {
+                return;
+            }
+            color = ChooseWildColor();
+            PlayerChoosesColor?.Invoke(this, color);
+        }
+
+        public void DrawCard()
+        {
+            HasDrawn = true;
+            PlayerDraw?.Invoke(this);
+        }
+
+        public void CardDrawn(Card card)
         {
             Cards.Add(card);
             if (!HasDrawn)
             {
                 return;
             }
+
             /* Loop back to original background process */
-            _worker = new BackgroundWorker { WorkerSupportsCancellation = true };
-            _worker.DoWork += BackgroundWorkerCallback;
-            _worker.RunWorkerCompleted += BackgroundWorkerEndWork;
-            _worker.RunWorkerAsync();
+            ComputerBeginTurn();
         }
 
         public void Pass()
@@ -106,59 +112,43 @@ namespace ClassicUno.Classes.Logic.Player
 
         public void EndTurn()
         {
-            IsSkipped = false; /* Make sure this variable is RESET */
+            /* Make sure these variables are RESET. */
+            IsSkipped = false;
             HasDrawn = false;
-            HasRequestedDraw = false;
             PlayerEndTurn?.Invoke(this);
         }
         #endregion
-
-        #region Background worker
-        private void BackgroundWorkerCallback(object sender, DoWorkEventArgs e)
+        
+        #region Private helpers
+        private async void ComputerBeginTurn()
         {
             /* Analyze upper card on discard pile (_discardCard) */
-            Thread.Sleep(_rnd.Next(600, 1500));
+            await Task.Delay(RandomEx.Shared.Next(400, 800));
             var card = SelectComputerCard();
             if (card == null)
             {
-                Thread.Sleep(_rnd.Next(300, 1500));
+                await Task.Delay(RandomEx.Shared.Next(400, 800));
                 if (!HasDrawn)
                 {
                     /* Need to draw */
-                    HasDrawn = true;
-                    HasRequestedDraw = true;
-                    PlayerDraw?.Invoke(this);
+                    DrawCard();
                     return;
                 }
                 /* Have to pass */
                 Pass();
+                await Task.Delay(300);
+                EndTurn();
                 return;
             }
 
             Cards.Remove(card);
-            PlayerPlaysCard?.Invoke(this, card);
-            if (card.Type == CardType.Wild || card.Type == CardType.DrawFour)
-            {
-                /* Choose color */
-                var c = ChooseWildColor();
-                PlayerChoosesColor?.Invoke(this, c);
-            }
-            Thread.Sleep(_rnd.Next(400, 800));
-        }
+            PlayCard(card);
 
-        private void BackgroundWorkerEndWork(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (HasRequestedDraw)
-            {
-                HasRequestedDraw = false;
-                return;
-            }
+            await Task.Delay(RandomEx.Shared.Next(400, 800));
 
             EndTurn();
         }
-        #endregion
 
-        #region Private helpers
         private Card SelectComputerCard()
         {
             if (Cards.Count == 0)
@@ -194,7 +184,7 @@ namespace ClassicUno.Classes.Logic.Player
         private Card SelectEasyCard(List<Card> playableCards)
         {
             /* Easy AI: occasionally misses a chance to play its final draw card. */
-            if (Cards.Count == 1 && _rnd.Next(100) < 15)
+            if (Cards.Count == 1 && RandomEx.Shared.Next(100) < 15)
             {
                 var lastCard = Cards[0];
 
@@ -207,7 +197,7 @@ namespace ClassicUno.Classes.Logic.Player
             }
 
             /* Easy AI: occasionally makes a bad decision and draws unnecessarily. */
-            if (_rnd.Next(100) < 15)
+            if (RandomEx.Shared.Next(100) < 15)
             {
                 return null;
             }
@@ -228,18 +218,18 @@ namespace ClassicUno.Classes.Logic.Player
                 .Where(c => c.Type == CardType.Numeric)
                 .ToList();
 
-            if (ordinaryCards.Count > 0 && _rnd.Next(100) < 75)
+            if (ordinaryCards.Count > 0 && RandomEx.Shared.Next(100) < 75)
             {
                 choices = ordinaryCards;
             }
 
-            return choices[_rnd.Next(choices.Count)];
+            return choices[RandomEx.Shared.Next(choices.Count)];
         }
 
         private Card SelectNormalCard(IEnumerable<Card> playableCards, IReadOnlyCollection<Card> hand)
         {
             /* More balanced - still allow a slight mistake by drawing for no reason. */
-            if (_rnd.Next(100) < 20)
+            if (RandomEx.Shared.Next(100) < 20)
             {
                 return null;
             }
@@ -305,7 +295,7 @@ namespace ClassicUno.Classes.Logic.Player
                     }
                 }
 
-                score += _rnd.Next(0, 4);
+                score += RandomEx.Shared.Next(0, 4);
 
                 if (score <= bestScore)
                 {
@@ -322,7 +312,7 @@ namespace ClassicUno.Classes.Logic.Player
         private Card SelectHardCard(IEnumerable<Card> playableCards, IReadOnlyCollection<Card> hand)
         {
             /* More aggressive - still introduce mistake drawing, but less likely. */
-            if (_rnd.Next(100) < 10)
+            if (RandomEx.Shared.Next(100) < 10)
             {
                 return null;
             }
@@ -382,7 +372,7 @@ namespace ClassicUno.Classes.Logic.Player
             return bestCard;
         }
 
-        private CardColor ChooseWildColor()
+        public CardColor ChooseWildColor()
         {
             var colors = Cards
                 .Where(c => c.Color != CardColor.None)
@@ -401,13 +391,13 @@ namespace ClassicUno.Classes.Logic.Player
             }
 
             /* Usually choose the colour we have most of. */
-            if (colors.Count == 1 || _rnd.Next(100) < 80)
+            if (colors.Count == 1 || RandomEx.Shared.Next(100) < 80)
             {
                 return colors[0].Color;
             }
 
             /* Occasionally choose another colour held in the hand. */
-            return colors[_rnd.Next(1, colors.Count)].Color;
+            return colors[RandomEx.Shared.Next(1, colors.Count)].Color;
         }
         #endregion
 

@@ -3,16 +3,20 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
+using ClassicUno.Classes.Shared;
 using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Properties;
+using Timer = System.Windows.Forms.Timer;
 
 namespace ClassicUno.Classes.UI
 {
@@ -89,6 +93,25 @@ namespace ClassicUno.Classes.UI
         /* Back of the UNO! cards - this is displayed on the UI when cards are "face-down" */
         private const int MaxBackImages = 8;
 
+        /* Card animation */
+        private readonly Timer _cardAnimationTimer = new Timer();
+        private readonly Stopwatch _cardAnimationWatch = new Stopwatch();
+        private readonly SemaphoreSlim _cardAnimationLock = new SemaphoreSlim(1, 1);
+
+        private TaskCompletionSource<bool> _cardAnimationCompletion;
+
+        private Image _animatedCardImage;
+        private PointF _animationStart;
+        private PointF _animationEnd;
+        private PointF _animatedCardCenter;
+
+        private float _animationStartAngle;
+        private float _animationEndAngle;
+        private float _animatedCardAngle;
+
+        private int _animationDuration;
+        private bool _cardAnimationActive;
+
         public int CardBackIndex;
 
         public List<Image> CardBackImages = new List<Image>();
@@ -101,6 +124,9 @@ namespace ClassicUno.Classes.UI
 
             BuildCardImages();
             BuildCardBacks();
+
+            _cardAnimationTimer.Interval = 16;
+            _cardAnimationTimer.Tick += CardAnimationTimer;
         }
         #endregion
 
@@ -126,6 +152,15 @@ namespace ClassicUno.Classes.UI
                 }
 
                 LogRenderer.Dispose();
+
+                _cardAnimationTimer.Stop();
+                _cardAnimationTimer.Tick -= CardAnimationTimer;
+                _cardAnimationTimer.Dispose();
+
+                _cardAnimationWatch.Stop();
+
+                _cardAnimationCompletion?.TrySetResult(true);
+                _cardAnimationCompletion = null;
             }
 
             base.Dispose(disposing);
@@ -246,6 +281,56 @@ namespace ClassicUno.Classes.UI
         #endregion
 
         #region Public methods
+        public async Task AnimateCardToHandAsync(IPlayer player, Card card, bool faceUp = false, int duration = 300)
+        {
+            if (CurrentGame == null || player == null)
+            {
+                return;
+            }
+
+            var destination = GetPlayerCardDestination(player, out var angle);
+
+            var start = GetPickupPileCenter();
+
+            var cardImage = faceUp && card != null ? GetCardImage(card) : CardBackImages[CardBackIndex];
+
+            await AnimateCardAsync(cardImage, start, destination, 0f, angle, duration);
+        }
+
+        public async Task AnimateCardToDiscardAsync(IPlayer player, Card card, int duration = 300)
+        {
+            if (CurrentGame == null || player == null || card == null)
+            {
+                return;
+            }
+
+            /* Find the player's position around the table. */
+            var playerIndex = CurrentGame.GameData.Players.IndexOf(player);
+
+            if (playerIndex < 0 || playerIndex >= 4)
+            {
+                return;
+            }
+
+            /* Determine the player's card rotation. */
+            var startAngle = CurrentGame.GameData.Players.Count > 2
+                ? playerIndex * 90f
+                : playerIndex * 180f;
+
+            /* Get the centre of the card's last known hand position. */
+            var start = new PointF(
+                card.Region.Left + card.Region.Width / 2f,
+                card.Region.Top + card.Region.Height / 2f);
+
+            /* Centre of the discard pile. */
+            var end = new PointF(
+                ClientRectangle.Left + _discardPilePosition.X + _cardWidth / 2f,
+                ClientRectangle.Top + _discardPilePosition.Y + _cardHeight / 2f);
+
+            /* Animate the actual face-up card. */
+            await AnimateCardAsync(GetCardImage(card), start, end, startAngle, card.DrawAngle, duration);
+        }
+
         public void ResetAnimation()
         {
             foreach (var animation in _unoAnimation.Where(animation => animation.IsAnimating))
@@ -275,6 +360,9 @@ namespace ClassicUno.Classes.UI
 
             DrawGameCenter(e.Graphics);
             DrawPlayerCards(e.Graphics);
+
+            DrawAnimatedCard(e.Graphics);
+
             DrawPlayerNames(e.Graphics, _playerNameBounds);
 
             LogRenderer?.Draw(e.Graphics);
@@ -318,7 +406,7 @@ namespace ClassicUno.Classes.UI
 
             g.DrawImage(directionImage, _directionBounds);
 
-            g.DrawText(Utils.GetDescriptionFromEnumValue(CurrentGame.GameData.CurrentDirection), _textColor, _directionTextBounds, StringAlignment.Center);
+            g.DrawText(Misc.GetDescriptionFromEnumValue(CurrentGame.GameData.CurrentDirection), _textColor, _directionTextBounds, StringAlignment.Center);
 
             DrawOrbColor(g);
             DrawPickupPile(g);
@@ -432,7 +520,7 @@ namespace ClassicUno.Classes.UI
 
                     card = CurrentGame.GameData.DiscardPile[cardIndex];
 
-                    DrawRotatedCard(g, CardBackImages[CardBackIndex], x, y, card.DrawAngle);
+                    DrawRotatedCard(g, Resources.blankCard, x, y, card.DrawAngle);
                 }
             }
 
@@ -514,10 +602,75 @@ namespace ClassicUno.Classes.UI
             var totalWidth = _cardWidth + (count - 1) * spacing;
             var totalHeight = _cardHeight + (count - 1) * spacing;
 
+            //for (var i = 0; i < count; i++)
+            //{
+            //    var card = player.Cards[i];
+            //    var cardImage = GetCardImage(card);
+            //    var image = player is HumanPlayer ? cardImage :
+            //        CurrentGame.GameState != GameState.Stopped ? CardBackImages[CardBackIndex] : cardImage;
+
+            //    var selectedOffsetY = card == CurrentGame.SelectedCard ? 23f : 0f;
+
+            //    if (image == null)
+            //    {
+            //        continue;
+            //    }
+
+            //    float x;
+            //    float y;
+
+            //    if (!sideways)
+            //    {
+            //        x = handBounds.Left + (handBounds.Width - totalWidth) / 2f + i * spacing;
+            //        y = handBounds.Top - selectedOffsetY;
+
+            //        DrawCard(g, image, new PointF(x - ClientRectangle.Left, y - ClientRectangle.Top));
+
+            //        if (player is HumanPlayer &&
+            //            CurrentGame.HighlightedCard != null &&
+            //            CurrentGame.HighlightedCard != CurrentGame.SelectedCard &&
+            //            CurrentGame.HighlightedCard == card)
+            //        {
+            //            DrawHoverCardHighlight(g, CurrentGame.HighlightedCard);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        x = handBounds.Left + handBounds.Width / 2f;
+            //        y = handBounds.Top + (handBounds.Height - totalHeight) / 2f + i * spacing + _cardHeight / 2f -
+            //            _cardWidth / 2f;
+
+            //        DrawRotatedCard(g, image, x, y, angle);
+            //    }
+
+            //    if (player is HumanPlayer)
+            //    {
+            //        /* Set the region of this card for mouse hit test */
+            //        card.Region = new RectangleF(x, y, i < count - 1 ? spacing : _cardWidth, _cardHeight);
+            //    }
+
+            //    /* UNO! animation */
+            //    if (count == 1 && CurrentGame.GameState != GameState.Dealing)
+            //    {
+            //        _unoAnimation[playerIndex].Start();
+            //    }
+            //    else
+            //    {
+            //        if (_unoAnimation[playerIndex] == null)
+            //        {
+            //            continue;
+            //        }
+            //        if (_unoAnimation[playerIndex].IsAnimating)
+            //        {
+            //            _unoAnimation[playerIndex].Stop();
+            //        }
+            //    }
+            //}
             for (var i = 0; i < count; i++)
             {
                 var card = player.Cards[i];
                 var cardImage = GetCardImage(card);
+
                 Image image = player is HumanPlayer ? cardImage :
                     CurrentGame.GameState != GameState.Stopped ? CardBackImages[CardBackIndex] : cardImage;
 
@@ -555,10 +708,22 @@ namespace ClassicUno.Classes.UI
                     DrawRotatedCard(g, image, x, y, angle);
                 }
 
-                if (player is HumanPlayer)
+                /* Store the card's screen position for hit testing and animation. */
+                if (!sideways)
                 {
-                    /* Set the region of this card for mouse hit test */
-                    card.Region = new RectangleF(x, y, i < count - 1 ? spacing : _cardWidth, _cardHeight);
+                    card.Region = new RectangleF(
+                        x,
+                        y,
+                        i < count - 1 ? spacing : _cardWidth,
+                        _cardHeight);
+                }
+                else
+                {
+                    card.Region = new RectangleF(
+                        x - _cardHeight / 2f,
+                        y - _cardWidth / 2f,
+                        _cardHeight,
+                        _cardWidth);
                 }
 
                 /* UNO! animation */
@@ -572,6 +737,7 @@ namespace ClassicUno.Classes.UI
                     {
                         continue;
                     }
+
                     if (_unoAnimation[playerIndex].IsAnimating)
                     {
                         _unoAnimation[playerIndex].Stop();
@@ -654,11 +820,58 @@ namespace ClassicUno.Classes.UI
         }
         #endregion
 
+        #region Card animation
+        private async Task AnimateCardAsync(Image image, PointF start, PointF end, float startAngle = 0f, float endAngle = 0f, int duration = 300)
+        {
+            await _cardAnimationLock.WaitAsync();
+
+            try
+            {
+                _animationStart = start;
+                _animationEnd = end;
+
+                _animationStartAngle = startAngle;
+                _animationEndAngle = endAngle;
+
+                _animatedCardCenter = start;
+                _animatedCardAngle = startAngle;
+
+                _animatedCardImage = image;
+                _animationDuration = Math.Max(1, duration);
+
+                _cardAnimationCompletion = new TaskCompletionSource<bool>();
+
+                _cardAnimationActive = true;
+
+                _cardAnimationWatch.Restart();
+                _cardAnimationTimer.Start();
+
+                Invalidate();
+
+                await _cardAnimationCompletion.Task;
+            }
+            finally
+            {
+                _cardAnimationLock.Release();
+            }
+        }
+        #endregion
+
         #region Card drawing methods
         private void DrawCard(Graphics g, Image cardImage, PointF position)
         {
             /* This draws a card anywhere on screen (related to "position") scaled; and is kept track of on resize */
             g.DrawImage(cardImage, new RectangleF(ClientRectangle.Left + position.X, ClientRectangle.Top + position.Y, _cardWidth, _cardHeight));
+        }
+
+        private void DrawAnimatedCard(Graphics g)
+        {
+            if (!_cardAnimationActive || _animatedCardImage == null)
+            {
+                return;
+            }
+
+            DrawRotatedCard(g, _animatedCardImage, _animatedCardCenter.X, _animatedCardCenter.Y, _animatedCardAngle);
         }
 
         private void DrawRotatedCard(Graphics g, Image cardImage, float centerX, float centerY, float angle)
@@ -677,6 +890,43 @@ namespace ClassicUno.Classes.UI
             }
         }
         #endregion
+        #endregion
+
+        #region Card animation timer callback
+        private void CardAnimationTimer(object sender, EventArgs e)
+        {
+            var elapsed = _cardAnimationWatch.ElapsedMilliseconds;
+
+            var progress = Math.Min(1f, (float)elapsed / _animationDuration);
+
+            /* Smooth start and finish. */
+            var eased = progress * progress * (3f - 2f * progress);
+
+            _animatedCardCenter = new PointF(
+                _animationStart.X + (_animationEnd.X - _animationStart.X) * eased,
+                _animationStart.Y + (_animationEnd.Y - _animationStart.Y) * eased);
+
+            _animatedCardAngle =
+                _animationStartAngle +
+                (_animationEndAngle - _animationStartAngle) * eased;
+
+            Invalidate();
+
+            if (progress < 1f)
+            {
+                return;
+            }
+            _cardAnimationTimer.Stop();
+            _cardAnimationWatch.Stop();
+
+            _cardAnimationActive = false;
+            _animatedCardImage = null;
+
+            var completion = _cardAnimationCompletion;
+            _cardAnimationCompletion = null;
+
+            completion?.TrySetResult(true);
+        }
         #endregion
 
         #region Bounds helpers
@@ -756,6 +1006,77 @@ namespace ClassicUno.Classes.UI
                     sideNameWidth,
                     nameHeight)
             };
+        }
+
+        /* Card animation */
+        private PointF GetPickupPileCenter()
+        {
+            return new PointF(
+                ClientRectangle.Left + _pickupPilePosition.X + _cardWidth / 2f,
+                ClientRectangle.Top + _pickupPilePosition.Y + _cardHeight / 2f);
+        }
+
+        private PointF GetPlayerCardDestination(IPlayer player, out float angle)
+        {
+            angle = 0f;
+
+            if (CurrentGame == null || player == null)
+            {
+                return PointF.Empty;
+            }
+
+            var players = CurrentGame.GameData.Players;
+            var playerIndex = players.IndexOf(player);
+
+            if (playerIndex < 0 || playerIndex >= players.Count || playerIndex >= 4)
+            {
+                return PointF.Empty;
+            }
+
+            /* Work out the hand position and rotation using the same
+             * player ordering as DrawPlayerCards(). */
+            var handIndex = players.Count == 2 && playerIndex == 1 ? 2 : playerIndex;
+
+            angle = players.Count > 2 ? playerIndex * 90f : playerIndex * 180f;
+
+            var sideways = Math.Abs(angle - 90f) < 0.1f || Math.Abs(angle - 270f) < 0.1f;
+            var handBounds = _playerHandBounds[handIndex];
+
+            /* Calculate the layout as though the new card has already
+             * been added to the player's hand. */
+            var count = player.Cards.Count + 1;
+
+            var spacing = sideways ? _cardHeight * 0.17f : _cardWidth * 0.30f;
+            var available = sideways ? ClientRectangle.Height - 40f : ClientRectangle.Width - 40f;
+
+            if (count > 1)
+            {
+                spacing = Math.Min(spacing, (available - _cardWidth) / (count - 1));
+            }
+
+            spacing = Math.Max(0f, spacing);
+
+            var totalWidth = _cardWidth + (count - 1) * spacing;
+            var totalHeight = _cardHeight + (count - 1) * spacing;
+
+            /* The new card will be the last card in the hand. */
+            var cardIndex = count - 1;
+
+            if (!sideways)
+            {
+                var x = handBounds.Left + (handBounds.Width - totalWidth) / 2f + cardIndex * spacing;
+                var y = handBounds.Top;
+
+                return new PointF(x + _cardWidth / 2f, y + _cardHeight / 2f);
+            }
+            else
+            {
+                var x = handBounds.Left + handBounds.Width / 2f;
+                var y = handBounds.Top + (handBounds.Height - totalHeight) / 2f +
+                    cardIndex * spacing + _cardHeight / 2f - _cardWidth / 2f;
+
+                return new PointF(x, y);
+            }
         }
         #endregion
 

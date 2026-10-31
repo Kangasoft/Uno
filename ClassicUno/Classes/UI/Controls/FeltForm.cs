@@ -5,6 +5,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using ClassicUno.Classes.Shared;
 
 namespace ClassicUno.Classes.UI.Controls
 {
@@ -69,7 +70,7 @@ namespace ClassicUno.Classes.UI.Controls
 
             _feltTexture = new Bitmap(size, size);
 
-            var rnd = new Random(12345);
+            var rnd = RandomEx.Shared;
 
             using (var g = Graphics.FromImage(_feltTexture))
             {

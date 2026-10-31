@@ -5,15 +5,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using ClassicUno.Classes.Settings.SettingsData;
 
 namespace ClassicUno.Classes.Logic.Player
 {
     public class HumanPlayer : IPlayer
     {
+        /*
+         * Q: Why do programmers prefer dark mode?
+         * A: Because light attracts bugs!
+         */
         #region Fields
-        public ComputerDifficulty Difficulty { get; set; } /* Not used on human players */
-
         public PlayerNameData NameData { get; set; }
 
         public int VoiceIndex { get; set; }
@@ -28,12 +31,11 @@ namespace ClassicUno.Classes.Logic.Player
 
         public bool HasDrawn { get; set; }
 
-        public bool HasRequestedDraw { get; set; }
-        
+
         public event Action<IPlayer> PlayerBeginTurn;
-        public event Action<IPlayer> PlayerDraw; /* Not used on human players */
-        public event Action<IPlayer, CardColor> PlayerChoosesColor; /* Not used on human players */
+        public event Action<IPlayer> PlayerDraw;
         public event Action<IPlayer, Card> PlayerPlaysCard;
+        public event Action<IPlayer, CardColor> PlayerChoosesColor;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
         #endregion
@@ -49,7 +51,7 @@ namespace ClassicUno.Classes.Logic.Player
         #region IPlayer
         public void BeginTurn(Card card, CardColor currentColor)
         {
-            /* Discard card "card" isn't necessary for human player */
+            /* Discard card isn't used */
             if (IsSkipped)
             {
                 IsSkipped = false;
@@ -61,27 +63,42 @@ namespace ClassicUno.Classes.Logic.Player
             PlayerBeginTurn?.Invoke(this);
         }
 
-        public void PlayCard(Card card)
+        public async void PlayCard(Card card)
         {
             Cards.Remove(card);
             PlayerPlaysCard?.Invoke(this, card);
         }
 
-        public void DrawCard(Card card)
+        public void ChooseColor(CardColor color)
+        {
+            PlayerChoosesColor?.Invoke(this, color);
+        }
+
+        public void DrawCard()
         {
             HasDrawn = true;
+            PlayerDraw?.Invoke(this);
+        }
+
+        public void CardDrawn(Card card)
+        {
             Cards.Add(card);
         }
 
-        public void Pass()
+        public async void Pass()
         {
             HasPassed = true;
             PlayerPass?.Invoke(this);
+
+            await Task.Delay(300);
+
+            EndTurn();
         }
 
         public void EndTurn()
         {
-            IsSkipped = false; /* Make sure this variable is RESET */
+            /* Make sure these variables are RESET. */
+            IsSkipped = false;
             HasDrawn = false;
             PlayerEndTurn?.Invoke(this);
         }
@@ -99,7 +116,6 @@ namespace ClassicUno.Classes.Logic.Player
         {
             return new HumanPlayer
             {
-                Difficulty = Difficulty,
                 NameData = NameData,
                 VoiceIndex = VoiceIndex,
                 AudioPan = AudioPan,

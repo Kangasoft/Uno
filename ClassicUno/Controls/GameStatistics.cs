@@ -6,8 +6,8 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.Shared;
 
 namespace ClassicUno.Controls
 {
@@ -265,7 +265,7 @@ namespace ClassicUno.Controls
 
                             var row = new RectangleF(x, y, width, 23F);
                             g.DrawString(label, Font, labelBrush, row, left);
-                            g.DrawString(Utils.FormatTime(value), Font, valueBrush, row, right);
+                            g.DrawString(Misc.FormatTime(value), Font, valueBrush, row, right);
                         }
                     }
                 }

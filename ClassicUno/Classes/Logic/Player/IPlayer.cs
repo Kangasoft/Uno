@@ -25,8 +25,6 @@ namespace ClassicUno.Classes.Logic.Player
     {
         /* This is the basic "contract" for each player - note: that this is a work in progress
          * and will change over time. */
-        ComputerDifficulty Difficulty { get; set; }
-
         PlayerNameData NameData { get; set; }
 
         int VoiceIndex { get; set; }
@@ -41,12 +39,11 @@ namespace ClassicUno.Classes.Logic.Player
 
         bool HasDrawn { get; set; }
 
-        bool HasRequestedDraw { get; set; }
 
         event Action<IPlayer> PlayerBeginTurn;
         event Action<IPlayer> PlayerDraw;
-        event Action<IPlayer, CardColor> PlayerChoosesColor;
         event Action<IPlayer, Card> PlayerPlaysCard;
+        event Action<IPlayer, CardColor> PlayerChoosesColor;
         event Action<IPlayer> PlayerPass;
         event Action<IPlayer> PlayerEndTurn;
 
@@ -54,7 +51,11 @@ namespace ClassicUno.Classes.Logic.Player
 
         void PlayCard(Card card);
 
-        void DrawCard(Card card);
+        void ChooseColor(CardColor color);
+
+        void DrawCard();
+
+        void CardDrawn(Card card);
 
         void Pass();
 

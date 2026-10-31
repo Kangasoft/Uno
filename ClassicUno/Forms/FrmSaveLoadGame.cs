@@ -8,9 +8,9 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers;
-using ClassicUno.Classes.Helpers.Management;
 using ClassicUno.Classes.Settings.SettingsData;
+using ClassicUno.Classes.Shared;
+using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Controls;
 using ClassicUno.Properties;
 
@@ -21,7 +21,7 @@ namespace ClassicUno.Forms
         #region Fields
         private readonly bool _saveMode;
 
-        private readonly BindingList<SavedGameData> _saves = SettingsManager.Settings.SavedGames;
+        private readonly BindingList<SavedGameData> _saves = SettingsManager.Settings.Saved.Games;
 
         private readonly BindingSource _source = new BindingSource();
 
@@ -380,7 +380,7 @@ namespace ClassicUno.Forms
                     .Where(c => !invalidChars.Contains(c))
                     .ToArray());
 
-            return Utils.MainDir(string.Format(Resources.userPath, $"saved\\{fileName}.dat"), true);
+            return Misc.MainDir(string.Format(Resources.userPath, $"saved\\{fileName}.dat"), true);
         }
         #endregion
     }

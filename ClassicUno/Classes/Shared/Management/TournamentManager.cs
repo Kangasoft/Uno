@@ -2,7 +2,7 @@
  * Version: 1.0.1
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
-namespace ClassicUno.Classes.Helpers.Management
+namespace ClassicUno.Classes.Shared.Management
 {
     public class TournamentManager
     {

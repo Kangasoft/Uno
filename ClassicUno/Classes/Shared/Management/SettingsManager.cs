@@ -6,13 +6,13 @@ using System.IO;
 using ClassicUno.Classes.Serialization;
 using ClassicUno.Properties;
 
-namespace ClassicUno.Classes.Helpers.Management
+namespace ClassicUno.Classes.Shared.Management
 {
     public static class SettingsManager
     {
         /* It's worse than that, he's DEAD Jim! */
         private static readonly string
-            FilePath = Utils.MainDir(string.Format(Resources.userPath, "settings.xml"), true);
+            FilePath = Misc.MainDir(string.Format(Resources.userPath, "settings.xml"), true);
 
         public static Settings.Settings Settings { get; set; }
 

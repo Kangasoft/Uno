@@ -106,6 +106,16 @@ namespace ClassicUno.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap blankCard {
+            get {
+                object obj = ResourceManager.GetObject("blankCard", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap blueOrb {
             get {
                 object obj = ResourceManager.GetObject("blueOrb", resourceCulture);

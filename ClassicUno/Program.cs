@@ -5,10 +5,10 @@
 using System;
 using System.IO;
 using System.Windows.Forms;
-using ClassicUno.Classes.Helpers.Management;
+using ClassicUno.Classes.Shared;
 using ClassicUno.Forms;
 using ClassicUno.Properties;
-using ClassicUno.Classes.Helpers;
+using ClassicUno.Classes.Shared.Management;
 
 namespace ClassicUno
 {
@@ -22,7 +22,7 @@ namespace ClassicUno
             AudioManager.Initialize();
 
             /* Check the "saved" games folder exists */
-            var path = Utils.MainDir(string.Format(Resources.userPath, "saved\\"), true);
+            var path = Misc.MainDir(string.Format(Resources.userPath, "saved\\"), true);
 
             if (!Directory.Exists(path))
             {

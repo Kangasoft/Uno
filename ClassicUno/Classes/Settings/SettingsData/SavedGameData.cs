@@ -3,10 +3,19 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
+using System.ComponentModel;
 using System.Xml.Serialization;
 
 namespace ClassicUno.Classes.Settings.SettingsData
 {
+    [Serializable]
+    public class Saved
+    {
+        [XmlElement("game")]
+        public BindingList<SavedGameData> Games = new BindingList<SavedGameData>();
+    }
+
+    [Serializable]
     public class SavedGameData
     {
         [XmlAttribute("name")]

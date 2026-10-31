@@ -6,10 +6,10 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace ClassicUno.Classes.Helpers
+namespace ClassicUno.Classes.Shared
 {
     /* Menu building helper */
-    public static class MenuHelper
+    public static class Menus
     {
         public static ToolStripMenuItem AddMenuItem(string text)
         {
