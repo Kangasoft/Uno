@@ -140,7 +140,7 @@ namespace ClassicUno.Classes.UI
         public List<Image> CardBackImages = new List<Image>();
         #endregion
 
-        #region Initialization
+        #region Constructor
         public GraphicsRenderer()
         {
             LogRenderer = new GameLogRenderer(_textColor);
@@ -317,7 +317,7 @@ namespace ClassicUno.Classes.UI
         }
         #endregion
 
-        #region Public methods
+        #region Animation methods
         public async Task AnimateCardToHandAsync(IPlayer player, Card card, bool faceUp = false, int duration = 300)
         {
             if (CurrentGame == null || player == null)
@@ -386,7 +386,7 @@ namespace ClassicUno.Classes.UI
             await AnimateCardAsync(GetCardImage(card), start, end, 0f, card.DrawAngle, duration);
         }
 
-        public async Task AnimateDeckStackAsync(int duration = 900)
+        public async Task AnimateDeckStackAsync(int duration = 500)
         {
             await _deckAnimationLock.WaitAsync();
 

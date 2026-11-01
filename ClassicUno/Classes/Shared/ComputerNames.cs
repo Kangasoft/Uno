@@ -11,7 +11,7 @@ namespace ClassicUno.Classes.Shared
     {
         /* Simple class for generating random Computer player names and genders */
         private static char RandomLetter() => (char)('A' + RandomEx.Shared.Next(26));
-        
+
         private static readonly List<string> MaleNames = new List<string>()
         {
             "John",
@@ -37,7 +37,8 @@ namespace ClassicUno.Classes.Shared
             "Max",
             "Mick",
             "Ken",
-            "Ryan"
+            "Ryan",
+            "Harry"
         };
 
         private static readonly List<string> FemaleNames = new List<string>()
@@ -65,7 +66,8 @@ namespace ClassicUno.Classes.Shared
             "Ivy",
             "Kath",
             "Karen",
-            "Amber"
+            "Amber",
+            "Madison"
         };
 
         public static PlayerNameData GetRandomName()

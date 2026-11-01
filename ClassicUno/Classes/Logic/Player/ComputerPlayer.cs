@@ -59,10 +59,8 @@ namespace ClassicUno.Classes.Logic.Player
             _discardCard = card;
             _currentColor = currentColor;
 
-            /* This isn't really used for computer players - except to force a UI repaint */
+            /* Architecture change - this must be called */
             PlayerBeginTurn?.Invoke(this);
-
-            ComputerBeginTurn();
         }
 
         public void PlayCard(Card card)
@@ -116,7 +114,7 @@ namespace ClassicUno.Classes.Logic.Player
         #endregion
         
         #region Private helpers
-        private async void ComputerBeginTurn()
+        public async void ComputerBeginTurn()
         {
             /* Analyze upper card on discard pile (_discardCard) */
             await Task.Delay(RandomEx.Shared.Next(400, 800));

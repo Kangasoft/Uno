@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -80,7 +81,7 @@ namespace ClassicUno.Classes.Logic
 
         private bool _undoStateSavedThisTurn;
 
-        private bool _waitToStart;
+        private bool _firstMove;
 
         private GameData _restart;
 
@@ -117,7 +118,7 @@ namespace ClassicUno.Classes.Logic
             _ui = ui;
 
             GameData = new GameData();
-            _waitToStart = true;
+            _firstMove = true;
 
             GameData.Players = new List<IPlayer>();
             GameData.Deck = new List<Card>();
@@ -202,7 +203,7 @@ namespace ClassicUno.Classes.Logic
             AddPlayerCallbacks();
             
             CurrentTime = 0;
-            _waitToStart = true;
+            _firstMove = true;
             GameData.CurrentPlayer = GameData.Players[0];
 
             Start();
@@ -222,52 +223,70 @@ namespace ClassicUno.Classes.Logic
 
         #region IPlayer callbacks
         #region Begin turn
+
         private async void PlayerBeginTurn(IPlayer player)
         {
-            /* Loop back mainly for the human player so the UI can be update by showing the "DRAW" and "PASS" buttons */
+            /* Loop back mainly for the human player so the UI can be updated. */
             _ui.ShowColorButtons(false);
             _ui.Invalidate();
 
             _ui.UpdateUndo();
 
-            if (!(player is HumanPlayer))
-            {
-                return;
-            }
-
-            /* Evaluted top card on discard pile */
+            /* Evaluate the top card on the discard pile. */
             var c = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
-            if (_waitToStart)
+
+            if (_firstMove)
             {
-                _waitToStart = false;
                 GameData.CurrentColor = c.Color;
 
                 _ui.UpdateStatus("Round started!");
-                _ui.UpdateLogText($"Game starts with {player}.");
-
+                
                 var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
 
                 switch (c.Type)
                 {
                     case CardType.Skip:
-                        /* You are skipped */
+                        /* Starting player is skipped. */
                         _ui.UpdateLogText($"{player} is skipped. Play continues with {nextPlayer}");
                         PlayerEndTurn(player);
                         return;
 
                     case CardType.DrawTwo:
-                        /* You have to draw two cards - and are skipped */
+                        /* Starting player draws two cards and is skipped. */
                         await BeginForceDraw(player, player, 2, false);
+
                         _ui.UpdateLogText($"{player} draws two cards and is skipped. Play continues with {nextPlayer}");
+
+                        if (!(player is HumanPlayer))
+                        {
+                            player.EndTurn();
+                        }
+
                         return;
 
-                    case CardType.Reverse:
-                        /* Change direction */
-                        GameData.CurrentDirection = GameData.CurrentDirection == PlayDirection.Clockwise
-                            ? PlayDirection.AntiClockwise
-                            : PlayDirection.Clockwise;
+                    case CardType.Wild:
+                        _ui.UpdateLogText($"Game starts with {player}.");
+                        if (player is ComputerPlayer)
+                        {
+                            /* Need to choose a color - Wilds as the first card under offical UNO rules is the current
+                             * player can choose a color (as they didn't play the card) and draw/play/pass as normal. */
+                            player.ChooseColor(CardColor.None);
+                            await Task.Delay(300);
+                        }
+                        break;
+
+                    default:
+                        _ui.UpdateLogText($"Game starts with {player}.");
                         break;
                 }
+            }
+
+            /* Computer players don't need the human UI controls. */
+            if (!(player is HumanPlayer))
+            {
+                /* Computer can also begin its turn if it hasn't been skipped */
+                ((ComputerPlayer)player).ComputerBeginTurn();
+                return;
             }
 
             if (player.IsSkipped)
@@ -275,16 +294,21 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
 
+            /* Enable UI buttons as Human is playing */
             _ui.ShowButtons(true);
-
-            var hasDrawn = player.HasDrawn;
-            _ui.EnableDraw(!hasDrawn);
-            _ui.EnablePass(hasDrawn);
 
             if (GameData.CurrentColor == CardColor.None && (c.Type == CardType.Wild || c.Type == CardType.DrawFour))
             {
-                /* Human needs to choose a color */
+                /* Human needs to choose a colour. */
+                _ui.EnableDraw(false);
+                _ui.EnablePass(false);
                 _ui.ShowColorButtons(true);
+            }
+            else
+            {
+                var hasDrawn = player.HasDrawn;
+                _ui.EnableDraw(!hasDrawn);
+                _ui.EnablePass(hasDrawn);
             }
         }
         #endregion
@@ -324,6 +348,8 @@ namespace ClassicUno.Classes.Logic
             /* Here is the logic for most of the game play. Player chooses a card in their hand, it goes to the discard pile and card is evaluated here
              * to determine course of action. */
 
+            _ui.SoundEffectRequest(SoundType.Drop);
+
             /* Set the angle for drawing on the discard pile. */
             card.DrawAngle = (float)(RandomEx.Shared.NextDouble() * 10.0 - 5.0);
 
@@ -333,8 +359,8 @@ namespace ClassicUno.Classes.Logic
             /* Now add the card to the discard pile. */
             GameData.CurrentColor = card.Color;
             GameData.DiscardPile.Add(card);
-
-            _ui.SoundEffectRequest(SoundType.Drop);
+            
+            /* Update the rest of the UI */
             _ui.Invalidate();
 
             /* Does player have UNO!? */
@@ -342,6 +368,8 @@ namespace ClassicUno.Classes.Logic
             {
                 /* Raise audio request */
                 _ui.VoiceRequest(VoiceType.Uno, player);
+
+                await Task.Delay(300);
             }
 
             var nextPlayer = GetNextPlayer(player, GameData.CurrentDirection);
@@ -425,7 +453,16 @@ namespace ClassicUno.Classes.Logic
 
             _ui.Invalidate();
 
-            if (player is HumanPlayer)
+            if (!(player is HumanPlayer))
+            {
+                return;
+            }
+
+            _ui.ShowColorButtons(false);
+
+            /* Wilds as the first card under offical UNO rules is the current player can choose a color
+             * (as they didn't play the card) and draw/play/pass as normal. */
+            if (!_firstMove)
             {
                 player.EndTurn();
             }
@@ -447,6 +484,11 @@ namespace ClassicUno.Classes.Logic
         {
             /* Play moves to next player - dependant on direction */
             _ui.UpdateStatus(string.Empty);
+
+            if (_firstMove)
+            {
+                _firstMove = false;
+            }
 
             if (player is HumanPlayer)
             {
@@ -631,17 +673,22 @@ namespace ClassicUno.Classes.Logic
         #region Deal
         private async void BeginDeal()
         {
-            GameState = GameState.Dealing;
-            _ui.UpdateStatus("Dealing new round!");
-            _ui.GameStateChanged();
             _ui.SoundEffectRequest(SoundType.Shuffle);
+
+            GameState = GameState.Dealing;
+
+            /* Get random player as dealer */
+            var dealer = GameData.Players[RandomEx.Shared.Next(GameData.Players.Count)];
+
+            _ui.UpdateLogText($"{dealer} is the dealer.");
+            _ui.UpdateStatus("Dealing new round!");
+
+            _ui.GameStateChanged();
 
             /* Visual shuffle animation. */
             await _ui.AnimateDeckStackAsync();
 
             await Task.Delay(300);
-
-            Card card;
 
             /* Deal seven cards to each player, one at a time. */
             for (var dealt = 0; dealt < 7; dealt++)
@@ -650,7 +697,7 @@ namespace ClassicUno.Classes.Logic
                 {
                     /* Take the next card from the deck, but don't add it
                      * to the player's hand until its animation finishes. */
-                    card = GameData.Deck[0];
+                    var card = GameData.Deck[0];
 
                     _ui.SoundEffectRequest(SoundType.Deal);
 
@@ -693,6 +740,8 @@ namespace ClassicUno.Classes.Logic
                 startingCard = topCard;
             }
 
+            startingCard = new Card{Type = CardType.Wild};
+
             startingCard.DrawAngle = (float)(RandomEx.Shared.NextDouble() * 10.0 - 5.0);
 
             _ui.SoundEffectRequest(SoundType.Draw);
@@ -708,14 +757,14 @@ namespace ClassicUno.Classes.Logic
             await Task.Delay(300);
 
             /* Dealing has finished - begin the game. */
+            GameData.CurrentPlayer = GetStartingPlayer(dealer, topCard);
 
-            card = GameData.DiscardPile[GameData.DiscardPile.Count - 1];
+            Debug.Print($"Dealer: {dealer} - next player: {GameData.CurrentPlayer}");
 
-            GameData.CurrentPlayer = GameData.Players[0];
-
-            if (card.Type != CardType.Wild)
+            /* Make sure to assign the current playable color, if it isn't a wild. */
+            if (startingCard.Type != CardType.Wild)
             {
-                GameData.CurrentColor = card.Color;
+                GameData.CurrentColor = startingCard.Color;
             }
 
             /* Store a restart game point. */
@@ -724,13 +773,16 @@ namespace ClassicUno.Classes.Logic
             GameState = GameState.Running;
             _ui.GameStateChanged();
 
-            GameData.CurrentPlayer.BeginTurn(card, GameData.CurrentColor);
+            /* Current player can begin */
+            GameData.CurrentPlayer.BeginTurn(startingCard, GameData.CurrentColor);
         }
         #endregion
 
         #region Force card drawing
         private async Task BeginForceDraw(IPlayer player, IPlayer nextPlayer, int cards, bool chooseColor)
         {
+            await Task.Delay(300);
+
             for (var count = 0; count < cards; count++)
             {
                 var card = await Draw();
@@ -796,6 +848,24 @@ namespace ClassicUno.Classes.Logic
             }
         }
 
+        private IPlayer GetStartingPlayer(IPlayer dealer, Card card)
+        {
+            var direction = card.Type == CardType.Reverse
+                ? PlayDirection.AntiClockwise
+                : PlayDirection.Clockwise;
+
+            /* Assign current game direction. */
+            GameData.CurrentDirection = direction;
+
+            /* With two players, Reverse acts like Skip. */
+            if (card.Type == CardType.Reverse && GameData.Players.Count == 2)
+            {
+                return dealer;
+            }
+
+            return GetNextPlayer(dealer, direction);
+        }
+
         private IPlayer GetNextPlayer(IPlayer currentPlayer, PlayDirection direction)
         {
             var index = GameData.Players.IndexOf(currentPlayer);
@@ -823,6 +893,8 @@ namespace ClassicUno.Classes.Logic
                 _ui.SoundEffectRequest(SoundType.Shuffle);
 
                 await _ui.AnimateDeckStackAsync();
+
+                await Task.Delay(300);
 
                 _ui.UpdateLogText("Deck re-shuffled!");
             }

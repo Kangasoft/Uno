@@ -233,6 +233,15 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to https://github.com/Kangasoft/Uno.
+        /// </summary>
+        internal static string gitHub {
+            get {
+                return ResourceManager.GetString("gitHub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap greenOrb {

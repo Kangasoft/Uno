@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -293,6 +294,8 @@ namespace ClassicUno.Forms
             /* Help menu */
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
             {
+                Menus.AddMenuItem("UNO on Github", "GITHUB", Keys.None, OnMenuClick),
+                new ToolStripSeparator(), 
                 Menus.AddMenuItem("About", "ABOUT", Keys.None, true, OnMenuClick)
             });
 
@@ -656,6 +659,16 @@ namespace ClassicUno.Forms
                     }
                     break;
 
+                case "GITHUB":
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = Resources.gitHub,
+                        UseShellExecute = true
+                    };
+
+                    Process.Start(startInfo);
+                    break;
+
                 case "ABOUT":
                     using (var about = new FrmAbout())
                     {
@@ -775,7 +788,7 @@ namespace ClassicUno.Forms
                 CurrentGame.SelectedCard = c;
                 Invalidate();
             }
-            _btnPlay.Enabled = CurrentGame?.SelectedCard != null;
+            _btnPlay.Enabled = CurrentGame?.SelectedCard != null && CurrentGame?.GameData.CurrentColor != CardColor.None;
 
             base.OnMouseDown(e);
         }
@@ -926,14 +939,15 @@ namespace ClassicUno.Forms
         {
             ResetAnimation();
 
+            /* Make sure log text area is blank */
+            _logText.Clear();
+            LogRenderer.Update(null);
+
             CurrentGame = new Game(this, data);
 
             _time.Enabled = true;
             _slTime.Text = @"Time: 0s";
             _slTime.Visible = true;
-
-            _logText.Clear();
-            LogRenderer.Update(null);
 
             Invalidate();
         }
@@ -970,7 +984,7 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => UpdateLogText(text));
                 return;
             }
-
+            
             _logText.Add(text);
             if (LogRenderer?.Visible != true)
             {

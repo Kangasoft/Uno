@@ -57,6 +57,8 @@ namespace ClassicUno.Classes.Logic.Player
         {
             /* Discard card isn't used here */
             HasPassed = false;
+
+            /* Architecture change - this must be called */
             PlayerBeginTurn?.Invoke(this);
         }
 

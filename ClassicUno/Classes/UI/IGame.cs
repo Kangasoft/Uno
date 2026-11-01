@@ -18,7 +18,7 @@ namespace ClassicUno.Classes.UI
 
         Task AnimateStartingDiscardAsync(Card card, int duration = 300);
 
-        Task AnimateDeckStackAsync(int duration = 900);
+        Task AnimateDeckStackAsync(int duration = 500);
 
         void SoundEffectRequest(SoundType type);
 
