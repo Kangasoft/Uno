@@ -42,6 +42,7 @@
             this.chkTournament = new System.Windows.Forms.CheckBox();
             this.lblDifficulty = new System.Windows.Forms.Label();
             this.cmbDifficulty = new System.Windows.Forms.ComboBox();
+            this.chkStart = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // lblName
@@ -51,7 +52,7 @@
             this.lblName.Location = new System.Drawing.Point(84, 14);
             this.lblName.Name = "lblName";
             this.lblName.Size = new System.Drawing.Size(67, 15);
-            this.lblName.TabIndex = 9;
+            this.lblName.TabIndex = 11;
             this.lblName.Text = "Your name:";
             // 
             // txtName
@@ -69,7 +70,7 @@
             this.lblPlayers.Location = new System.Drawing.Point(84, 171);
             this.lblPlayers.Name = "lblPlayers";
             this.lblPlayers.Size = new System.Drawing.Size(108, 15);
-            this.lblPlayers.TabIndex = 12;
+            this.lblPlayers.TabIndex = 14;
             this.lblPlayers.Text = "Number of players:";
             // 
             // cmbPlayers
@@ -92,7 +93,7 @@
             this.lblGender.Location = new System.Drawing.Point(84, 45);
             this.lblGender.Name = "lblGender";
             this.lblGender.Size = new System.Drawing.Size(48, 15);
-            this.lblGender.TabIndex = 10;
+            this.lblGender.TabIndex = 12;
             this.lblGender.Text = "Gender:";
             // 
             // cmbGender
@@ -106,10 +107,10 @@
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(147, 208);
+            this.btnStart.Location = new System.Drawing.Point(144, 235);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(75, 23);
-            this.btnStart.TabIndex = 7;
+            this.btnStart.TabIndex = 8;
             this.btnStart.Tag = "";
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
@@ -117,10 +118,10 @@
             // btnClose
             // 
             this.btnClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnClose.Location = new System.Drawing.Point(228, 208);
+            this.btnClose.Location = new System.Drawing.Point(228, 235);
             this.btnClose.Name = "btnClose";
             this.btnClose.Size = new System.Drawing.Size(75, 23);
-            this.btnClose.TabIndex = 8;
+            this.btnClose.TabIndex = 9;
             this.btnClose.Tag = "";
             this.btnClose.Text = "Close";
             this.btnClose.UseVisualStyleBackColor = true;
@@ -133,7 +134,7 @@
             this.pnlIcon.Location = new System.Drawing.Point(12, 12);
             this.pnlIcon.Name = "pnlIcon";
             this.pnlIcon.Size = new System.Drawing.Size(64, 64);
-            this.pnlIcon.TabIndex = 13;
+            this.pnlIcon.TabIndex = 10;
             // 
             // chkSelect
             // 
@@ -176,7 +177,7 @@
             this.lblDifficulty.Location = new System.Drawing.Point(84, 104);
             this.lblDifficulty.Name = "lblDifficulty";
             this.lblDifficulty.Size = new System.Drawing.Size(85, 15);
-            this.lblDifficulty.TabIndex = 11;
+            this.lblDifficulty.TabIndex = 13;
             this.lblDifficulty.Text = "Difficulty level:";
             // 
             // cmbDifficulty
@@ -188,12 +189,25 @@
             this.cmbDifficulty.Size = new System.Drawing.Size(105, 23);
             this.cmbDifficulty.TabIndex = 4;
             // 
+            // chkStart
+            // 
+            this.chkStart.AutoSize = true;
+            this.chkStart.BackColor = System.Drawing.Color.Transparent;
+            this.chkStart.Location = new System.Drawing.Point(87, 199);
+            this.chkStart.Name = "chkStart";
+            this.chkStart.Size = new System.Drawing.Size(137, 19);
+            this.chkStart.TabIndex = 14;
+            this.chkStart.Tag = "START";
+            this.chkStart.Text = "Random player starts";
+            this.chkStart.UseVisualStyleBackColor = false;
+            // 
             // FrmNew
             // 
             this.AcceptButton = this.btnStart;
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(315, 243);
+            this.ClientSize = new System.Drawing.Size(315, 270);
+            this.Controls.Add(this.chkStart);
             this.Controls.Add(this.cmbDifficulty);
             this.Controls.Add(this.lblDifficulty);
             this.Controls.Add(this.chkTournament);
@@ -238,5 +252,6 @@
         private System.Windows.Forms.CheckBox chkTournament;
         private System.Windows.Forms.Label lblDifficulty;
         private System.Windows.Forms.ComboBox cmbDifficulty;
+        private System.Windows.Forms.CheckBox chkStart;
     }
 }

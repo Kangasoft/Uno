@@ -49,5 +49,8 @@ namespace ClassicUno.Classes.Settings.SettingsData
 
         [XmlAttribute("tournament")]
         public bool TournamentMode { get; set; }
+
+        [XmlAttribute("randomStart")]
+        public bool RandomPlayerStarts { get; set; }
     }
 }

@@ -37,6 +37,8 @@ namespace ClassicUno.Forms
 
         public ComputerDifficulty Difficulty { get; set; }
 
+        public bool RandomPlayerStarts { get; set; }
+
         public bool TournamentMode { get; set; }
 
 
@@ -92,8 +94,8 @@ namespace ClassicUno.Forms
 
             var state = TournamentMode;
             chkTournament.Checked = state;
-            //lblPlayers.Enabled = !state;
-            //cmbPlayers.Enabled = !state;
+
+            chkStart.Checked = RandomPlayerStarts;
 
             base.OnLoad(e);
         }
@@ -154,6 +156,7 @@ namespace ClassicUno.Forms
             NameData.VoiceIndex = cmbVoice.SelectedIndex;
 
             Difficulty = (ComputerDifficulty)cmbDifficulty.SelectedIndex;
+            RandomPlayerStarts = chkStart.Checked;
 
             NumberOfPlayers = cmbPlayers.SelectedIndex + 2;
             DialogResult = DialogResult.OK;

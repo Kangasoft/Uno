@@ -19,6 +19,7 @@ using ClassicUno.Classes.Shared;
 using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Classes.UI;
 using ClassicUno.Classes.UI.Controls;
+using ClassicUno.Classes.UI.Rendering;
 using ClassicUno.Controls;
 using ClassicUno.Properties;
 
@@ -644,7 +645,7 @@ namespace ClassicUno.Forms
                 case "BACKS":
                     using (var backs = new FrmCardBacks())
                     {
-                        backs.CardImages = CardBackImages;
+                        backs.CardImages = Cards.CardBackImages;
                         backs.SelectedIndex = SettingsManager.Settings.General.CardBack;
 
                         if (backs.ShowDialog(this) == DialogResult.OK)
@@ -894,7 +895,8 @@ namespace ClassicUno.Forms
                 NameData = data.NameData,
                 NumberOfPlayers = data.NumberOfPlayers,
                 Difficulty = data.Difficulty,
-                TournamentMode = data.TournamentMode
+                TournamentMode = data.TournamentMode,
+                RandomPlayerStarts = data.RandomPlayerStarts
             };
             if (form.ShowDialog(this) != DialogResult.OK)
             {
@@ -906,6 +908,7 @@ namespace ClassicUno.Forms
             data.NumberOfPlayers = form.NumberOfPlayers;
             data.Difficulty = form.Difficulty;
             data.TournamentMode = form.TournamentMode;
+            data.RandomPlayerStarts = form.RandomPlayerStarts;
 
             if (form.TournamentMode)
             {

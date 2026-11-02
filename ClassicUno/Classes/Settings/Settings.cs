@@ -34,6 +34,7 @@ namespace ClassicUno.Classes.Settings
             /* Set default settings */
             Game.NumberOfPlayers = 2;
             Game.Difficulty = ComputerDifficulty.Easy;
+            Game.RandomPlayerStarts = true;
 
             /* Window defaults */
             General.Window.Size = new Size(720, 470);

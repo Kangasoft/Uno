@@ -6,7 +6,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace ClassicUno.Classes.UI
+namespace ClassicUno.Classes.UI.Rendering
 {
     /* Menu and statusbar renderer */
     public class UnoToolStripRenderer : ToolStripProfessionalRenderer

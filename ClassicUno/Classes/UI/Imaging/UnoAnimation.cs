@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
 
-namespace ClassicUno.Classes.UI
+namespace ClassicUno.Classes.UI.Imaging
 {
     public class UnoAnimation : IDisposable
     {

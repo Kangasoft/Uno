@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -677,10 +676,16 @@ namespace ClassicUno.Classes.Logic
 
             GameState = GameState.Dealing;
 
-            /* Get random player as dealer */
-            var dealer = GameData.Players[RandomEx.Shared.Next(GameData.Players.Count)];
+            var start = SettingsManager.Settings.Game.RandomPlayerStarts;
 
-            _ui.UpdateLogText($"{dealer} is the dealer.");
+            /* Get random player as dealer */
+            var dealer = start ? GameData.Players[RandomEx.Shared.Next(GameData.Players.Count)] : GameData.Players[0];
+
+            if (start)
+            {
+                _ui.UpdateLogText($"{dealer} is the dealer.");
+            }
+            
             _ui.UpdateStatus("Dealing new round!");
 
             _ui.GameStateChanged();
@@ -740,8 +745,6 @@ namespace ClassicUno.Classes.Logic
                 startingCard = topCard;
             }
 
-            startingCard = new Card{Type = CardType.Wild};
-
             startingCard.DrawAngle = (float)(RandomEx.Shared.NextDouble() * 10.0 - 5.0);
 
             _ui.SoundEffectRequest(SoundType.Draw);
@@ -757,9 +760,7 @@ namespace ClassicUno.Classes.Logic
             await Task.Delay(300);
 
             /* Dealing has finished - begin the game. */
-            GameData.CurrentPlayer = GetStartingPlayer(dealer, topCard);
-
-            Debug.Print($"Dealer: {dealer} - next player: {GameData.CurrentPlayer}");
+            GameData.CurrentPlayer = start ? GetStartingPlayer(dealer, topCard) : dealer;
 
             /* Make sure to assign the current playable color, if it isn't a wild. */
             if (startingCard.Type != CardType.Wild)

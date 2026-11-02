@@ -31,6 +31,14 @@ namespace ClassicUno
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            /* Show the splash screen first. */
+            using (var splash = new FrmSplash())
+            {
+                Application.Run(splash);
+            }
+
+            /* Show main form */
             Application.Run(new FrmGame());
         }
     }

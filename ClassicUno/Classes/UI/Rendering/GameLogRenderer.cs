@@ -10,7 +10,7 @@ using System.Drawing.Text;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace ClassicUno.Classes.UI
+namespace ClassicUno.Classes.UI.Rendering
 {
     public sealed class GameLogRenderer : IDisposable
     {
