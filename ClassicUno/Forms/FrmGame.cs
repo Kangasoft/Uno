@@ -768,7 +768,7 @@ namespace ClassicUno.Forms
             {
                 var c = HitTest(CurrentGame.GameData.Players[0].Cards, e.Location);
                 CurrentGame.HighlightedCard = c;
-                Invalidate();
+                InvalidateBackground();
             }
 
             base.OnMouseMove(e);
@@ -787,7 +787,7 @@ namespace ClassicUno.Forms
                 /* Your turn */
                 var c = HitTest(CurrentGame.GameData.Players[0].Cards, e.Location);
                 CurrentGame.SelectedCard = c;
-                Invalidate();
+                InvalidateBackground();
             }
             _btnPlay.Enabled = CurrentGame?.SelectedCard != null && CurrentGame?.GameData.CurrentColor != CardColor.None;
 

@@ -14,14 +14,13 @@ using System.Windows.Forms;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Shared;
-using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Classes.UI.Imaging;
 using ClassicUno.Properties;
 using Timer = System.Windows.Forms.Timer; /* Only declared like this as System.Threading is declared above, giving a different meaning to "Timer" */
 
 namespace ClassicUno.Classes.UI.Rendering
 {
-    public class GraphicsRenderer : FeltForm
+    public class GraphicsRenderer : CardRegions
     {
         /*
          * A programmer walks into a bar and orders 1.000 beers 🍺.
@@ -40,30 +39,12 @@ namespace ClassicUno.Classes.UI.Rendering
         #endregion
 
         #region Fields
-        public Game CurrentGame { get; set; }
-
         public GameLogRenderer LogRenderer { get; set; }
-
-        private float _scale;
-        private float _cardWidth;
-        private float _cardHeight;
-
-        /* Cached layout geometry. These rectangles/positions are calculated by Rescale()
-         * and then reused by the paint methods. */
-        private PointF _statusCenter;
-        private RectangleF _directionBounds;
-        private RectangleF _directionTextBounds;
-        private RectangleF _orbBounds;
-        private PointF _pickupPilePosition;
-        private PointF _discardPilePosition;
-        private RectangleF[] _playerHandBounds = new RectangleF[4];
-        private RectangleF[] _playerNameBounds = new RectangleF[4];
 
         /* UNO! and winner GIF animators */
         private UnoAnimation[] _unoAnimation = new UnoAnimation[4];
         private UnoAnimation _winner;
 
-        private RectangleF[] _unoIndicatorBounds = new RectangleF[4];
         private bool _unoAnimationsInitialized;
 
         private readonly Color _textColor = Color.FromArgb(255, 225, 140);
@@ -100,10 +81,9 @@ namespace ClassicUno.Classes.UI.Rendering
         private int _deckAnimationDuration;
         private int _deckAnimationStagger;
 
-        /* Card image class */
-        public CardImages Cards = new CardImages();
-
-        public int CardBackIndex { get; set; }
+        /* Cached static game background. */
+        private Bitmap _backgroundBuffer;
+        private bool _backgroundDirty = true;
         #endregion
 
         #region Constructor
@@ -142,6 +122,12 @@ namespace ClassicUno.Classes.UI.Rendering
 
                 LogRenderer.Dispose();
 
+                if (_backgroundBuffer != null)
+                {
+                    _backgroundBuffer.Dispose();
+                    _backgroundBuffer = null;
+                }
+
                 /* Card animation clean up */
                 _cardAnimationTimer.Stop();
                 _cardAnimationTimer.Tick -= CardAnimationTimer;
@@ -173,6 +159,7 @@ namespace ClassicUno.Classes.UI.Rendering
         protected override void OnResize(EventArgs e)
         {
             ReScale();
+            InvalidateBackground();
 
             if (LogRenderer != null)
             {
@@ -186,7 +173,7 @@ namespace ClassicUno.Classes.UI.Rendering
                 /* Set UNO animation class */
                 for (var i = 0; i <= 3; i++)
                 {
-                    _unoAnimation[i] = new UnoAnimation(this, _unoIndicatorBounds[i], (Image)Resources.animatedUno.Clone())
+                    _unoAnimation[i] = new UnoAnimation(this, UnoIndicatorBounds[i], (Image)Resources.animatedUno.Clone())
                     {
                         Opacity = 0.8f
                     };
@@ -199,86 +186,69 @@ namespace ClassicUno.Classes.UI.Rendering
                 /* Set the new bounds to each UNO animation class */
                 for (var i = 0; i <= 3; i++)
                 {
-                    _unoAnimation[i].Bounds = _unoIndicatorBounds[i];
+                    _unoAnimation[i].Bounds = UnoIndicatorBounds[i];
                 }
             }
 
             base.OnResize(e);
         }
+        #endregion
 
-        private void ReScale()
+        #region Background buffer
+        /*
+         * Call this after changing anything represented in the static background:
+         * player hands, selected/highlighted card, player turn, deck/discard piles,
+         * current colour/direction, or game state.
+         *
+         * Animation timer callbacks should continue to call Invalidate() only.
+         */
+        public void InvalidateBackground()
         {
-            const float referenceWidth = 1600f;
-            const float referenceHeight = 850f;
+            _backgroundDirty = true;
+            Invalidate();
+        }
 
-            _scale = Math.Min(ClientRectangle.Width / referenceWidth, ClientRectangle.Height / referenceHeight);
+        private void EnsureBackgroundBuffer()
+        {
+            var width = ClientRectangle.Width;
+            var height = ClientRectangle.Height;
 
-            _cardWidth = 110f * _scale;
-            _cardHeight = 160f * _scale;
-
-            /* Central status area shared by the direction indicator, orb and piles. */
-            _statusCenter = new PointF(ClientRectangle.Width / 2f, (ClientRectangle.Height - _cardHeight * 2f) / 2f);
-
-            var directionHeight = _cardHeight * (64f / 216f);
-            var directionWidth = directionHeight * (Resources.clockwise.Width / (float)Resources.clockwise.Height);
-            var directionY = _statusCenter.Y;
-
-            _directionBounds = new RectangleF(_statusCenter.X - directionWidth / 2f, directionY, directionWidth, directionHeight);
-            _directionTextBounds = new RectangleF(_statusCenter.X - 100f, directionY + directionHeight, 200f, 28f);
-
-            var orbSize = _cardHeight * (64f / 216f);
-            _orbBounds = new RectangleF(_statusCenter.X - orbSize / 2f, _statusCenter.Y + _cardHeight - orbSize, orbSize, orbSize);
-
-            _pickupPilePosition = new PointF(_statusCenter.X - (_cardWidth + 20f) * 2f, _statusCenter.Y);
-            _discardPilePosition = new PointF(_statusCenter.X + (_cardWidth - 20f) * 2f, _statusCenter.Y);
-
-            _playerHandBounds = GetPlayerHandBounds(_cardWidth, _cardHeight);
-            _playerNameBounds = GetPlayerNameBounds(_playerHandBounds);
-
-            /* Calculate UNO animation bounds for each player's hand.
-             * Player order: bottom, left, top, right. */
-            _unoIndicatorBounds = new RectangleF[4];
-
-            /* Scale the animation relative to the card dimensions. */
-            var unoWidth = _cardWidth * 0.75f;
-            var unoHeight = _cardHeight * (64f / 144f) * 0.75f;
-
-            for (var i = 0; i <= 3; i++)
+            if (width <= 0 || height <= 0)
             {
-                var hand = _playerHandBounds[i];
+                return;
+            }
 
-                float x;
-                float y;
-
-                switch (i)
+            if (_backgroundBuffer == null ||
+                _backgroundBuffer.Width != width ||
+                _backgroundBuffer.Height != height)
+            {
+                if (_backgroundBuffer != null)
                 {
-                    case 0: /* Bottom player */
-                        x = hand.Left + (hand.Width - unoWidth) / 2f;
-                        y = hand.Bottom - unoHeight * 0.65f - 12f;
-                        break;
-
-                    case 1: /* Left player - centre UNO over left-aligned name */
-                        x = _playerNameBounds[1].Left;
-                        y = _playerNameBounds[1].Top - unoHeight * _scale;
-                        break;
-
-                    case 2: /* Top player */
-                        x = hand.Left + (hand.Width - unoWidth) / 2f;
-                        y = hand.Bottom - unoHeight * 0.65f - 12f;
-                        break;
-
-                    default: /* Right player - centre UNO over right-aligned name */
-                        x = _playerNameBounds[3].Right - unoWidth;
-                        y = _playerNameBounds[3].Top - unoHeight * _scale;
-                        break;
+                    _backgroundBuffer.Dispose();
                 }
 
-                _unoIndicatorBounds[i] = new RectangleF(
-                    (int)Math.Round(x),
-                    (int)Math.Round(y),
-                    (int)Math.Round(unoWidth),
-                    (int)Math.Round(unoHeight));
+                _backgroundBuffer = new Bitmap(width, height);
+                _backgroundDirty = true;
             }
+
+            if (!_backgroundDirty)
+            {
+                return;
+            }
+
+            using (var g = Graphics.FromImage(_backgroundBuffer))
+            {
+                g.Clear(Color.Transparent);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                DrawGameCenter(g);
+                DrawPlayerCards(g);
+                DrawPlayerNames(g, PlayerNameBounds);
+            }
+
+            _backgroundDirty = false;
         }
         #endregion
 
@@ -297,6 +267,9 @@ namespace ClassicUno.Classes.UI.Rendering
             var cardImage = faceUp && card != null ? Cards.GetCardImage(card) : Cards.CardBackImages[CardBackIndex];
 
             await AnimateCardAsync(cardImage, start, destination, 0f, angle, duration);
+
+            /* The card has reached the player's hand, so refresh the background buffer. */
+            InvalidateBackground();
         }
 
         public async Task AnimateCardToDiscardAsync(IPlayer player, Card card, int duration = 300)
@@ -326,11 +299,17 @@ namespace ClassicUno.Classes.UI.Rendering
 
             /* Centre of the discard pile. */
             var end = new PointF(
-                ClientRectangle.Left + _discardPilePosition.X + _cardWidth / 2f,
-                ClientRectangle.Top + _discardPilePosition.Y + _cardHeight / 2f);
+                ClientRectangle.Left + DiscardPilePosition.X + CardWidth / 2f,
+                ClientRectangle.Top + DiscardPilePosition.Y + CardHeight / 2f);
+
+            /* Refresh the background buffer, so the card appears to be removed from the player's hand. */
+            InvalidateBackground();
 
             /* Animate the actual face-up card. */
             await AnimateCardAsync(Cards.GetCardImage(card), start, end, startAngle, card.DrawAngle, duration);
+
+            /* The card has reached the discard pile, so refresh the background buffer. */
+            InvalidateBackground();
         }
 
         public async Task AnimateStartingDiscardAsync(Card card, int duration = 500)
@@ -341,14 +320,17 @@ namespace ClassicUno.Classes.UI.Rendering
             }
 
             var start = new PointF(
-                ClientRectangle.Left + _pickupPilePosition.X + _cardWidth / 2f,
-                ClientRectangle.Top + _pickupPilePosition.Y + _cardHeight / 2f);
+                ClientRectangle.Left + PickupPilePosition.X + CardWidth / 2f,
+                ClientRectangle.Top + PickupPilePosition.Y + CardHeight / 2f);
 
             var end = new PointF(
-                ClientRectangle.Left + _discardPilePosition.X + _cardWidth / 2f,
-                ClientRectangle.Top + _discardPilePosition.Y + _cardHeight / 2f);
+                ClientRectangle.Left + DiscardPilePosition.X + CardWidth / 2f,
+                ClientRectangle.Top + DiscardPilePosition.Y + CardHeight / 2f);
 
             await AnimateCardAsync(Cards.GetCardImage(card), start, end, 0f, card.DrawAngle, duration);
+
+            /* The card has reached the discard pile, so refresh the background buffer. */
+            InvalidateBackground();
         }
 
         public async Task AnimateDeckStackAsync(int duration = 500)
@@ -359,8 +341,8 @@ namespace ClassicUno.Classes.UI.Rendering
             {
                 _deckAnimationCards.Clear();
 
-                var centerX = _pickupPilePosition.X + _cardWidth / 2f;
-                var centerY = _pickupPilePosition.Y + _cardHeight / 2f;
+                var centerX = PickupPilePosition.X + CardWidth / 2f;
+                var centerY = PickupPilePosition.Y + CardHeight / 2f;
 
                 const int cardCount = 10;
 
@@ -430,12 +412,20 @@ namespace ClassicUno.Classes.UI.Rendering
                 return;
             }
 
-            DrawGameCenter(e.Graphics);
-            DrawPlayerCards(e.Graphics);
+            EnsureBackgroundBuffer();
+
+            if (_backgroundBuffer != null)
+            {
+                e.Graphics.DrawImageUnscaled(_backgroundBuffer, ClientRectangle.Left, ClientRectangle.Top);
+            }
+
+            /* Dynamic foreground animations are drawn over the cached background. */
+            if (_deckAnimationActive)
+            {
+                DrawDeckStackAnimation(e.Graphics);
+            }
 
             DrawAnimatedCard(e.Graphics);
-
-            DrawPlayerNames(e.Graphics, _playerNameBounds);
 
             LogRenderer?.Draw(e.Graphics);
 
@@ -462,7 +452,7 @@ namespace ClassicUno.Classes.UI.Rendering
                 size = e.Graphics.MeasureString(text, font);
             }
 
-            var bounds = new RectangleF(_statusCenter.X - size.Width / 2f, ClientRectangle.Height / 2f + size.Height,
+            var bounds = new RectangleF(StatusCenter.X - size.Width / 2f, ClientRectangle.Height / 2f + size.Height,
                 size.Width, size.Height);
             e.Graphics.DrawText(text, _textColor, bounds, StringAlignment.Center, fontSize);
 
@@ -477,9 +467,9 @@ namespace ClassicUno.Classes.UI.Rendering
             var game = CurrentGame.GameData;
             Image directionImage = game.CurrentDirection == PlayDirection.Clockwise ? Resources.clockwise : Resources.anticlockwise;
 
-            g.DrawImage(directionImage, _directionBounds);
+            g.DrawImage(directionImage, DirectionBounds);
 
-            g.DrawText(Misc.GetDescriptionFromEnumValue(game.CurrentDirection), _textColor, _directionTextBounds, StringAlignment.Center);
+            g.DrawText(Misc.GetDescriptionFromEnumValue(game.CurrentDirection), _textColor, DirectionTextBounds, StringAlignment.Center);
 
             DrawOrbColor(g);
             DrawPickupPile(g);
@@ -490,12 +480,6 @@ namespace ClassicUno.Classes.UI.Rendering
         #region Pick-up pile
         private void DrawPickupPile(Graphics g)
         {
-            if (_deckAnimationActive)
-            {
-                DrawDeckStackAnimation(g);
-                return;
-            }
-
             /* Draw the pick-up pile - Get the center of the clientRectangle */
             var game = CurrentGame.GameData;
             var totalCards = game.Deck.Count;
@@ -519,13 +503,13 @@ namespace ClassicUno.Classes.UI.Rendering
             for (var i = 0; i < visualLayers; i++)
             {
                 DrawCard(g, Cards.CardBackImages[CardBackIndex],
-                    new PointF(_pickupPilePosition.X + offset, _pickupPilePosition.Y + offset));
+                    new PointF(PickupPilePosition.X + offset, PickupPilePosition.Y + offset));
                 offset++;
             }
 
             /* Draw card count text under deck - not sure I like or want to keep this code... */
             g.DrawText($"{game.Deck.Count} (108)", _textColor,
-                new RectangleF(_pickupPilePosition.X - 50f, _pickupPilePosition.Y + _cardHeight + 6f, 200f, 28f),
+                new RectangleF(PickupPilePosition.X - 50f, PickupPilePosition.Y + CardHeight + 6f, 200f, 28f),
                 StringAlignment.Center);
         }
         #endregion
@@ -567,7 +551,7 @@ namespace ClassicUno.Classes.UI.Rendering
                 return;
             }
 
-            g.DrawImage(orb, _orbBounds);
+            g.DrawImage(orb, OrbBounds);
         }
         #endregion
 
@@ -596,8 +580,8 @@ namespace ClassicUno.Classes.UI.Rendering
                     var cardIndex = indices[i];
                     var offset = indices.Length - i;
 
-                    var x = ClientRectangle.Left + _discardPilePosition.X - offset * 2 + _cardWidth / 2f;
-                    var y = ClientRectangle.Top + _discardPilePosition.Y - offset * 2 + _cardHeight / 2f;
+                    var x = ClientRectangle.Left + DiscardPilePosition.X - offset * 2 + CardWidth / 2f;
+                    var y = ClientRectangle.Top + DiscardPilePosition.Y - offset * 2 + CardHeight / 2f;
 
                     card = CurrentGame.GameData.DiscardPile[cardIndex];
 
@@ -606,8 +590,8 @@ namespace ClassicUno.Classes.UI.Rendering
             }
 
             /* Draw the face-up top card, slightly crooked. */
-            var topCentreX = ClientRectangle.Left + _discardPilePosition.X + _cardWidth / 2f;
-            var topCentreY = ClientRectangle.Top + _discardPilePosition.Y + _cardHeight / 2f;
+            var topCentreX = ClientRectangle.Left + DiscardPilePosition.X + CardWidth / 2f;
+            var topCentreY = ClientRectangle.Top + DiscardPilePosition.Y + CardHeight / 2f;
 
             card = CurrentGame.GameData.DiscardPile[CurrentGame.GameData.DiscardPile.Count - 1];
             DrawRotatedCard(g, Cards.GetCardImage(card), topCentreX, topCentreY, card.DrawAngle);
@@ -634,7 +618,7 @@ namespace ClassicUno.Classes.UI.Rendering
         private void DrawPlayerHand(IPlayer player, Graphics g, int angle, int playerIndex)
         {
             /* Draw a player's card hand */
-            if (playerIndex < 0 || playerIndex >= _playerHandBounds.Length)
+            if (playerIndex < 0 || playerIndex >= PlayerHandBounds.Length)
             {
                 return;
             }
@@ -659,7 +643,7 @@ namespace ClassicUno.Classes.UI.Rendering
                 }
 
                 /* Show who the winner is */
-                _winner = new UnoAnimation(this, _unoIndicatorBounds[playerIndex], (Image)Resources.winner.Clone())
+                _winner = new UnoAnimation(this, UnoIndicatorBounds[playerIndex], (Image)Resources.winner.Clone())
                 {
                     Opacity = 1f
                 };
@@ -669,20 +653,20 @@ namespace ClassicUno.Classes.UI.Rendering
             }
 
             var sideways = angle == 90 || angle == 270;
-            var handBounds = _playerHandBounds[playerIndex];
+            var handBounds = PlayerHandBounds[playerIndex];
 
-            var spacing = sideways ? _cardHeight * 0.17f : _cardWidth * 0.30f;
+            var spacing = sideways ? CardHeight * 0.17f : CardWidth * 0.30f;
             var available = sideways ? ClientRectangle.Height - 40f : ClientRectangle.Width - 40f;
 
             if (count > 1)
             {
-                spacing = Math.Min(spacing, (available - _cardWidth) / (count - 1));
+                spacing = Math.Min(spacing, (available - CardWidth) / (count - 1));
             }
 
             spacing = Math.Max(0f, spacing);
 
-            var totalWidth = _cardWidth + (count - 1) * spacing;
-            var totalHeight = _cardHeight + (count - 1) * spacing;
+            var totalWidth = CardWidth + (count - 1) * spacing;
+            var totalHeight = CardHeight + (count - 1) * spacing;
 
             for (var i = 0; i < count; i++)
             {
@@ -720,8 +704,8 @@ namespace ClassicUno.Classes.UI.Rendering
                 else
                 {
                     x = handBounds.Left + handBounds.Width / 2f;
-                    y = handBounds.Top + (handBounds.Height - totalHeight) / 2f + i * spacing + _cardHeight / 2f -
-                        _cardWidth / 2f;
+                    y = handBounds.Top + (handBounds.Height - totalHeight) / 2f + i * spacing + CardHeight / 2f -
+                        CardWidth / 2f;
 
                     DrawRotatedCard(g, image, x, y, angle);
                 }
@@ -732,16 +716,16 @@ namespace ClassicUno.Classes.UI.Rendering
                     card.Region = new RectangleF(
                         x,
                         y,
-                        i < count - 1 ? spacing : _cardWidth,
-                        _cardHeight);
+                        i < count - 1 ? spacing : CardWidth,
+                        CardHeight);
                 }
                 else
                 {
                     card.Region = new RectangleF(
-                        x - _cardHeight / 2f,
-                        y - _cardWidth / 2f,
-                        _cardHeight,
-                        _cardWidth);
+                        x - CardHeight / 2f,
+                        y - CardWidth / 2f,
+                        CardHeight,
+                        CardWidth);
                 }
 
                 /* UNO! animation */
@@ -771,11 +755,11 @@ namespace ClassicUno.Classes.UI.Rendering
             const float radius = 18f;
             const float diameter = radius * 2;
 
-            var isLastCard = Math.Abs(r.Width - _cardWidth) < 0.1f;
+            var isLastCard = Math.Abs(r.Width - CardWidth) < 0.1f;
 
             /* Use the full card width for ALL cards so they maintain their natural rounded rectangle shape.
              * Overlapping cards will naturally cover the rest of it. */
-            var renderWidth = isLastCard ? r.Width : _cardWidth;
+            var renderWidth = isLastCard ? r.Width : CardWidth;
 
             using (var path = new GraphicsPath())
             {
@@ -909,7 +893,7 @@ namespace ClassicUno.Classes.UI.Rendering
         private void DrawCard(Graphics g, Image cardImage, PointF position)
         {
             /* This draws a card anywhere on screen (related to "position") scaled; and is kept track of on resize */
-            g.DrawImage(cardImage, new RectangleF(ClientRectangle.Left + position.X, ClientRectangle.Top + position.Y, _cardWidth, _cardHeight));
+            g.DrawImage(cardImage, new RectangleF(ClientRectangle.Left + position.X, ClientRectangle.Top + position.Y, CardWidth, CardHeight));
         }
 
         private void DrawAnimatedCard(Graphics g)
@@ -930,7 +914,7 @@ namespace ClassicUno.Classes.UI.Rendering
             {
                 g.TranslateTransform(centerX, centerY);
                 g.RotateTransform(angle);
-                g.DrawImage(cardImage, new RectangleF(-_cardWidth / 2f, -_cardHeight / 2f, _cardWidth, _cardHeight));
+                g.DrawImage(cardImage, new RectangleF(-CardWidth / 2f, -CardHeight / 2f, CardWidth, CardHeight));
             }
             finally
             {
@@ -1000,157 +984,6 @@ namespace ClassicUno.Classes.UI.Rendering
             _deckAnimationCompletion = null;
 
             completion?.TrySetResult(true);
-        }
-        #endregion
-
-        #region Bounds helpers
-        private RectangleF[] GetPlayerHandBounds(float cardWidth, float cardHeight)
-        {
-            /* Returns the bounds of each player's hand on screen. */
-            const float edgeMargin = 20f;
-            const float nameHeight = 28f;
-            const float nameGap = 6f;
-
-            return new[]
-            {
-                /* Bottom hand */
-                new RectangleF(
-                    ClientRectangle.Left + (ClientRectangle.Width - cardWidth * 2f) / 2f,
-                    ClientRectangle.Bottom - cardHeight - 120f,
-                    cardWidth * 2f,
-                    cardHeight),
-
-                /* Left hand */
-                new RectangleF(
-                    ClientRectangle.Left + edgeMargin,
-                    ClientRectangle.Top + (ClientRectangle.Height - cardWidth) / 2f,
-                    cardHeight,
-                    cardWidth),
-
-                /* Top hand */
-                new RectangleF(
-                    ClientRectangle.Left + (ClientRectangle.Width - cardWidth * 2f) / 2f,
-                    ClientRectangle.Top + edgeMargin + nameHeight + nameGap,
-                    cardWidth * 2f,
-                    cardHeight),
-
-                /* Right hand */
-                new RectangleF(
-                    ClientRectangle.Right - cardHeight - edgeMargin,
-                    ClientRectangle.Top + (ClientRectangle.Height - cardWidth) / 2f,
-                    cardHeight,
-                    cardWidth)
-            };
-        }
-
-        private RectangleF[] GetPlayerNameBounds(IReadOnlyList<RectangleF> handBounds)
-        {
-            /* Returns the bounds of where each player's name is to be drawn */
-            const float gap = 6f;
-            const float nameHeight = 28f;
-            const float sideNameWidth = 245f;
-
-            return new[]
-            {
-                /* Bottom name */
-                new RectangleF(
-                    ClientRectangle.Left + (ClientRectangle.Width - sideNameWidth) / 2f,
-                    handBounds[0].Bottom + gap,
-                    sideNameWidth,
-                    nameHeight),
-
-                /* Left name */
-                new RectangleF(
-                    handBounds[1].Right + gap + 10f,
-                    handBounds[1].Top,
-                    sideNameWidth,
-                    nameHeight),
-
-                /* Top name */
-                new RectangleF(
-                    ClientRectangle.Left + (ClientRectangle.Width - sideNameWidth) / 2f,
-                    handBounds[2].Bottom + gap,
-                    sideNameWidth,
-                    nameHeight),
-
-                /* Right name */
-                new RectangleF(
-                    handBounds[3].Left - sideNameWidth - gap - 10f,
-                    handBounds[3].Top,
-                    sideNameWidth,
-                    nameHeight)
-            };
-        }
-
-        /* Card animation */
-        private PointF GetPickupPileCenter()
-        {
-            return new PointF(
-                ClientRectangle.Left + _pickupPilePosition.X + _cardWidth / 2f,
-                ClientRectangle.Top + _pickupPilePosition.Y + _cardHeight / 2f);
-        }
-
-        private PointF GetPlayerCardDestination(IPlayer player, out float angle)
-        {
-            angle = 0f;
-
-            if (CurrentGame == null || player == null)
-            {
-                return PointF.Empty;
-            }
-
-            var players = CurrentGame.GameData.Players;
-            var playerIndex = players.IndexOf(player);
-
-            if (playerIndex < 0 || playerIndex >= players.Count || playerIndex >= 4)
-            {
-                return PointF.Empty;
-            }
-
-            /* Work out the hand position and rotation using the same
-             * player ordering as DrawPlayerCards(). */
-            var handIndex = players.Count == 2 && playerIndex == 1 ? 2 : playerIndex;
-
-            angle = players.Count > 2 ? playerIndex * 90f : playerIndex * 180f;
-
-            var sideways = Math.Abs(angle - 90f) < 0.1f || Math.Abs(angle - 270f) < 0.1f;
-            var handBounds = _playerHandBounds[handIndex];
-
-            /* Calculate the layout as though the new card has already
-             * been added to the player's hand. */
-            var count = player.Cards.Count + 1;
-
-            var spacing = sideways ? _cardHeight * 0.17f : _cardWidth * 0.30f;
-            var available = sideways ? ClientRectangle.Height - 40f : ClientRectangle.Width - 40f;
-
-            if (count > 1)
-            {
-                spacing = Math.Min(spacing, (available - _cardWidth) / (count - 1));
-            }
-
-            spacing = Math.Max(0f, spacing);
-
-            var totalWidth = _cardWidth + (count - 1) * spacing;
-            var totalHeight = _cardHeight + (count - 1) * spacing;
-
-            /* The new card will be the last card in the hand. */
-            var cardIndex = count - 1;
-
-            if (!sideways)
-            {
-                var x = handBounds.Left + (handBounds.Width - totalWidth) / 2f + cardIndex * spacing;
-                var y = handBounds.Top;
-
-                return new PointF(x + _cardWidth / 2f, y + _cardHeight / 2f);
-            }
-            else
-            {
-                var x = handBounds.Left + handBounds.Width / 2f;
-                var y = handBounds.Top + (handBounds.Height - totalHeight) / 2f +
-                    cardIndex * spacing + _cardHeight / 2f - _cardWidth / 2f;
-
-                return new PointF(x, y);
-            }
         }
         #endregion
     }

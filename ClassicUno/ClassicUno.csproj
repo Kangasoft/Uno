@@ -58,6 +58,9 @@
     <Compile Include="Classes\UI\Controls\CardStripControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="Classes\UI\Rendering\CardRegions.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Classes\UI\Rendering\GameLogRenderer.cs" />
     <Compile Include="Classes\UI\Imaging\UnoAnimation.cs" />
     <Compile Include="Classes\UI\Rendering\UnoToolStripRenderer.cs" />
@@ -192,7 +195,6 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <None Include="Images\splash.png" />
     <Content Include="mainIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
