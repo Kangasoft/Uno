@@ -3,6 +3,7 @@
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -120,8 +121,11 @@ namespace ClassicUno.Forms
 
         private byte _opacity;
 
+        private const int ImageWidth = 450;
+        private const int ImageHeight = 300;
+
         private const int FadeDuration = 400;
-        private const int DisplayDuration = 5000;
+        private const int DisplayDuration = 3000;
         private const int FadeOutStart = FadeDuration + DisplayDuration;
         private const int TotalDuration = FadeOutStart + FadeDuration;
         #endregion
@@ -129,25 +133,24 @@ namespace ClassicUno.Forms
         #region Constructor
         public FrmSplash()
         {
-            AutoScaleMode = AutoScaleMode.None;
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
             ShowInTaskbar = false;
 
+            ClientSize = new Size(ImageHeight, ImageHeight);
+
             /* Load the embedded resource. */
             using (var original = Resources.splash)
             {
-                _splashImage = new Bitmap(500, 333, PixelFormat.Format32bppPArgb);
+                _splashImage = new Bitmap(ImageWidth, ImageHeight, PixelFormat.Format32bppPArgb);
 
                 using (var g = Graphics.FromImage(_splashImage))
                 {
                     g.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-                    g.DrawImage(original, 0, 0, 500, 333);
+                    g.DrawImage(original, 0, 0, ImageWidth, ImageHeight);
                 }
             }
-
-            ClientSize = new Size(500, 333);
 
             _opacity = 0;
 
@@ -243,7 +246,7 @@ namespace ClassicUno.Forms
                 var width = _splashImage.Width;
                 var height = _splashImage.Height;
 
-                /* Create a top-down, 32-bit DIB section. */
+                /* Create a top-down, 32-bit DIB (Device-Independant Bitmap) section. */
                 var bmi = new BitmapInfo
                 {
                     bmiHeader =
@@ -326,7 +329,7 @@ namespace ClassicUno.Forms
                     ref blend,
                     UlwAlpha))
                 {
-                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
                 }
             }
             finally
@@ -368,7 +371,7 @@ namespace ClassicUno.Forms
             }
             else if (elapsed < FadeOutStart)
             {
-                /* Fully visible for five seconds. */
+                /* Fully visible for three seconds. */
                 _opacity = 255;
             }
             else if (elapsed < TotalDuration)

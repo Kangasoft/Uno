@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using System.Windows.Forms;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.Shared;
+using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Classes.UI.Imaging;
 using ClassicUno.Properties;
 using Timer = System.Windows.Forms.Timer; /* Only declared like this as System.Threading is declared above, giving a different meaning to "Timer" */
@@ -39,6 +41,15 @@ namespace ClassicUno.Classes.UI.Rendering
         #endregion
 
         #region Fields
+        /* Card image resources */
+        public CardImages Cards = new CardImages();
+
+        /* Tournament management class */
+        protected readonly TournamentManager Tournament = new TournamentManager();
+
+        public int CardBackIndex { get; set; }
+
+        /* Game log text rendering */
         public GameLogRenderer LogRenderer { get; set; }
 
         /* UNO! and winner GIF animators */
@@ -218,14 +229,9 @@ namespace ClassicUno.Classes.UI.Rendering
                 return;
             }
 
-            if (_backgroundBuffer == null ||
-                _backgroundBuffer.Width != width ||
-                _backgroundBuffer.Height != height)
+            if (_backgroundBuffer == null || _backgroundBuffer.Width != width || _backgroundBuffer.Height != height)
             {
-                if (_backgroundBuffer != null)
-                {
-                    _backgroundBuffer.Dispose();
-                }
+                _backgroundBuffer?.Dispose();
 
                 _backgroundBuffer = new Bitmap(width, height);
                 _backgroundDirty = true;
@@ -239,9 +245,12 @@ namespace ClassicUno.Classes.UI.Rendering
             using (var g = Graphics.FromImage(_backgroundBuffer))
             {
                 g.Clear(Color.Transparent);
+                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                DrawTournamentInfo(g);
 
                 DrawGameCenter(g);
                 DrawPlayerCards(g);
@@ -452,12 +461,37 @@ namespace ClassicUno.Classes.UI.Rendering
                 size = e.Graphics.MeasureString(text, font);
             }
 
-            var bounds = new RectangleF(StatusCenter.X - size.Width / 2f, ClientRectangle.Height / 2f + size.Height,
-                size.Width, size.Height);
+            var bounds = new RectangleF(StatusCenter.X - size.Width / 2f, ClientRectangle.Height / 2f + size.Height, size.Width, size.Height);
+
             e.Graphics.DrawText(text, _textColor, bounds, StringAlignment.Center, fontSize);
 
             base.OnPaint(e);
         }
+
+        #region Tournament information
+        private void DrawTournamentInfo(Graphics graphics)
+        {
+            if (!Tournament.IsActive)
+            {
+                return;
+            }
+
+            const int iconSize = 48;
+            const int padding = 10;
+            const int topPadding = 18;
+            const int textWidth = 160;
+
+            /* Draw tournament icon. */
+            var iconBounds = new Rectangle(padding, topPadding + padding, iconSize, iconSize);
+
+            graphics.DrawImage(Resources.tournamentIcon, iconBounds);
+
+            /* Draw round title alongside the icon. */
+            var textBounds = new RectangleF(iconBounds.Right + padding, iconBounds.Y, textWidth, iconSize);
+
+            graphics.DrawText(Tournament.ToString(), _textColor, textBounds, StringAlignment.Near);
+        }
+        #endregion
 
         #region Game center
         private void DrawGameCenter(Graphics g)
@@ -502,8 +536,7 @@ namespace ClassicUno.Classes.UI.Rendering
             var offset = 0;
             for (var i = 0; i < visualLayers; i++)
             {
-                DrawCard(g, Cards.CardBackImages[CardBackIndex],
-                    new PointF(PickupPilePosition.X + offset, PickupPilePosition.Y + offset));
+                DrawCard(g, Cards.CardBackImages[CardBackIndex], new PointF(PickupPilePosition.X + offset, PickupPilePosition.Y + offset));
                 offset++;
             }
 

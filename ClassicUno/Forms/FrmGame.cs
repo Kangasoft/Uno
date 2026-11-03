@@ -61,8 +61,6 @@ namespace ClassicUno.Forms
         private readonly string _recoveryFile = Misc.MainDir(string.Format(Resources.userPath, "recovery.dat"), true);
 
         private readonly List<string> _logText = new List<string>();
-
-        private readonly TournamentManager _tournament = new TournamentManager();
         #endregion
 
         #region Constructor
@@ -519,13 +517,13 @@ namespace ClassicUno.Forms
                 case "SAVE":
                     if ((CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused))
                     {
-                        using (var d = new FrmSaveLoadGame(true) {SaveName = _tournament.IsActive ? "My tournament" : "My UNO game"})
+                        using (var d = new FrmSaveLoadGame(true) {SaveName = Tournament.IsActive ? "My tournament" : "My UNO game"})
                         {
                             d.ShowDialog(this);
                             if (d.DialogResult == DialogResult.OK)
                             {
                                 /* Save current game */
-                                d.SelectedSave.Tournament = _tournament.IsActive;
+                                d.SelectedSave.Tournament = Tournament.IsActive;
                                 if (SaveGame(d.SelectedSave.FileName))
                                 {
                                     UpdateStatus("Game successfully saved.");
@@ -878,9 +876,9 @@ namespace ClassicUno.Forms
             }
 
             /* Reset tournament */
-            if (_tournament.IsActive)
+            if (Tournament.IsActive)
             {
-                _tournament.End();
+                Tournament.End();
             }
 
             /* Reset default button states */
@@ -915,7 +913,7 @@ namespace ClassicUno.Forms
                 /* Create a tournament penis game ignoring number of players. The structure of tournaments is 3
                  * successive games (which the human player has to win each of) starting with 2 players round 1,
                  * 3 in round 2 and finally 4 in round 3. */
-                _tournament.Start();
+                Tournament.Start();
                 StartTournamentRound();
                 return;
             }
@@ -931,10 +929,12 @@ namespace ClassicUno.Forms
             var data = new GameOptionData
             {
                 NameData = settings.NameData,
-                NumberOfPlayers = _tournament.GetPlayerCount(),
+                NumberOfPlayers = Tournament.GetPlayerCount(),
                 TournamentMode = true
             };
 
+            Tournament.BeginNextRound();
+            
             StartGame(data);
         }
 
@@ -970,11 +970,11 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            if (string.IsNullOrEmpty(text) && _tournament.IsActive)
+            if (string.IsNullOrEmpty(text) && Tournament.IsActive)
             {
                 /* Normally this text field is blank during a normal UNO game. However, if a tournament
                  * is running we can use the "blank spots" to display the tournament round information. */
-                text = $"Tournament: Round {_tournament.CurrentRound} of {_tournament.TotalRounds}";
+                text = $"Tournament: Round {Tournament.CurrentRound} of {Tournament.TotalRounds}";
             }
 
             _slGame.Text = text;
@@ -1066,7 +1066,7 @@ namespace ClassicUno.Forms
             SettingsManager.Settings.Statistics.TotalGameTime += time;
 
             /* Handle tournament games separately */
-            if (_tournament.IsActive)
+            if (Tournament.IsActive)
             {
                 HandleTournamentGameOver(player, score);
                 return;
@@ -1113,21 +1113,21 @@ namespace ClassicUno.Forms
         private void HandleTournamentGameOver(IPlayer player, int score)
         {
             var humanWon = player is HumanPlayer;
-            var completedRound = _tournament.CurrentRound;
-            var tournamentWon = _tournament.RecordResult(humanWon, score);
+            var completedRound = Tournament.CurrentRound;
+            var tournamentWon = Tournament.RecordResult(humanWon, score);
 
             if (tournamentWon)
             {
                 CustomMessageBox.Show(this,
-                    $"Congratulations! You have won all {completedRound} rounds and completed the tournament!\r\n\r\nYou have won a total of {_tournament.TotalScore} points, including a {_tournament.Bonus} point bonus!",
+                    $"Congratulations! You have won all {completedRound} rounds and completed the tournament!\r\n\r\nYou have won a total of {Tournament.TotalScore} points, including a {Tournament.Bonus} point bonus!",
                     Resources.appTitle,
                     CustomMessageBoxButtons.Ok,
                     CustomMessageBoxIcon.Information);
 
                 /* Record the bonus points */
-                SettingsManager.Settings.Statistics.HighScore += _tournament.Bonus;
+                SettingsManager.Settings.Statistics.HighScore += Tournament.Bonus;
 
-                _tournament.End();
+                Tournament.End();
                 EndCurrentGame();
                 return;
             }
@@ -1141,14 +1141,14 @@ namespace ClassicUno.Forms
                     CustomMessageBoxButtons.Ok,
                     CustomMessageBoxIcon.Exclamation);
 
-                _tournament.End();
+                Tournament.End();
                 EndCurrentGame();
                 return;
             }
 
             /* The human won this round, and another round remains. */
             CustomMessageBox.Show(this,
-                $"You won round {completedRound} of {_tournament.TotalRounds} gaining {score} points!\r\n\r\n" +
+                $"You won round {completedRound} of {Tournament.TotalRounds} gaining {score} points!\r\n\r\n" +
                 "Prepare for the next round.",
                 Resources.appTitle,
                 CustomMessageBoxButtons.Ok,
@@ -1316,7 +1316,7 @@ namespace ClassicUno.Forms
             {
                 return false;
             }
-            _tournament.RestoreState(state.TournamentActive, state.TournamentRound, state.TournamentScore);
+            Tournament.RestoreState(state.TournamentActive, state.TournamentRound, state.TournamentScore);
 
             _time.Enabled = true;
             _slTime.Visible = true;
@@ -1342,9 +1342,9 @@ namespace ClassicUno.Forms
                 return false;
             }
 
-            state.TournamentActive = _tournament.IsActive;
-            state.TournamentRound = _tournament.CurrentRound;
-            state.TournamentScore = _tournament.TotalScore;
+            state.TournamentActive = Tournament.IsActive;
+            state.TournamentRound = Tournament.CurrentRound;
+            state.TournamentScore = Tournament.TotalScore;
 
             BinarySerialize<GameStateData>.Save(path, state);
             return true;

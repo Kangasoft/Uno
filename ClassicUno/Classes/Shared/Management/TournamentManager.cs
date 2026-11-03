@@ -6,6 +6,8 @@ namespace ClassicUno.Classes.Shared.Management
 {
     public class TournamentManager
     {
+        private int _displayRound;
+
         public bool IsActive { get; private set; }
 
         public int CurrentRound { get; private set; }
@@ -20,7 +22,13 @@ namespace ClassicUno.Classes.Shared.Management
         {
             IsActive = true;
             CurrentRound = 1;
+            _displayRound = 1;
             TotalScore = 0;
+        }
+
+        public void BeginNextRound()
+        {
+            _displayRound = CurrentRound;
         }
 
         /* Records a completed game and updates tournament progress.
@@ -58,6 +66,7 @@ namespace ClassicUno.Classes.Shared.Management
             IsActive = false;
             TotalScore = 0;
             CurrentRound = 0;
+            _displayRound = 0;
         }
 
         public int GetPlayerCount()
@@ -69,7 +78,25 @@ namespace ClassicUno.Classes.Shared.Management
         {
             IsActive = isActive;
             CurrentRound = isActive ? round : 0;
+            _displayRound = CurrentRound;
             TotalScore = isActive ? score : 0;
+        }
+
+        public override string ToString()
+        {
+            switch (_displayRound)
+            {
+                case 1:
+                    return "First Round";
+
+                case 2:
+                    return "Second Round";
+
+                case 3:
+                    return "Final Round";
+            }
+
+            return string.Empty;
         }
     }
 }

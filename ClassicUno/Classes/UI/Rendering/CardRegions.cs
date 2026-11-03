@@ -8,7 +8,6 @@ using System.Drawing;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
 using ClassicUno.Classes.UI.Controls;
-using ClassicUno.Classes.UI.Imaging;
 using ClassicUno.Properties;
 
 namespace ClassicUno.Classes.UI.Rendering
@@ -18,25 +17,30 @@ namespace ClassicUno.Classes.UI.Rendering
         #region Card and game state
         private Game _currentGame;
 
-        /* Card image resources */
-        public CardImages Cards = new CardImages();
-
-        public int CardBackIndex { get; set; }
-
         /* Cached layout geometry */
-        protected float LayoutScale;
-        protected float CardWidth;
-        protected float CardHeight;
+        private float _scale;
 
-        protected PointF StatusCenter;
-        protected RectangleF DirectionBounds;
-        protected RectangleF DirectionTextBounds;
-        protected RectangleF OrbBounds;
-        protected PointF PickupPilePosition;
-        protected PointF DiscardPilePosition;
-        protected RectangleF[] PlayerHandBounds = new RectangleF[4];
-        protected RectangleF[] PlayerNameBounds = new RectangleF[4];
-        protected RectangleF[] UnoIndicatorBounds = new RectangleF[4];
+        protected float CardWidth { get; private set; }
+
+        protected float CardHeight { get; private set; }
+
+        protected PointF StatusCenter { get; private set; }
+
+        protected RectangleF DirectionBounds { get; private set; }
+
+        protected RectangleF DirectionTextBounds { get; private set; }
+
+        protected RectangleF OrbBounds { get; private set; }
+
+        protected PointF PickupPilePosition { get; private set; }
+
+        protected PointF DiscardPilePosition { get; private set; }
+
+        protected RectangleF[] PlayerHandBounds { get; private set; } = new RectangleF[4];
+
+        protected RectangleF[] PlayerNameBounds { get; private set; } = new RectangleF[4];
+
+        protected RectangleF[] UnoIndicatorBounds { get; private set; } = new RectangleF[4];
 
         public Game CurrentGame
         {
@@ -59,10 +63,10 @@ namespace ClassicUno.Classes.UI.Rendering
             const float referenceWidth = 1600f;
             const float referenceHeight = 850f;
 
-            LayoutScale = Math.Min(ClientRectangle.Width / referenceWidth, ClientRectangle.Height / referenceHeight);
+            _scale = Math.Min(ClientRectangle.Width / referenceWidth, ClientRectangle.Height / referenceHeight);
 
-            CardWidth = 110f * LayoutScale;
-            CardHeight = 160f * LayoutScale;
+            CardWidth = 110f * _scale;
+            CardHeight = 160f * _scale;
 
             /* Central status area shared by the direction indicator, orb and piles. */
             StatusCenter = new PointF(ClientRectangle.Width / 2f, (ClientRectangle.Height - CardHeight * 2f) / 2f);
@@ -107,7 +111,7 @@ namespace ClassicUno.Classes.UI.Rendering
 
                     case 1: /* Left player - centre UNO over left-aligned name */
                         x = PlayerNameBounds[1].Left;
-                        y = PlayerNameBounds[1].Top - unoHeight * LayoutScale;
+                        y = PlayerNameBounds[1].Top - unoHeight * _scale;
                         break;
 
                     case 2: /* Top player */
@@ -117,7 +121,7 @@ namespace ClassicUno.Classes.UI.Rendering
 
                     default: /* Right player - centre UNO over right-aligned name */
                         x = PlayerNameBounds[3].Right - unoWidth;
-                        y = PlayerNameBounds[3].Top - unoHeight * LayoutScale;
+                        y = PlayerNameBounds[3].Top - unoHeight * _scale;
                         break;
                 }
 
@@ -278,19 +282,6 @@ namespace ClassicUno.Classes.UI.Rendering
 
                 return new PointF(x, y);
             }
-        }
-        #endregion
-
-        #region Dispose
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                Cards?.Dispose();
-                Cards = null;
-            }
-
-            base.Dispose(disposing);
         }
         #endregion
     }
