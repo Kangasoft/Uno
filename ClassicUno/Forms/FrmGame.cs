@@ -294,8 +294,9 @@ namespace ClassicUno.Forms
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
             {
                 Menus.AddMenuItem("UNO on Github", "GITHUB", Keys.None, OnMenuClick),
-                new ToolStripSeparator(), 
-                Menus.AddMenuItem("About", "ABOUT", Keys.None, true, OnMenuClick)
+                new ToolStripSeparator(),
+                Menus.AddMenuItem("Rules...", "RULES", Keys.None, OnMenuClick),
+                Menus.AddMenuItem("About...", "ABOUT", Keys.None, true, OnMenuClick)
             });
 
             /* Add controls */
@@ -668,6 +669,13 @@ namespace ClassicUno.Forms
                     Process.Start(startInfo);
                     break;
 
+                case "RULES":
+                    using (var rules = new FrmRules())
+                    {
+                        rules.ShowDialog(this);
+                    }
+                    break;
+
                 case "ABOUT":
                     using (var about = new FrmAbout())
                     {
@@ -764,9 +772,17 @@ namespace ClassicUno.Forms
 
             if (CurrentGame != null)
             {
-                var c = HitTest(CurrentGame.GameData.Players[0].Cards, e.Location);
-                CurrentGame.HighlightedCard = c;
-                InvalidateBackground();
+                var previousCard = CurrentGame.HighlightedCard;
+                var currentCard = HitTest(CurrentGame.GameData.Players[0].Cards, e.Location);
+
+                if (previousCard != currentCard)
+                {
+                    CurrentGame.HighlightedCard = currentCard;
+
+                    /* Redraw only the affected card areas. */
+                    InvalidateHoverCard(previousCard);
+                    InvalidateHoverCard(currentCard);
+                }
             }
 
             base.OnMouseMove(e);
@@ -960,6 +976,22 @@ namespace ClassicUno.Forms
             return cards.FirstOrDefault(c =>
                 location.X >= c.Region.X && location.X <= c.Region.X + c.Region.Width && location.Y >= c.Region.Y &&
                 location.Y <= c.Region.Y + c.Region.Height);
+        }
+
+        private void InvalidateHoverCard(Card card)
+        {
+            if (card == null || card == CurrentGame?.SelectedCard)
+            {
+                return;
+            }
+
+            var bounds = Rectangle.Ceiling(new RectangleF(
+                card.Region.X,
+                card.Region.Y,
+                CardWidth,
+                CardHeight));
+
+            Invalidate(bounds);
         }
 
         public void UpdateStatus(string text)

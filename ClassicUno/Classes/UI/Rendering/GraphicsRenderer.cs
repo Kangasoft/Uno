@@ -428,6 +428,18 @@ namespace ClassicUno.Classes.UI.Rendering
                 e.Graphics.DrawImageUnscaled(_backgroundBuffer, ClientRectangle.Left, ClientRectangle.Top);
             }
 
+            /* Draw hovered card highlight over the background. */
+            if (CurrentGame?.HighlightedCard != null && CurrentGame.HighlightedCard != CurrentGame.SelectedCard)
+            {
+                var cards = CurrentGame.GameData.Players[0].Cards;
+                var index = cards.IndexOf(CurrentGame.HighlightedCard);
+
+                if (index >= 0)
+                {
+                    DrawHoverCardHighlight(e.Graphics, cards, index);
+                }
+            }
+
             /* Dynamic foreground animations are drawn over the cached background. */
             if (_deckAnimationActive)
             {
@@ -725,14 +737,6 @@ namespace ClassicUno.Classes.UI.Rendering
                     y = handBounds.Top - selectedOffsetY;
 
                     DrawCard(g, image, new PointF(x - ClientRectangle.Left, y - ClientRectangle.Top));
-
-                    if (player is HumanPlayer &&
-                        CurrentGame.HighlightedCard != null &&
-                        CurrentGame.HighlightedCard != CurrentGame.SelectedCard &&
-                        CurrentGame.HighlightedCard == card)
-                    {
-                        DrawHoverCardHighlight(g, CurrentGame.HighlightedCard);
-                    }
                 }
                 else
                 {
@@ -781,50 +785,71 @@ namespace ClassicUno.Classes.UI.Rendering
             }
         }
 
-        private void DrawHoverCardHighlight(Graphics g, Card card)
+        private void DrawHoverCardHighlight(Graphics g, IList<Card> cards, int index)
         {
             /* This method is becoming a pain in my ass! */
-            var r = card.Region;
+            var card = cards[index];
+
+            var bounds = new RectangleF(
+                card.Region.X,
+                card.Region.Y,
+                CardWidth,
+                CardHeight);
+
+            var state = g.Save();
+
+            try
+            {
+                using (var cardPath = CreateCardPath(bounds))
+                using (var visibleRegion = new Region(cardPath))
+                {
+                    /* Exclude every card drawn in front of the hovered card. */
+                    for (var i = index + 1; i < cards.Count; i++)
+                    {
+                        var next = cards[i];
+
+                        var nextBounds = new RectangleF(
+                            next.Region.X,
+                            next.Region.Y,
+                            CardWidth,
+                            CardHeight);
+
+                        using (var nextPath = CreateCardPath(nextBounds))
+                        {
+                            visibleRegion.Exclude(nextPath);
+                        }
+                    }
+
+                    g.SetClip(visibleRegion, CombineMode.Intersect);
+
+                    using (var brush = new SolidBrush(Color.FromArgb(80, Color.DeepSkyBlue)))
+                    {
+                        g.FillPath(brush, cardPath);
+                    }
+                }
+            }
+            finally
+            {
+                g.Restore(state);
+            }
+        }
+
+        /* Helper method for DrawHoverCardHighlight */
+        private static GraphicsPath CreateCardPath(RectangleF bounds)
+        {
             const float radius = 18f;
             const float diameter = radius * 2;
 
-            var isLastCard = Math.Abs(r.Width - CardWidth) < 0.1f;
+            var path = new GraphicsPath();
 
-            /* Use the full card width for ALL cards so they maintain their natural rounded rectangle shape.
-             * Overlapping cards will naturally cover the rest of it. */
-            var renderWidth = isLastCard ? r.Width : CardWidth;
+            path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
 
-            using (var path = new GraphicsPath())
-            {
-                /* Top-left rounded corner */
-                path.AddArc(r.X, r.Y, diameter, diameter, 180, 90);
+            path.CloseFigure();
 
-                if (isLastCard)
-                {
-                    /* Top-right rounded corner */
-                    path.AddArc(r.X + renderWidth - diameter, r.Y, diameter, diameter, 270, 90);
-
-                    /* Bottom-right rounded corner */
-                    path.AddArc(r.X + renderWidth - diameter, r.Bottom - diameter, diameter, diameter, 0, 90);
-                }
-                else
-                {
-                    /* Top-right rounded corner using full card width */
-                    path.AddArc(r.X + renderWidth - diameter, r.Y, diameter, diameter, 270, 90);
-
-                    /* Bottom-right rounded corner using full card width */
-                    path.AddArc(r.X + renderWidth - diameter, r.Bottom - diameter, diameter, diameter, 0, 90);
-                }
-
-                /* Bottom-left rounded corner */
-                path.AddArc(r.X, r.Bottom - diameter, diameter, diameter, 90, 90);
-                path.CloseFigure();
-
-                using (var brush = new SolidBrush(Color.FromArgb(80, Color.DeepSkyBlue)))
-                {
-                    g.FillPath(brush, path);
-                }
-            }
+            return path;
         }
         #endregion
 
