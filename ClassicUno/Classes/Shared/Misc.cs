@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -53,6 +54,26 @@ namespace ClassicUno.Classes.Shared
                 Directory.CreateDirectory(pathOnly);
             }
             return currentPath;
+        }
+
+        /* Shell Execute */
+        public static void ShellExecute(string path)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                };
+
+                Process.Start(startInfo);
+            }
+            catch
+            {
+                /* Ignore */
+                Debug.Assert(true);
+            }
         }
 
         /* Quick util for getting the current monitor the application is running on */

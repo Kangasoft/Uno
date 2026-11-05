@@ -233,7 +233,7 @@ namespace ClassicUno.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to https://github.com/Kangasoft/Uno.
+        ///   Looks up a localized string similar to https://github.com/Kangasoft/Uno/.
         /// </summary>
         internal static string gitHub {
             get {

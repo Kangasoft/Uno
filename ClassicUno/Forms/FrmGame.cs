@@ -4,7 +4,6 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -293,10 +292,10 @@ namespace ClassicUno.Forms
             /* Help menu */
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
             {
-                Menus.AddMenuItem("UNO on Github", "GITHUB", Keys.None, OnMenuClick),
+                Menus.AddMenuItem("UNO on Github", "GITHUB", Keys.F2, OnMenuClick),
                 new ToolStripSeparator(),
-                Menus.AddMenuItem("Rules...", "RULES", Keys.None, OnMenuClick),
-                Menus.AddMenuItem("About...", "ABOUT", Keys.None, true, OnMenuClick)
+                Menus.AddMenuItem("Contents", "CONTENTS",  Keys.F1, true, OnMenuClick),
+                Menus.AddMenuItem("About...", "ABOUT", Keys.Shift | Keys.F1, true, OnMenuClick)
             });
 
             /* Add controls */
@@ -660,20 +659,11 @@ namespace ClassicUno.Forms
                     break;
 
                 case "GITHUB":
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = Resources.gitHub,
-                        UseShellExecute = true
-                    };
-
-                    Process.Start(startInfo);
+                    Misc.ShellExecute(Resources.gitHub);
                     break;
 
-                case "RULES":
-                    using (var rules = new FrmRules())
-                    {
-                        rules.ShowDialog(this);
-                    }
+                case "CONTENTS":
+                    Misc.ShellExecute(Misc.MainDir(@"\ClassicUno.chm", false));
                     break;
 
                 case "ABOUT":
