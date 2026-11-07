@@ -39,8 +39,6 @@ namespace ClassicUno.Classes.Logic
     #region Game play data class
     public class GameData : ICloneable
     {
-        /* I separated this to its own class from the main class as to add a "restart" feature
-         * at a later date. */
         public List<IPlayer> Players { get; set; }
 
         public List<Card> Deck { get; set; }
@@ -80,15 +78,17 @@ namespace ClassicUno.Classes.Logic
 
         private bool _undoStateSavedThisTurn;
 
+        private GameStateData _restart;
+
         private bool _firstMove;
-
-        private GameData _restart;
-
+        
         public GameData GameData;
 
         public UndoManager Undo = new UndoManager();
 
         public bool Restartable => _restart != null;
+
+        public bool FirstMove => _firstMove;
 
         public GameState GameState { get; set; }
 
@@ -105,7 +105,7 @@ namespace ClassicUno.Classes.Logic
             /* Restore a previous game state */
             _ui = ui;
 
-            GameData = GameStateManager.RestoreGameState(state);
+            GameData = GameStateManager.RestoreGameState(state, out _firstMove);
 
             CurrentTime = state.CurrentTime;
 
@@ -198,7 +198,8 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
             RemovePlayerCallbacks();
-            GameData = (GameData) _restart.Clone();
+            //GameData = (GameData) _restart.Clone();
+            GameData = GameStateManager.RestoreGameState(_restart, out _firstMove);
             AddPlayerCallbacks();
             
             CurrentTime = 0;
@@ -298,9 +299,10 @@ namespace ClassicUno.Classes.Logic
 
             if (GameData.CurrentColor == CardColor.None && (c.Type == CardType.Wild || c.Type == CardType.DrawFour))
             {
-                /* Human needs to choose a colour. */
+                /* Human needs to choose a colour before playing. */
                 _ui.EnableDraw(false);
                 _ui.EnablePass(false);
+                _ui.EnablePlay(false);
                 _ui.ShowColorButtons(true);
             }
             else
@@ -458,6 +460,13 @@ namespace ClassicUno.Classes.Logic
             }
 
             _ui.ShowColorButtons(false);
+
+            /* Opening Wild: the player chooses the starting color but retains their turn. */
+            if (_firstMove)
+            {
+                _firstMove = false;
+                return;
+            }
 
             /* Wilds as the first card under offical UNO rules is the current player can choose a color
              * (as they didn't play the card) and draw/play/pass as normal. */
@@ -769,7 +778,8 @@ namespace ClassicUno.Classes.Logic
             }
 
             /* Store a restart game point. */
-            _restart = (GameData)GameData.Clone();
+            //_restart = (GameData)GameData.Clone();
+            _restart = GameStateManager.CreateGameState(GameData, 0, true);
 
             GameState = GameState.Running;
             _ui.GameStateChanged();

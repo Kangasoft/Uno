@@ -54,6 +54,12 @@
     <Compile Include="Classes\Shared\Management\UndoManager.cs" />
     <Compile Include="Classes\Settings\SettingsData\SavedGameData.cs" />
     <Compile Include="Classes\Shared\RandomEx.cs" />
+    <Compile Include="Classes\UI\Controls\UserButtons\ButtonStrip.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Classes\UI\Controls\UserButtons\CustomButton.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Classes\UI\Imaging\CardImages.cs" />
     <Compile Include="Classes\UI\Controls\CardStripControl.cs">
       <SubType>UserControl</SubType>
@@ -86,9 +92,6 @@
     <Compile Include="Classes\Settings\SettingsData\GeneralData.cs" />
     <Compile Include="Classes\Settings\SettingsData\SoundData.cs" />
     <Compile Include="Classes\Settings\SettingsData\StatisticsData.cs" />
-    <Compile Include="Classes\UI\Controls\CustomButton.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="Classes\UI\Controls\FeltForm.cs">
       <SubType>Form</SubType>
     </Compile>

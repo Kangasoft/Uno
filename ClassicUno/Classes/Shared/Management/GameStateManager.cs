@@ -14,6 +14,8 @@ namespace ClassicUno.Classes.Shared.Management
     [Serializable]
     public class GameStateData
     {
+        public bool FirstMove { get; set; }
+
         public List<Card> Deck { get; set; }
 
         public List<Card> DiscardPile { get; set; }
@@ -59,10 +61,11 @@ namespace ClassicUno.Classes.Shared.Management
 
     public static class GameStateManager
     {
-        public static GameStateData CreateGameState(GameData data, int currentTime)
+        public static GameStateData CreateGameState(GameData data, int currentTime, bool firstMove)
         {
             return new GameStateData
             {
+                FirstMove = firstMove,
                 Deck = data.Deck.Select(c => (Card) c.Clone()).ToList(),
                 DiscardPile = data.DiscardPile.Select(c => (Card) c.Clone()).ToList(),
 
@@ -88,8 +91,10 @@ namespace ClassicUno.Classes.Shared.Management
             };
         }
 
-        public static GameData RestoreGameState(GameStateData state)
+        public static GameData RestoreGameState(GameStateData state, out bool firstMove)
         {
+            firstMove = state?.FirstMove ?? false;
+
             var players = state?.Players.Select(RestorePlayer).ToList();
 
             if (players?.Any(p => p == null) != false)

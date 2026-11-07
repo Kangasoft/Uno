@@ -17,7 +17,7 @@ using ClassicUno.Classes.Settings.SettingsData;
 using ClassicUno.Classes.Shared;
 using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Classes.UI;
-using ClassicUno.Classes.UI.Controls;
+using ClassicUno.Classes.UI.Controls.UserButtons;
 using ClassicUno.Classes.UI.Rendering;
 using ClassicUno.Controls;
 using ClassicUno.Properties;
@@ -40,16 +40,7 @@ namespace ClassicUno.Forms
 
         private readonly ToolStripMenuItem _mnuOptions;
 
-        private readonly TableLayoutPanel _tblButtons;
-
-        private readonly CustomButton _btnDraw;
-        private readonly CustomButton _btnPass;
-        private readonly CustomButton _btnPlay;
-
-        private readonly CustomButton _btnRed;
-        private readonly CustomButton _btnBlue;
-        private readonly CustomButton _btnGreen;
-        private readonly CustomButton _btnYellow;
+        private readonly ButtonStrip _controlButtons;
 
         private readonly Timer _tmrNew;
 
@@ -121,141 +112,13 @@ namespace ClassicUno.Forms
 
             _statusBar.Items.AddRange(new ToolStripItem[] {_slGame, _slTime});
             
-            /* Button table layout */
-            _tblButtons = new TableLayoutPanel
+            /* User control buttons */
+            _controlButtons = new ButtonStrip
             {
-                BackColor = Color.Transparent,
-                RowCount = 1,
-                ColumnCount = 8,
-                Location = new Point(247, 533),
-                Size = new Size(472, 63),
-                TabIndex = 4,
                 Visible = false
             };
 
-            _tblButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 63F));
-
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
-            _tblButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
-
-            /* User buttons */
-            _btnPlay = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnPlay,
-                BackgroundImageLayout = ImageLayout.Center,
-                Enabled = false,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(143, 3),
-                Size = new Size(61, 55),
-                TabIndex = 5,
-                Tag = "PLAY",
-                UseVisualStyleBackColor = false
-            };
-
-            _btnDraw = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnDraw,
-                BackgroundImageLayout = ImageLayout.Center,
-                Enabled = false,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(3, 3),
-                Size = new Size(64, 55),
-                TabIndex = 2,
-                Tag = "DRAW",
-                UseVisualStyleBackColor = false
-            };
-
-            _btnPass = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnPass,
-                BackgroundImageLayout = ImageLayout.Center,
-                Enabled = false,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(73, 3),
-                Size = new Size(61, 55),
-                TabIndex = 3,
-                Tag = "PASS",
-                UseVisualStyleBackColor = false
-            };
-
-            _btnYellow = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnYellow,
-                BackgroundImageLayout = ImageLayout.Center,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(413, 3),
-                Size = new Size(54, 55),
-                TabIndex = 8,
-                Tag = "YELLOW",
-                UseVisualStyleBackColor = false,
-                Visible = false
-            };
-
-            _btnGreen = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnGreen,
-                BackgroundImageLayout = ImageLayout.Center,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(353, 3),
-                Size = new Size(54, 55),
-                TabIndex = 7,
-                Tag = "GREEN",
-                UseVisualStyleBackColor = false,
-                Visible = false
-            };
-
-            _btnBlue = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnBlue,
-                BackgroundImageLayout = ImageLayout.Center,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(293, 3),
-                Size = new Size(54, 55),
-                TabIndex = 6,
-                Tag = "BLUE",
-                UseVisualStyleBackColor = false,
-                Visible = false
-            };
-
-            _btnRed = new CustomButton
-            {
-                BackColor = Color.Transparent,
-                BackgroundImage = Resources.btnRed,
-                BackgroundImageLayout = ImageLayout.Center,
-                FlatStyle = FlatStyle.Flat,
-                Location = new Point(233, 3),
-                Size = new Size(54, 55),
-                TabIndex = 5,
-                Tag = "RED",
-                UseVisualStyleBackColor = false,
-                Visible = false
-            };
-
-           
-            _tblButtons.Controls.Add(_btnDraw, 0, 0);
-            _tblButtons.Controls.Add(_btnPass, 1, 0);
-            _tblButtons.Controls.Add(_btnPlay, 2, 0);
-            _tblButtons.Controls.Add(_btnRed, 4, 0);
-            _tblButtons.Controls.Add(_btnBlue, 5, 0);
-            _tblButtons.Controls.Add(_btnGreen, 6, 0);
-            _tblButtons.Controls.Add(_btnYellow, 7, 0);
-            
-            foreach (var btn in _tblButtons.Controls.Cast<Button>().Where(btn => btn != null))
-            {
-                btn.Click += OnButtonClick;
-            }
+            _controlButtons.ButtonClick += OnControlButtonClick;
 
             var renderer = new UnoToolStripRenderer();
 
@@ -292,14 +155,14 @@ namespace ClassicUno.Forms
             /* Help menu */
             mnuHelp.DropDownItems.AddRange(new ToolStripItem[]
             {
-                Menus.AddMenuItem("UNO on Github", "GITHUB", Keys.F2, OnMenuClick),
+                Menus.AddMenuItem("UNO on Github", "GITHUB", Keys.F2, true, false, Resources.world, OnMenuClick),
                 new ToolStripSeparator(),
-                Menus.AddMenuItem("Contents", "CONTENTS",  Keys.F1, true, OnMenuClick),
-                Menus.AddMenuItem("About...", "ABOUT", Keys.Shift | Keys.F1, true, OnMenuClick)
+                Menus.AddMenuItem("Contents", "CONTENTS", Keys.F1, true, false, Resources.help, OnMenuClick),
+                Menus.AddMenuItem("About...", "ABOUT", Keys.Shift | Keys.F1, true, false, Resources.about, OnMenuClick)
             });
 
             /* Add controls */
-            Controls.AddRange(new Control[] {_mnuMain, _statusBar, _tblButtons});
+            Controls.AddRange(new Control[] { _mnuMain, _statusBar, _controlButtons });
         }
         #endregion
 
@@ -338,10 +201,11 @@ namespace ClassicUno.Forms
                 return;
             }
             /* Move button table layout */
-            var x = ClientRectangle.Width / 2 - (_tblButtons.Width - (!_btnRed.Visible ? 260 : 0)) / 2;
+            var x = ClientRectangle.Width / 2 - _controlButtons.Width / 2;
 
-            _tblButtons.Bounds = new Rectangle(x, ClientRectangle.Height - _statusBar.Height - _tblButtons.Height,
-                _tblButtons.Width, _tblButtons.Height);
+            _controlButtons.Bounds = new Rectangle(x,
+                ClientRectangle.Height - _statusBar.Height - _controlButtons.Height - 12,
+                _controlButtons.Width, _controlButtons.Height);
 
             base.OnResize(e);
         }
@@ -400,6 +264,7 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Menus
+
         private void BuildMenuGame(ToolStripDropDownItem m)
         {
             m.DropDownItems.Clear();
@@ -416,26 +281,32 @@ namespace ClassicUno.Forms
 
                 load = CurrentGame.GameState != GameState.Dealing && saved > 0;
 
-                undo = CurrentGame.Undo.CanUndo && CurrentGame.GameState == GameState.Running && CurrentGame.GameData.CurrentPlayer is HumanPlayer;
+                undo = CurrentGame.Undo.CanUndo && CurrentGame.GameState == GameState.Running &&
+                       CurrentGame.GameData.CurrentPlayer is HumanPlayer;
             }
 
             m.DropDownItems.AddRange(
                 new ToolStripItem[]
                 {
-                    Menus.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, OnMenuClick),
-                    new ToolStripSeparator(),
-                    Menus.AddMenuItem("Load game", "LOAD", Keys.Control | Keys.O, load, OnMenuClick),
-                    Menus.AddMenuItem("Save game", "SAVE", Keys.Control | Keys.S,
-                        CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused,
+                    Menus.AddMenuItem("New game", "NEW", Keys.Control | Keys.N, true, false, Resources.newGame,
                         OnMenuClick),
                     new ToolStripSeparator(),
-                    Menus.AddMenuItem("Undo last move", "UNDO", Keys.Control | Keys.Z, undo, OnMenuClick),
-                    Menus.AddMenuItem("Restart game", "RESTART", Keys.Control | Keys.R, restart, OnMenuClick),
+                    Menus.AddMenuItem("Load game", "LOAD", Keys.Control | Keys.O, load, false, Resources.load,
+                        OnMenuClick),
+                    Menus.AddMenuItem("Save game", "SAVE", Keys.Control | Keys.S,
+                        CurrentGame?.GameState == GameState.Running || CurrentGame?.GameState == GameState.Paused,
+                        false, Resources.save,
+                        OnMenuClick),
+                    new ToolStripSeparator(),
+                    Menus.AddMenuItem("Undo last move", "UNDO", Keys.Control | Keys.Z, undo, false, Resources.undo,
+                        OnMenuClick),
+                    Menus.AddMenuItem("Restart game", "RESTART", Keys.Control | Keys.R, restart, false,
+                        Resources.restart, OnMenuClick),
                 });
 
             var pause = Menus.AddMenuItem(CurrentGame?.GameState == GameState.Paused ? "Resume game" : "Pause game",
                 "PAUSE", Keys.None,
-                CurrentGame != null && CurrentGame?.GameState != GameState.Dealing,
+                CurrentGame != null && CurrentGame?.GameState != GameState.Dealing, false, Resources.pause,
                 OnMenuClick);
             pause.ShortcutKeyDisplayString = @"Pause";
 
@@ -443,9 +314,10 @@ namespace ClassicUno.Forms
             {
                 pause,
                 new ToolStripSeparator(),
-                Menus.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, OnMenuClick),
+                Menus.AddMenuItem("Statistics...", "STATS", Keys.Alt | Keys.S, true, false, Resources.stats,
+                    OnMenuClick),
                 new ToolStripSeparator(),
-                Menus.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, OnMenuClick)
+                Menus.AddMenuItem("Exit", "EXIT", Keys.Alt | Keys.F4, true, false, Resources.close, OnMenuClick)
             });
         }
 
@@ -462,17 +334,20 @@ namespace ClassicUno.Forms
                 new ToolStripItem[]
                 {
                     Menus.AddMenuItem("Enable voice", "VOICE", Keys.Alt | Keys.V, true,
-                        SettingsManager.Settings.Sound.EnableVoice, null, OnMenuClick),
+                        SettingsManager.Settings.Sound.EnableVoice, Resources.sound, OnMenuClick),
                     Menus.AddMenuItem("Enable card sound effects", "SFX", Keys.Alt | Keys.E, true,
-                        SettingsManager.Settings.Sound.EnableEffects, null, OnMenuClick),
+                        SettingsManager.Settings.Sound.EnableEffects, Resources.sound, OnMenuClick),
                     Menus.AddMenuItem("Enable music", "MUSIC", Keys.Alt | Keys.M, true,
-                        SettingsManager.Settings.Sound.EnableMusic, null, OnMenuClick),
+                        SettingsManager.Settings.Sound.EnableMusic, Resources.music, OnMenuClick),
                     new ToolStripSeparator(),
-                    Menus.AddMenuItem("Show status bar", "STATUS", Keys.None, true, SettingsManager.Settings.General.ShowStatus, null, OnMenuClick),
-                    Menus.AddMenuItem("Show game log text", "LOG", Keys.None, true, SettingsManager.Settings.General.ShowLogText, null, OnMenuClick),
+                    Menus.AddMenuItem("Show status bar", "STATUS", Keys.None, true,
+                        SettingsManager.Settings.General.ShowStatus, Resources.status, OnMenuClick),
+                    Menus.AddMenuItem("Show game log text", "LOG", Keys.None, true,
+                        SettingsManager.Settings.General.ShowLogText, Resources.log, OnMenuClick),
                     new ToolStripSeparator(),
-                    Menus.AddMenuItem("Card back...", "BACKS", Keys.None, true, OnMenuClick),
-                    Menus.AddMenuItem("Options...", "OPTIONS", Keys.Alt | Keys.O, true, OnMenuClick)
+                    Menus.AddMenuItem("Card back...", "BACKS", Keys.None, true, false, Resources.cardBack, OnMenuClick),
+                    Menus.AddMenuItem("Options...", "OPTIONS", Keys.Alt | Keys.O, true, false, Resources.options,
+                        OnMenuClick)
                 });
         }
 
@@ -704,47 +579,41 @@ namespace ClassicUno.Forms
         #endregion
 
         #region Control buttons
-        private void OnButtonClick(object sender, EventArgs e)
+        private void OnControlButtonClick(CustomButtonType type, CustomButtonIdentifier identifier)
         {
             if (CurrentGame == null)
             {
                 return;
             }
 
-            var btn = (Button)sender;
-            if (btn == null)
+            switch (identifier)
             {
-                return;
-            }
-
-            switch (btn.Tag)
-            {
-                case "DRAW":
+                case CustomButtonIdentifier.Draw:
                     CurrentGame.SaveUndoState();
                     CurrentGame.GameData.CurrentPlayer.DrawCard();
                     break;
 
-                case "PASS":
+                case CustomButtonIdentifier.Pass:
                     CurrentGame.GameData.CurrentPlayer.Pass();
                     break;
 
-                case "PLAY":
+                case CustomButtonIdentifier.Play:
                     PlayCard();
                     break;
 
-                case "RED":
+                case CustomButtonIdentifier.Red:
                     CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Red);
                     break;
 
-                case "BLUE":
+                case CustomButtonIdentifier.Blue:
                     CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Blue);
                     break;
 
-                case "GREEN":
+                case CustomButtonIdentifier.Green:
                     CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Green);
                     break;
 
-                case "YELLOW":
+                case CustomButtonIdentifier.Yellow:
                     CurrentGame.GameData.CurrentPlayer.ChooseColor(CardColor.Yellow);
                     break;
             }
@@ -789,12 +658,18 @@ namespace ClassicUno.Forms
             if (CurrentGame?.GameData.CurrentPlayer is HumanPlayer && e.Button == MouseButtons.Left)
             {
                 /* Your turn */
+                if (CurrentGame.GameData.CurrentColor == CardColor.None)
+                {
+                    /* Don't select a card at all */
+                    return;
+                }
                 var c = HitTest(CurrentGame.GameData.Players[0].Cards, e.Location);
                 CurrentGame.SelectedCard = c;
                 InvalidateBackground();
             }
-            _btnPlay.Enabled = CurrentGame?.SelectedCard != null && CurrentGame?.GameData.CurrentColor != CardColor.None;
 
+            _controlButtons.EnableButton(CustomButtonIdentifier.Play,
+                CurrentGame?.SelectedCard != null && CurrentGame?.GameData.CurrentColor != CardColor.None);
             base.OnMouseDown(e);
         }
 
@@ -813,9 +688,17 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            if (CurrentGame?.SelectedCard != null && e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left)
             {
-                PlayCard();
+                if (CurrentGame?.SelectedCard != null)
+                {
+                    PlayCard();
+                }
+                else if (CurrentGame?.GameData.CurrentColor == CardColor.None)
+                {
+                    SoundEffectRequest(SoundType.Error);
+                    UpdateStatus("You must select a card color to continue.");
+                }
             }
 
             base.OnMouseDoubleClick(e);
@@ -888,8 +771,9 @@ namespace ClassicUno.Forms
             }
 
             /* Reset default button states */
-            _btnDraw.Enabled = false;
-            _btnPass.Enabled = false;
+            _controlButtons.EnableButton(CustomButtonIdentifier.Draw, false);
+            _controlButtons.EnableButton(CustomButtonIdentifier.Pass, false);
+
             ShowButtons(false);
             ShowColorButtons(false);
 
@@ -1193,8 +1077,8 @@ namespace ClassicUno.Forms
             _slGame.Text = @"No game running. Select the Game menu and New Game.";
             _slTime.Visible = false;
 
-            _btnDraw.Enabled = false;
-            _btnPass.Enabled = false;
+            _controlButtons.EnableButton(CustomButtonIdentifier.Draw, false);
+            _controlButtons.EnableButton(CustomButtonIdentifier.Pass, false);
 
             ShowButtons(false);
             ShowColorButtons(false);
@@ -1266,7 +1150,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            _tblButtons.Visible = visible;
+            _controlButtons.Visible = visible;
         }
 
         public void EnableDraw(bool enabled)
@@ -1276,7 +1160,8 @@ namespace ClassicUno.Forms
                 _sync.Execute(() => EnableDraw(enabled));
                 return;
             }
-            _btnDraw.Enabled = enabled;
+
+            _controlButtons.EnableButton(CustomButtonIdentifier.Draw, enabled);
         }
 
         public void EnablePass(bool enabled)
@@ -1287,7 +1172,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            _btnPass.Enabled = enabled;
+            _controlButtons.EnableButton(CustomButtonIdentifier.Pass, enabled);
         }
 
         public void EnablePlay(bool enabled)
@@ -1298,7 +1183,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            _btnPlay.Enabled = enabled;
+            _controlButtons.EnableButton(CustomButtonIdentifier.Play, enabled);
         }
 
         public void ShowColorButtons(bool visible)
@@ -1309,10 +1194,7 @@ namespace ClassicUno.Forms
                 return;
             }
 
-            _btnRed.Visible = visible;
-            _btnBlue.Visible = visible;
-            _btnGreen.Visible = visible;
-            _btnYellow.Visible = visible;
+            _controlButtons.ShowColorButtons(visible);
 
             OnResize(new EventArgs());
         }
@@ -1358,7 +1240,7 @@ namespace ClassicUno.Forms
             {
                 return false;
             }
-            var state = GameStateManager.CreateGameState(CurrentGame.GameData, CurrentGame.CurrentTime);
+            var state = GameStateManager.CreateGameState(CurrentGame.GameData, CurrentGame.CurrentTime, CurrentGame.FirstMove);
             if (state == null)
             {
                 return false;
