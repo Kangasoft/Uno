@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace ClassicUno.Classes.UI.Controls.UserButtons
+namespace ClassicUno.Controls.UserButtons
 {
     #region Enums
     public enum CustomButtonType

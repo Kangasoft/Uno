@@ -17,10 +17,6 @@ namespace ClassicUno
         [STAThread]
         private static void Main()
         {
-            /* Initalize static classes */
-            SettingsManager.Load();
-            AudioManager.Initialize();
-
             /* Check the "saved" games folder exists */
             var path = Misc.MainDir(string.Format(Resources.userPath, "saved\\"), true);
 

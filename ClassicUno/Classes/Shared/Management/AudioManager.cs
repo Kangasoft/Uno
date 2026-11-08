@@ -25,7 +25,9 @@ namespace ClassicUno.Classes.Shared.Management
         Deal = 1,
         Drop = 2,
         Draw = 3,
-        Error = 4
+        Error = 4,
+        Win = 5,
+        Loss = 6
     }
     #endregion
 
@@ -82,7 +84,9 @@ namespace ClassicUno.Classes.Shared.Management
                     LoadSound(Misc.MainDir(@"\data\sound\card-deal.wav"), SoundType.Deal),
                     LoadSound(Misc.MainDir(@"\data\sound\card-drop.wav"), SoundType.Drop),
                     LoadSound(Misc.MainDir(@"\data\sound\card-draw.wav"), SoundType.Draw),
-                    LoadSound(Misc.MainDir(@"\data\sound\card-error.wav"), SoundType.Error)
+                    LoadSound(Misc.MainDir(@"\data\sound\card-error.wav"), SoundType.Error),
+                    LoadSound(Misc.MainDir(@"\data\sound\game-win.mp3"), SoundType.Win),
+                    LoadSound(Misc.MainDir(@"\data\sound\game-loss.mp3"), SoundType.Loss)
                 });
 
             /* Set test voice */
@@ -207,6 +211,7 @@ namespace ClassicUno.Classes.Shared.Management
             {
                 return;
             }
+
             foreach (var s in Sounds.Where(s => s.Type == type))
             {
                 s.Player?.PlayAsync(true);

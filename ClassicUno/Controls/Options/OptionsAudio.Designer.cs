@@ -104,7 +104,7 @@ namespace ClassicUno.Controls.Options
             this.gbSfx.Size = new System.Drawing.Size(303, 90);
             this.gbSfx.TabIndex = 6;
             this.gbSfx.TabStop = false;
-            this.gbSfx.Text = "Voices:";
+            this.gbSfx.Text = "Sound effects:";
             // 
             // tbSfx
             // 
@@ -133,10 +133,10 @@ namespace ClassicUno.Controls.Options
             this.chkSfx.AutoSize = true;
             this.chkSfx.Location = new System.Drawing.Point(10, 22);
             this.chkSfx.Name = "chkSfx";
-            this.chkSfx.Size = new System.Drawing.Size(161, 19);
+            this.chkSfx.Size = new System.Drawing.Size(135, 19);
             this.chkSfx.TabIndex = 0;
             this.chkSfx.Tag = "SFXCHK";
-            this.chkSfx.Text = "Enable card sound effects";
+            this.chkSfx.Text = "Enable sound effects";
             this.chkSfx.UseVisualStyleBackColor = true;
             // 
             // gbVoice

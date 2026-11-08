@@ -2,10 +2,10 @@
  * Version: 1.0.1
  * By: Jason James Newland
  * ©2026 - Kangasoft Software */
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using ClassicUno.Classes.UI.Controls;
 using ClassicUno.Controls;
 
 namespace ClassicUno.Forms
@@ -50,6 +50,8 @@ namespace ClassicUno.Forms
                 Size = new Size(432, 220)
             };
 
+            _ctlCards.DoubleClick += OnDoubleClick;
+
             var btnClose = new Button
             {
                 DialogResult = DialogResult.OK,
@@ -63,6 +65,25 @@ namespace ClassicUno.Forms
             Controls.AddRange(new Control[] {_ctlCards, btnClose});
 
             AcceptButton = btnClose;
+        }
+        #endregion
+
+        #region Dispose
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _ctlCards.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+        #endregion
+
+        #region List double-click handler
+        private void OnDoubleClick(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.OK;
+            Close();
         }
         #endregion
     }

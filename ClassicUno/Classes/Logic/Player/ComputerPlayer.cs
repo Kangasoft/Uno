@@ -41,6 +41,8 @@ namespace ClassicUno.Classes.Logic.Player
         public event Action<IPlayer, CardColor> PlayerChoosesColor;
         public event Action<IPlayer> PlayerPass;
         public event Action<IPlayer> PlayerEndTurn;
+
+        public Func<Task> CheckPauseAsync { get; set; }
         #endregion
 
         #region Constructor
@@ -84,7 +86,7 @@ namespace ClassicUno.Classes.Logic.Player
             PlayerDraw?.Invoke(this);
         }
 
-        public void CardDrawn(Card card)
+        public async void CardDrawn(Card card)
         {
             Cards.Add(card);
             if (!HasDrawn)
@@ -95,7 +97,7 @@ namespace ClassicUno.Classes.Logic.Player
             _drawnCard = card;
 
             /* Loop back to original background process */
-            ComputerBeginTurn();
+            await ComputerBeginTurn();
         }
 
         public void Pass()
@@ -114,10 +116,11 @@ namespace ClassicUno.Classes.Logic.Player
         #endregion
         
         #region Private helpers
-        public async void ComputerBeginTurn()
+        public async Task ComputerBeginTurn()
         {
             /* Analyze upper card on discard pile (_discardCard) */
             await Task.Delay(RandomEx.Shared.Next(400, 800));
+            await (CheckPauseAsync?.Invoke() ?? Task.CompletedTask);
 
             Card card;
 
@@ -139,6 +142,8 @@ namespace ClassicUno.Classes.Logic.Player
             if (card == null)
             {
                 await Task.Delay(RandomEx.Shared.Next(400, 800));
+                await (CheckPauseAsync?.Invoke() ?? Task.CompletedTask);
+
                 if (!HasDrawn)
                 {
                     /* Need to draw */
@@ -148,10 +153,15 @@ namespace ClassicUno.Classes.Logic.Player
                 /* Have to pass */
                 _drawnCard = null;
                 Pass();
+
                 await Task.Delay(300);
+                await (CheckPauseAsync?.Invoke() ?? Task.CompletedTask);
+
                 EndTurn();
                 return;
             }
+
+            await (CheckPauseAsync?.Invoke() ?? Task.CompletedTask);
 
             Cards.Remove(card);
             _drawnCard = null;

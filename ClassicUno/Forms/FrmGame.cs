@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Media;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
@@ -17,9 +18,9 @@ using ClassicUno.Classes.Settings.SettingsData;
 using ClassicUno.Classes.Shared;
 using ClassicUno.Classes.Shared.Management;
 using ClassicUno.Classes.UI;
-using ClassicUno.Classes.UI.Controls.UserButtons;
 using ClassicUno.Classes.UI.Rendering;
 using ClassicUno.Controls;
+using ClassicUno.Controls.UserButtons;
 using ClassicUno.Properties;
 
 namespace ClassicUno.Forms
@@ -56,6 +57,9 @@ namespace ClassicUno.Forms
         #region Constructor
         public FrmGame()
         {
+            /* Initalize settings */
+            SettingsManager.Load();
+
             /* Get current assembly */
             var assembly = Assembly.GetExecutingAssembly();
 
@@ -169,6 +173,9 @@ namespace ClassicUno.Forms
         #region Form overrides
         protected override void OnLoad(EventArgs e)
         {
+            /* Initialize Audio manager */
+            AudioManager.Initialize();
+
             /* Set window position and size */
             var loc = SettingsManager.Settings.General.Window.Location;
             if (loc == Point.Empty)
@@ -560,12 +567,14 @@ namespace ClassicUno.Forms
                     switch (CurrentGame.GameState)
                     {
                         case GameState.Running:
-                            CurrentGame.GameState = GameState.Paused;
+                            CurrentGame.PauseGame();
+                            _controlButtons.Enabled = false;
                             AudioManager.PauseMusic();
                             break;
 
                         case GameState.Paused:
-                            CurrentGame.GameState = GameState.Running;
+                            CurrentGame.ResumeGame();
+                            _controlButtons.Enabled = true;
                             AudioManager.ResumeMusic();
                             break;
                     }
@@ -928,7 +937,7 @@ namespace ClassicUno.Forms
             Invalidate();
         }
 
-        public void GameOver(IPlayer player, int score)
+        public async void GameOver(IPlayer player, int score)
         {
             if (InvokeRequired)
             {
@@ -952,11 +961,25 @@ namespace ClassicUno.Forms
                 {
                     SettingsManager.Settings.Statistics.LongestStreak = streak;
                 }
+
+                /* Play winning sound effect */
+                if (SettingsManager.Settings.Sound.EnableEffects)
+                {
+                    AudioManager.PlayEffect(SoundType.Win);
+                    await Task.Delay(3000);
+                }
             }
             else
             {
                 SettingsManager.Settings.Statistics.GamesLost++;
                 SettingsManager.Settings.Statistics.CurrentStreak = 0;
+
+                /* Play loss sound effect */
+                if (SettingsManager.Settings.Sound.EnableEffects)
+                {
+                    AudioManager.PlayEffect(SoundType.Loss);
+                    await Task.Delay(2000);
+                }
             }
 
             var time = CurrentGame.CurrentTime;

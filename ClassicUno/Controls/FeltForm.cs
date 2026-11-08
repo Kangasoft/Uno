@@ -7,7 +7,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using ClassicUno.Classes.Shared;
 
-namespace ClassicUno.Classes.UI.Controls
+namespace ClassicUno.Controls
 {
     public class FeltForm : Form
     {

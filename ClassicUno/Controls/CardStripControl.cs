@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace ClassicUno.Classes.UI.Controls
+namespace ClassicUno.Controls
 {
     public sealed class CardStripControl : UserControl
     {
@@ -29,6 +29,7 @@ namespace ClassicUno.Classes.UI.Controls
         private int _maxScrollOffset;
 
         public event EventHandler SelectedIndexChanged;
+        public new EventHandler DoubleClick;
         #endregion
 
         #region Properties
@@ -171,6 +172,18 @@ namespace ClassicUno.Classes.UI.Controls
             Index = -1;
         }
 
+        protected override void OnMouseDoubleClick(MouseEventArgs e)
+        {
+            /* Override default double-click behaviour - this ignores right button double-clicking */
+            if (e.Button != MouseButtons.Left)
+            {
+                base.OnMouseDoubleClick(e);
+                return;
+            }
+            DoubleClick?.Invoke(this, EventArgs.Empty);
+            base.OnMouseDoubleClick(e);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -240,6 +253,11 @@ namespace ClassicUno.Classes.UI.Controls
             if (disposing)
             {
                 _scrollBar.Scroll -= ScrollBarScroll;
+
+                foreach (var image in Images)
+                {
+                    image.Dispose();
+                }
             }
 
             base.Dispose(disposing);

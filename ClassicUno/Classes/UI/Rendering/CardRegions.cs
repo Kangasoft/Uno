@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using ClassicUno.Classes.Logic;
 using ClassicUno.Classes.Logic.Player;
-using ClassicUno.Classes.UI.Controls;
+using ClassicUno.Controls;
 using ClassicUno.Properties;
 
 namespace ClassicUno.Classes.UI.Rendering

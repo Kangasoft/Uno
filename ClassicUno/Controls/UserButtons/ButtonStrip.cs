@@ -9,7 +9,7 @@ using System.Linq;
 using System.Windows.Forms;
 using ClassicUno.Properties;
 
-namespace ClassicUno.Classes.UI.Controls.UserButtons
+namespace ClassicUno.Controls.UserButtons
 {
     /* I decided to write my own custom button and button strip control, as I don't like
      * the TableLayout control and a standard Button leaves a lot to be desired when

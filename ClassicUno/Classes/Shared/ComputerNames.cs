@@ -10,7 +10,7 @@ namespace ClassicUno.Classes.Shared
     public static class ComputerNames
     {
         /* Simple class for generating random Computer player names and genders */
-        private static char RandomLetter() => (char)('A' + RandomEx.Shared.Next(26));
+        private static char RandomLetter() => (char)('A' + RandomEx.Shared.Next(23)); /* Stop at W */
 
         private static readonly List<string> MaleNames = new List<string>()
         {
@@ -49,7 +49,7 @@ namespace ClassicUno.Classes.Shared
             "Annie",
             "Amy",
             "Jenny",
-            "Alica",
+            "Alicia",
             "Jasmine",
             "Wendy",
             "Rebecca",
@@ -87,8 +87,10 @@ namespace ClassicUno.Classes.Shared
                     names = FemaleNames;
                     break;
             }
-            /* Pick a random name based on gender */
-            var name = $"{names[RandomEx.Shared.Next(0, names.Count - 1)]} {RandomLetter()}.";
+            /* Pick a random name based on gender.
+             * Corrected names.Count -1 to just name.Count to not exclude last name of either list.
+             */
+            var name = $"{names[RandomEx.Shared.Next(names.Count)]} {RandomLetter()}.";
             var data = new PlayerNameData
             {
                 Name = name,

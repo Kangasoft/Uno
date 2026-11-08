@@ -81,7 +81,10 @@ namespace ClassicUno.Classes.Logic
         private GameStateData _restart;
 
         private bool _firstMove;
-        
+        private bool _openingWildPending;
+
+        private TaskCompletionSource<bool> _resumeSignal;
+
         public GameData GameData;
 
         public UndoManager Undo = new UndoManager();
@@ -106,6 +109,13 @@ namespace ClassicUno.Classes.Logic
             _ui = ui;
 
             GameData = GameStateManager.RestoreGameState(state, out _firstMove);
+
+            if (GameData == null)
+            {
+                throw new InvalidOperationException("Unable to restore game state.");
+            }
+
+            _openingWildPending = _firstMove && GameData.CurrentColor == CardColor.None;
 
             CurrentTime = state.CurrentTime;
 
@@ -191,6 +201,32 @@ namespace ClassicUno.Classes.Logic
             _ui.UpdateUndo();
         }
 
+        public void PauseGame()
+        {
+            if (GameState == GameState.Paused)
+            {
+                return;
+            }
+
+            _resumeSignal = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            GameState = GameState.Paused;
+        }
+
+        public void ResumeGame()
+        {
+            if (GameState != GameState.Paused)
+            {
+                return;
+            }
+
+            GameState = GameState.Running;
+
+            _resumeSignal?.TrySetResult(true);
+            _resumeSignal = null;
+        }
+
         public void Restart()
         {
             if (_restart == null)
@@ -198,8 +234,16 @@ namespace ClassicUno.Classes.Logic
                 return;
             }
             RemovePlayerCallbacks();
-            //GameData = (GameData) _restart.Clone();
+
             GameData = GameStateManager.RestoreGameState(_restart, out _firstMove);
+
+            if (GameData == null)
+            {
+                throw new InvalidOperationException("Unable to restore game state.");
+            }
+
+            _openingWildPending = _firstMove && GameData.CurrentColor == CardColor.None;
+
             AddPlayerCallbacks();
             
             CurrentTime = 0;
@@ -285,7 +329,7 @@ namespace ClassicUno.Classes.Logic
             if (!(player is HumanPlayer))
             {
                 /* Computer can also begin its turn if it hasn't been skipped */
-                ((ComputerPlayer)player).ComputerBeginTurn();
+                await ((ComputerPlayer)player).ComputerBeginTurn();
                 return;
             }
 
@@ -461,19 +505,14 @@ namespace ClassicUno.Classes.Logic
 
             _ui.ShowColorButtons(false);
 
-            /* Opening Wild: the player chooses the starting color but retains their turn. */
-            if (_firstMove)
+            if (_openingWildPending)
             {
+                _openingWildPending = false;
                 _firstMove = false;
                 return;
             }
 
-            /* Wilds as the first card under offical UNO rules is the current player can choose a color
-             * (as they didn't play the card) and draw/play/pass as normal. */
-            if (!_firstMove)
-            {
-                player.EndTurn();
-            }
+            player.EndTurn();
         }
         #endregion
 
@@ -667,7 +706,9 @@ namespace ClassicUno.Classes.Logic
                     NameData = name,
                     VoiceIndex = AudioManager.GetRandomVoice(name.Gender),
                     Difficulty = data.Difficulty,
-                    AudioPan = panValues[players] /* Give the player's voice a slight pan left or right depending on position */
+                    /* Give the player's voice a slight pan left or right depending on position */
+                    AudioPan = panValues[players],
+                    CheckPauseAsync = CheckPauseAsync
                 };
                 GameData.Players.Add(player);
             }
@@ -764,6 +805,8 @@ namespace ClassicUno.Classes.Logic
             /* Animation finished - add the card to the discard pile. */
             GameData.DiscardPile.Add(startingCard);
 
+            _openingWildPending = startingCard.Type == CardType.Wild;
+
             _ui.SoundEffectRequest(SoundType.Drop);
 
             await Task.Delay(300);
@@ -778,7 +821,6 @@ namespace ClassicUno.Classes.Logic
             }
 
             /* Store a restart game point. */
-            //_restart = (GameData)GameData.Clone();
             _restart = GameStateManager.CreateGameState(GameData, 0, true);
 
             GameState = GameState.Running;
@@ -921,6 +963,21 @@ namespace ClassicUno.Classes.Logic
             var card = GameData.Deck[0];
             GameData.Deck.RemoveAt(0);
             return card;
+        }
+
+        private async Task CheckPauseAsync()
+        {
+            while (GameState == GameState.Paused)
+            {
+                var signal = _resumeSignal;
+
+                if (signal == null)
+                {
+                    return;
+                }
+
+                await signal.Task;
+            }
         }
 
         private static string GetGameText(IPlayer player, IPlayer nextPlayer, Card card)
