@@ -4,6 +4,7 @@
  * ©2026 - Kangasoft Software */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -534,7 +535,7 @@ namespace ClassicUno.Forms
                             {
                                 CardBackIndex = backs.SelectedIndex;
                                 SettingsManager.Settings.General.CardBack = CardBackIndex;
-                                Invalidate();
+                                InvalidateBackground();
                             }
                         }
                     }

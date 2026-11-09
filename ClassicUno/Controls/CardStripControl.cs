@@ -253,11 +253,6 @@ namespace ClassicUno.Controls
             if (disposing)
             {
                 _scrollBar.Scroll -= ScrollBarScroll;
-
-                foreach (var image in Images)
-                {
-                    image.Dispose();
-                }
             }
 
             base.Dispose(disposing);

@@ -68,17 +68,6 @@ namespace ClassicUno.Forms
         }
         #endregion
 
-        #region Dispose
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _ctlCards.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-        #endregion
-
         #region List double-click handler
         private void OnDoubleClick(object sender, EventArgs e)
         {
